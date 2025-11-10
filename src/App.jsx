@@ -1,10 +1,8 @@
-import DispatchForm from './Component/DispatchForm';
-import DocumentForm from './Component/DocumentForm';
+import OrderTrackingDetail from './Page/OrderTrackingDetail';
 function App() {
   return (
     <>
-      <DispatchForm />
-      <DocumentForm />
+      <OrderTrackingDetail />
     </>
   );
 }
