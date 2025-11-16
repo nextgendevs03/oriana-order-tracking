@@ -1,17 +1,30 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 
-function App() {
+import React from "react";
+import OrderTrackingDetail from "./page/OrderTrackingDetail";
+
+
+const App: React.FC = () => {
   return (
+<div>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
+   
     </BrowserRouter>
+
+      <OrderTrackingDetail />
+
+      </div>
+  
+
   );
-}
+};
 
 export default App;
 

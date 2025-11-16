@@ -1,5 +1,3 @@
-
-///update////
 import React from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
 import { useNavigate, Link } from "react-router-dom";
