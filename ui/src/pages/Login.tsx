@@ -1,14 +1,11 @@
 import React from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
 import { useNavigate, Link } from "react-router-dom";
-
 const { Title, Text } = Typography;
-
 interface LoginData {
   username: string;
   password: string;
 }
-
 const Login: React.FC = () => {
   const navigate = useNavigate();
 

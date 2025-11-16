@@ -1,10 +1,8 @@
 import React from "react";
 import { Layout, Typography, Avatar, Space } from "antd";
 import SidebarMenu from "../Components/SidebarMenu";
-
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
-
 const Dashboard: React.FC = () => {
   const username = localStorage.getItem("loggedUser") || "Guest";
 
