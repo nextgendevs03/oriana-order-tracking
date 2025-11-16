@@ -1,0 +1,51 @@
+{
+    "orders": [
+      {
+        "orderId": "ORD-001",
+        "date": "2025-11-15",
+        "salesPerson": "Ajay",
+        "clientName": "ABC Corporation",
+        "dispatchType": "Single",
+        "totalQty": 50,
+        "paymentStatus": "Advance",
+        "remarks": "Urgent delivery",
+        "clientAddress": "123 Street, City",
+        "clientContact": "9999999999",
+        "oemName": "Sieneng",
+        "productModel": "INV-123",
+        "spareQty": 5,
+        "warranty": "2 Years",
+        "dispatchPlanDate": "2025-11-20",
+        "siteLocation": "Site-1",
+        "onSiteSupport": "Yes",
+        "confirmDispatchDate": "2025-11-19"
+      }
+    ],
+    "dispatches": [
+      {
+        "orderId": "ORD-001",
+        "deliveryCount": 1,
+        "dispatchType": "Single",
+        "siteProjectName": "Project Alpha",
+        "siteProjectLocation": "Location Alpha",
+        "siteAddress": "Site Address 1",
+        "siteMapLink": "https://maps.google.com/alpha",
+        "deliveryQty": 50,
+        "confirmDispatchDate": "2025-11-19",
+        "dispatchDate": "2025-11-19"
+      }
+    ],
+    "deliveries": [
+      {
+        "orderId": "ORD-001",
+        "noDuesClearance": "Pending",
+        "taxInvoiceNo": "TX-789",
+        "invoiceDate": "2025-11-18",
+        "ewayBill": "EW-123",
+        "deliveryChallan": "DC-456",
+        "dispatchDate": "2025-11-19",
+        "packingList": []
+      }
+    ]
+  }
+  
