@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import React from "react";
-import OrderTrackingDetail from "./page/OrderTrackingDetail";
+import OrderTrackingDetail from "./pages/OrderTrackingDetail";
 const App: React.FC = () => {
   return (
     <div>
