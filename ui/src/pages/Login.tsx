@@ -52,12 +52,6 @@ const Login: React.FC = () => {
           <Button type="primary" htmlType="submit" block>
             Login
           </Button>
-
-          {/* NEW SIGNUP LINK */}
-          <div style={{ marginTop: 15, textAlign: "center" }}>
-            <Text>New user? </Text>
-            <Link to="/signup">Create an account</Link>
-          </div>
         </Form>
       </Card>
     </div>
