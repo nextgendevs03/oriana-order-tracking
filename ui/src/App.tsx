@@ -1,22 +1,37 @@
-
+import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import React from "react";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
+
+// Components
+import PurchaseDetailsForm from "./Components/PurchaseDetailForm/PurchaseDetailsForm";
+ import ParentComponent from "./Components/PurchaseDetailForm/Modal/Parent Component";
+
 const App: React.FC = () => {
   return (
-    <div>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ordertracking" element={<OrderTrackingDetail />} />
-        </Routes>
-       </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/ordertracking" element={<OrderTrackingDetail />} />
+        <Route path="/purchasedetailform" element={<PurchaseDetailsForm />} />
+
+        Purchase Details Form + Item Management
+        {/* <Route
+          path="/PurchaseDetailsForm"
+          element={
+            <div style={{ padding: 20 }}>
+              <PurchaseDetailsForm
+                form={undefined as any} // 🔹 if using AntD Form instance, pass it properly
+              />
+              <ParentComponent />
+            </div>
+          }
+        /> */}
+      </Routes>
+    </BrowserRouter>
   );
 };
 
 export default App;
-

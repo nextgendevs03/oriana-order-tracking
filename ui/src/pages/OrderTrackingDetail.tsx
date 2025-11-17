@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import PurchaseDetailsForm from "../Components/PurchaseDetailForm/PurchaseDetailsForm";
+import ParentComponent from "../Components/PurchaseDetailForm/Modal/Parent Component";
 import {
   Layout,
   Typography,
@@ -29,6 +31,10 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import ItemModal from "../Components/PurchaseDetailForm/Modal/ItemModal";
+import ItemTable from "../Components/PurchaseDetailForm/Modal/ItemsTable";
+// import ParentComponent from "../Components/PurchaseDetailForm/Modal/Parent Component";
+
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -36,31 +42,31 @@ const { Panel } = Collapse;
 const { Option } = Select;
 
 // TypeScript Interfaces
-interface PurchaseFormValues {
-  orderId: string;
-  date?: string;
-  salesPerson?: string;
-  clientName?: string;
-  osgPiNo?: string;
-  osgPiDate?: string;
-  poStatus?: string;
-  clientPoNo?: string;
-  poDate?: string;
-  dispatchType?: "Single" | "Multiple";
-  clientAddress?: string;
-  clientContact?: string;
-  oemName?: string;
-  productModel?: string;
-  totalQty?: number;
-  spareQty?: number;
-  warranty?: string;
-  dispatchPlanDate?: string;
-  siteLocation?: string;
-  onSiteSupport?: "Yes" | "No" | "Maybe";
-  confirmDispatchDate?: string;
-  paymentStatus?: string;
-  remarks?: string;
-}
+// interface PurchaseFormValues {
+//   orderId: string;
+//   date?: string;
+//   salesPerson?: string;
+//   clientName?: string;
+//   osgPiNo?: string;
+//   osgPiDate?: string;
+//   poStatus?: string;
+//   clientPoNo?: string;
+//   poDate?: string;
+//   dispatchType?: "Single" | "Multiple";
+//   clientAddress?: string;
+//   clientContact?: string;
+//   oemName?: string;
+//   productModel?: string;
+//   totalQty?: number;
+//   spareQty?: number;
+//   warranty?: string;
+//   dispatchPlanDate?: string;
+//   siteLocation?: string;
+//   onSiteSupport?: "Yes" | "No" | "Maybe";
+//   confirmDispatchDate?: string;
+//   paymentStatus?: string;
+//   remarks?: string;
+// }
 
 interface DispatchFormValues {
   orderId: string;
@@ -91,9 +97,12 @@ type UserRole = "Sales Person" | "Delivery Person";
 const OrderTrackingDetail: React.FC = () => {
   const [role, setRole] = useState<UserRole>("Sales Person");
 
-  const [purchaseForm] = Form.useForm<PurchaseFormValues>();
-  const [dispatchForm] = Form.useForm<DispatchFormValues>();
-  const [deliveryForm] = Form.useForm<DeliveryFormValues>();
+  // const [purchaseForm] = Form.useForm<PurchaseFormValues>();
+  // const [dispatchForm] = Form.useForm<DispatchFormValues>();
+  // const [deliveryForm] = Form.useForm<DeliveryFormValues>();
+  const [purchaseForm] = Form.useForm<any>();
+  const [dispatchForm] = Form.useForm<any>();
+  const [deliveryForm] = Form.useForm<any>();
 
   // Frontend store for submitted forms
   const [submittedData, setSubmittedData] = useState<any[]>([]);
@@ -166,8 +175,8 @@ const OrderTrackingDetail: React.FC = () => {
           </div>
 
           <Collapse bordered={false} style={{ marginTop: 24 }} expandIconPosition="start">
-            {/* Purchase Panel */}
-            <Panel
+            
+             <Panel
               header={
                 <Row align="middle" justify="space-between" style={{ width: "100%" }}>
                   <Col>
@@ -182,7 +191,7 @@ const OrderTrackingDetail: React.FC = () => {
               }
               key="1"
             >
-              <Form<PurchaseFormValues>
+              {/* <Form<PurchaseFormValues>
                 layout="vertical"
                 form={purchaseForm}
                 onFinish={(values: PurchaseFormValues) => handleSuccess("Purchase Details", values, purchaseForm)}
@@ -235,8 +244,8 @@ const OrderTrackingDetail: React.FC = () => {
                   <Col span={8}><Form.Item name="clientAddress" label="Client Address"><Input.TextArea rows={1} /></Form.Item></Col>
                   <Col span={8}><Form.Item name="clientContact" label="Client Point of Contact"><Input /></Form.Item></Col>
                 </Row>
-
-                <Row gutter={16}>
+                <ParentComponent/>
+                  <Row gutter={16}>
                   <Col span={8}><Form.Item name="oemName" label="OEM Name"><Select placeholder="Select">
                     <Option value="Sieneng">Sieneng</Option>
                     <Option value="Solis">Solis</Option>
@@ -244,17 +253,17 @@ const OrderTrackingDetail: React.FC = () => {
                   </Select></Form.Item></Col>
                   <Col span={8}><Form.Item name="productModel" label="Product Model"><Input /></Form.Item></Col>
                   <Col span={8}><Form.Item name="totalQty" label="Total Quantity Ordered"><Input type="number" /></Form.Item></Col>
-                </Row>
+                </Row>  
 
                 <Row gutter={16}>
-                  <Col span={8}><Form.Item name="spareQty" label="Spare Quantity"><Input type="number" /></Form.Item></Col>
+                    <Col span={8}><Form.Item name="spareQty" label="Spare Quantity"><Input type="number" /></Form.Item></Col>
                   <Col span={8}><Form.Item name="warranty" label="Warranty Period"><Select>
                     <Option value="1 Year">1 Year</Option>
                     <Option value="2 Years">2 Years</Option>
                     <Option value="3 Years">3 Years</Option>
-                  </Select></Form.Item></Col>
+                  </Select></Form.Item></Col>   
                   <Col span={8}><Form.Item name="dispatchPlanDate" label="Dispatch Plan Date"><DatePicker style={{ width: "100%" }} /></Form.Item></Col>
-                </Row>
+                </Row> 
 
                 <Row gutter={16}>
                   <Col span={8}><Form.Item name="siteLocation" label="Site Location"><Input /></Form.Item></Col>
@@ -284,8 +293,11 @@ const OrderTrackingDetail: React.FC = () => {
                     </Button>
                   </Col>
                 </Row>
-              </Form>
-            </Panel>
+              </Form> */}
+              {/* ⭐ NEW PURCHASE DETAILS FORM */}
+            <PurchaseDetailsForm form={purchaseForm} />
+
+            </Panel> 
 
             {/* Dispatch Panel */}
             <Panel
@@ -525,22 +537,6 @@ const OrderTrackingDetail: React.FC = () => {
     </Row>
   </Form>
 </Panel>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
           </Collapse>
 
           {/* Frontend preview */}

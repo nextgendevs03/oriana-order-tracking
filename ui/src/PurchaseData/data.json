@@ -1,0 +1,21 @@
+{
+    "orderId": "ORD001",
+    "date": "2025-11-16",
+    "salesPerson": "Ajay",
+    "clientName": "TATA",
+    "osgPiNo": "OSG-55",
+    "osgPiDate": "2025-11-15",
+    "poStatus": "PO Received",
+    "clientPoNo": "CP-8899",
+    "poDate": "2025-11-16",
+    "dispatchType": "Single",
+    "clientAddress": "Mumbai",
+    "clientContact": "Mr. Sharma",
+    "dispatchPlanDate": "2025-11-20",
+    "siteLocation": "Pune",
+    "onSiteSupport": "Yes",
+    "confirmDispatchDate": "2025-11-22",
+    "paymentStatus": "Received",
+    "remarks": "Urgent"
+  }
+  
