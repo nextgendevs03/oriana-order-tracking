@@ -29,6 +29,7 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import DeliveryForm from "../Components/DeliveryConfirmation/DeliveryForm";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -528,14 +529,29 @@ const OrderTrackingDetail: React.FC = () => {
 
 
 
+{/* Delivery Confirmation */}
 
 
+<Panel
+              header={
+                <Row align="middle" justify="space-between" style={{ width: "100%" }}>
+                  <Col>
+                    <TruckOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+                    <Text strong>Delivery Confirmation</Text>
+                  </Col>
+                  <Col>
+                    <Tag color="orange">In Progress</Tag>
+                    <EyeOutlined />
+                  </Col>
+                </Row>
+              }
+              key="4"
+            >
 
+<DeliveryForm/>
+            </Panel>
 
-
-
-
-
+          
 
 
 

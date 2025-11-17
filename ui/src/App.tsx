@@ -4,6 +4,11 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import React from "react";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
+import DeliveryForm from "./Components/DeliveryConfirmation/DeliveryForm";
+// import DocumentForm from "./Components/Documents/DocumentsForm";
+// import DocumentsForm from "./Components/Documents/DocumentsForm";
+
+
 const App: React.FC = () => {
   return (
     <div>
@@ -12,8 +17,12 @@ const App: React.FC = () => {
           <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/ordertracking" element={<OrderTrackingDetail />} />
+          {/* <Route path="/documentform" element={<DocumentsForm />} /> */}
+
+          <Route path="/deliveryform" element={<DeliveryForm/>} />
         </Routes>
        </BrowserRouter>
+
     </div>
   );
 };
