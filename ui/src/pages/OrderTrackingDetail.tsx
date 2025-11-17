@@ -29,6 +29,8 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import ModalDocuments from "../Components/Documents/Modals/ModalDocuments";
+import DocumentForm from "../Components/Documents/DocumentsForm";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -424,12 +426,21 @@ const OrderTrackingDetail: React.FC = () => {
 
 
 {/* Delivery Panel */}
+
+
+
+
 <Panel
+
+
+
+
+
   header={
     <Row align="middle" justify="space-between" style={{ width: "100%" }}>
       <Col>
         <CheckCircleOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
-        <Text strong>Delivery Confirmation</Text>
+        <Text strong>Document Confirmation</Text>
       </Col>
       <Col>
         <Tag color="default">Pending</Tag>
@@ -439,107 +450,13 @@ const OrderTrackingDetail: React.FC = () => {
   }
   key="3"
 >
-  <Form<DeliveryFormValues>
-    layout="vertical"
-    form={deliveryForm}
-    onFinish={(values: DeliveryFormValues) =>
-      handleSuccess("Delivery Confirmation", values, deliveryForm)
-    }
-  >
-    <Row gutter={16}>
-      <Col span={8}>
-        <Form.Item name="orderId" label="Order ID" rules={[{ required: true }]}>
-          <Input placeholder="Enter Order ID" />
-        </Form.Item>
-      </Col>
 
-      <Col span={8}>
-        <Form.Item name="noDuesClearance" label="No Dues Clearance from Account">
-          <Select placeholder="Select Status">
-            <Option value="Pending">Pending</Option>
-            <Option value="Approved">Approved</Option>
-            <Option value="Option3">Option 3</Option>
-          </Select>
-        </Form.Item>
-      </Col>
+<DocumentForm/>
 
-      <Col span={8}>
-        <Form.Item name="taxInvoiceNo" label="Tax Invoice No">
-          <Input placeholder="Enter Tax Invoice No" />
-        </Form.Item>
-      </Col>
-    </Row>
 
-    <Row gutter={16}>
-      <Col span={8}>
-        <Form.Item name="invoiceDate" label="Invoice Date">
-          <DatePicker style={{ width: "100%" }} />
-        </Form.Item>
-      </Col>
 
-      <Col span={8}>
-        <Form.Item name="ewayBill" label="E-Way Bill">
-          <Select placeholder="Select Option">
-            <Option value="Option1">Option 1</Option>
-            <Option value="Option2">Option 2</Option>
-            <Option value="Option3">Option 3</Option>
-          </Select>
-        </Form.Item>
-      </Col>
 
-      <Col span={8}>
-        <Form.Item name="deliveryChallan" label="Delivery Challan">
-          <Select placeholder="Select Option">
-            <Option value="Option1">Option 1</Option>
-            <Option value="Option2">Option 2</Option>
-            <Option value="Option3">Option 3</Option>
-          </Select>
-        </Form.Item>
-      </Col>
-    </Row>
-
-    <Row gutter={16}>
-      <Col span={8}>
-        <Form.Item name="dispatchDate" label="Dispatch Date">
-          <DatePicker style={{ width: "100%" }} />
-        </Form.Item>
-      </Col>
-
-      <Col span={8}>
-        <Form.Item name="packingList" label="Packing List">
-          <Input placeholder="Enter Packing List Details" />
-        </Form.Item>
-      </Col>
-    </Row>
-
-    <Row justify="end">
-      <Col>
-        <Button
-          type="primary"
-          htmlType="submit"
-          style={{ backgroundColor: "#6a1b9a", borderColor: "#6a1b9a", borderRadius: 8 }}
-        >
-          Submit
-        </Button>
-      </Col>
-    </Row>
-  </Form>
 </Panel>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
           </Collapse>
 
