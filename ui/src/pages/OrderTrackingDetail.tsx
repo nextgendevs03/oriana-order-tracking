@@ -29,6 +29,7 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import CommissioningData from "../Components/Commissioning/CommissioningForm";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -526,7 +527,28 @@ const OrderTrackingDetail: React.FC = () => {
   </Form>
 </Panel>
 
+{/* Commissioning Panel */}
 
+<Panel
+  header={
+    <Row align="middle" justify="space-between" style={{ width: "100%" }}>
+      <Col>
+        <CheckCircleOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+        <Text strong> Commisioning </Text>
+      </Col>
+      <Col>
+        <Tag color="default">Pending</Tag>
+        <EyeOutlined />
+      </Col>
+    </Row>
+  }
+  key="6"
+>
+
+<CommissioningData/>
+
+
+</Panel>
 
 
 
