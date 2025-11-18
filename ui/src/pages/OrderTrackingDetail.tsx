@@ -29,6 +29,8 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import DispatchForm from "../Components/DispatchDetails/DispatchForm";
+import ModalDispatch from "../Components/DispatchDetails/Modals/ModalDispatch";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -289,6 +291,7 @@ const OrderTrackingDetail: React.FC = () => {
 
             {/* Dispatch Panel */}
             <Panel
+
               header={
                 <Row align="middle" justify="space-between" style={{ width: "100%" }}>
                   <Col>
@@ -302,48 +305,15 @@ const OrderTrackingDetail: React.FC = () => {
                 </Row>
               }
               key="2"
-            >
-              <Form<DispatchFormValues>
-                layout="vertical"
-                form={dispatchForm}
-                onFinish={(values: DispatchFormValues) => handleSuccess("Dispatch Details", values, dispatchForm)}
-              >
-                <Row gutter={16}>
-                  <Col span={8}><Form.Item name="orderId" label="Order ID" rules={[{ required: true }]}><Input placeholder="Enter Order ID" /></Form.Item></Col>
-                  <Col span={8}><Form.Item name="deliveryCount" label="Delivery Count"><Input type="number" placeholder="Enter Delivery Count" /></Form.Item></Col>
-                  <Col span={8}><Form.Item name="dispatchType" label="No of Dispatch"><Radio.Group>
-                    <Radio value="Single">Single</Radio>
-                    <Radio value="Multiple">Multiple</Radio>
-                  </Radio.Group></Form.Item></Col>
-                </Row>
+            > 
 
-                <Row gutter={16}>
-                  <Col span={12}><Form.Item name="siteProjectName" label="Site Wise Project Name"><Input placeholder="Enter Project Name" /></Form.Item></Col>
-                  <Col span={12}><Form.Item name="siteProjectLocation" label="Site Wise Project Location"><Input placeholder="Enter Project Location" /></Form.Item></Col>
-                </Row>
+ {/*           dispatchForm  import  due....... */}
 
-                <Row gutter={16}>
-                  <Col span={12}><Form.Item name="siteAddress" label="Site Delivery Address"><Input.TextArea rows={2} placeholder="Enter Delivery Address" /></Form.Item></Col>
-                  <Col span={12}><Form.Item name="siteMapLink" label="Site Google Map Link"><Input placeholder="Paste Google Map Link" /></Form.Item></Col>
-                </Row>
 
-                <Row gutter={16}>
-                  <Col span={8}><Form.Item name="deliveryQty" label="Site Wise Delivery Quantity"><Input type="number" placeholder="Enter Quantity" /></Form.Item></Col>
-                  <Col span={8}><Form.Item name="confirmDispatchDate" label="Confirm Dispatch Date"><DatePicker style={{ width: "100%" }} /></Form.Item></Col>
-                  <Col span={8}><Form.Item name="dispatchDate" label="Date"><DatePicker style={{ width: "100%" }} /></Form.Item></Col>
-                </Row>
-
-                <Row justify="end">
-                  <Col>
-                    <Button type="primary" htmlType="submit" style={{ backgroundColor: "#6a1b9a", borderColor: "#6a1b9a", borderRadius: 8 }}>
-                      Submit
-                    </Button>
-                  </Col>
-                </Row>
-              </Form>
             </Panel>
 
-            {/* Delivery Panel
+
+            {/* Document panel
             <Panel
               header={
                 <Row align="middle" justify="space-between" style={{ width: "100%" }}>
@@ -524,21 +494,8 @@ const OrderTrackingDetail: React.FC = () => {
       </Col>
     </Row>
   </Form>
+
 </Panel>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
           </Collapse>
