@@ -29,6 +29,7 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import PreCommissioningForm from "../Components/PreCommissioning/PreCommissioningForm";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -523,20 +524,34 @@ const OrderTrackingDetail: React.FC = () => {
         </Button>
       </Col>
     </Row>
+
+
+
+
   </Form>
 </Panel>
 
 
+ {/* Pre-Commissioning */}
 
+  <Panel
 
-
-
-
-
-
-
-
-
+  header={
+    <Row align="middle" justify="space-between" style={{ width: "100%" }}>
+      <Col>
+        <CheckCircleOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+        <Text strong>Pre-Commissioning</Text>
+      </Col>
+      <Col>
+        <Tag color="default">Pending</Tag>
+        <EyeOutlined />
+      </Col>
+    </Row>
+  }
+  key="4"
+>
+<PreCommissioningForm serialNumbers={[]} />
+  </Panel>
 
 
 
