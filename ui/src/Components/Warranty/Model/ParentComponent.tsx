@@ -104,7 +104,7 @@ const WarrantyParent: React.FC = () => {
 
       {/* Warranty Form Modal */}
       <Modal
-        title="Warranty Form"
+        // title="Warranty Form"
         open={warrantyModalOpen}
         centered
         footer={null}
