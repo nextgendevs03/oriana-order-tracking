@@ -18,7 +18,7 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
 
   return (
     <Card
-      title="Warranty / Project Details"
+      // title="Warranty"
       style={{
         maxWidth: 600,
         margin: "20px auto",
