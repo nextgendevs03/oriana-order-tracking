@@ -31,7 +31,7 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
         layout="vertical"
         onFinish={handleFinish}
         initialValues={{
-          sharedStatus: "Pending",
+          sharedStatus: "",
           warrantyStartDate: null,
           warrantyEndDate: null,
           issueDate: null,
