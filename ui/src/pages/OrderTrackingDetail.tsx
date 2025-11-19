@@ -283,7 +283,7 @@ const OrderTrackingDetail: React.FC = () => {
               onFinish={(values) =>
                 handleSuccess("Warranty Details", values, warrantyForm)
               }
-            >
+             > 
               {/* <Row gutter={16}>
                 <Col span={8}>
                   <Form.Item
@@ -353,7 +353,7 @@ const OrderTrackingDetail: React.FC = () => {
                   </Button>
                 </Col>
               </Row> */}
-            </Form>
+          </Form> 
           </Panel>
         </Collapse>
        <ParentComponent/>
