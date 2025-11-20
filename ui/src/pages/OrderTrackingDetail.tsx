@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-// import PurchaseDetailsForm from "../Components/PurchaseDetailForm/PurchaseDetailsForm";
-// import ParentComponent from "../Components/PurchaseDetailForm/Modal/Parent Component";
 import WarrantyForm from "../Components/Warranty/WarrantyForm";
 import ParentComponent from "../Components/Warranty/Model/ParentComponent";
 
@@ -41,31 +39,6 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 const { Option } = Select;
-/* ------------------------------ Interfaces ------------------------------ */
-
-interface DispatchFormValues {
-  orderId: string;
-  deliveryCount?: number;
-  dispatchType?: "Single" | "Multiple";
-  siteProjectName?: string;
-  siteProjectLocation?: string;
-  siteAddress?: string;
-  siteMapLink?: string;
-  deliveryQty?: number;
-  confirmDispatchDate?: string;
-  dispatchDate?: string;
-}
-
-interface DeliveryFormValues {
-  orderId: string;
-  noDuesClearance?: string;
-  taxInvoiceNo?: string;
-  invoiceDate?: string;
-  ewayBill?: string;
-  deliveryChallan?: string;
-  dispatchDate?: string;
-  packingList?: any;
-}
 
 /* ⭐ NEW WARRANTY INTERFACE */
 interface WarrantyFormValues {
@@ -171,94 +144,7 @@ const OrderTrackingDetail: React.FC = () => {
               </Row>
             }
             key="3"
-          >
-            {/* Delivery Form — unchanged */}
-            <Form
-              layout="vertical"
-              form={deliveryForm}
-              onFinish={(values) =>
-                handleSuccess("Delivery Confirmation", values, deliveryForm)
-              }
-            >
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="orderId" label="Order ID" rules={[{ required: true }]}>
-                    <Input placeholder="Enter Order ID" />
-                  </Form.Item>
-                </Col>
-
-                <Col span={8}>
-                  <Form.Item name="noDuesClearance" label="No Dues Clearance from Account">
-                    <Select placeholder="Select Status">
-                      <Option value="Pending">Pending</Option>
-                      <Option value="Approved">Approved</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col span={8}>
-                  <Form.Item name="taxInvoiceNo" label="Tax Invoice No">
-                    <Input placeholder="Enter Tax Invoice No" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="invoiceDate" label="Invoice Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-
-                <Col span={8}>
-                  <Form.Item name="ewayBill" label="E-Way Bill">
-                    <Select placeholder="Select Option">
-                      <Option value="Option1">Option 1</Option>
-                      <Option value="Option2">Option 2</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                <Col span={8}>
-                  <Form.Item name="deliveryChallan" label="Delivery Challan">
-                    <Select placeholder="Select Option">
-                      <Option value="Option1">Option 1</Option>
-                      <Option value="Option2">Option 2</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="dispatchDate" label="Dispatch Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-
-                <Col span={8}>
-                  <Form.Item name="packingList" label="Packing List">
-                    <Input placeholder="Enter Packing List Details" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row justify="end">
-                <Col>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{
-                      backgroundColor: "#6a1b9a",
-                      borderColor: "#6a1b9a",
-                      borderRadius: 8,
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Col>
-              </Row>
-            </Form>
+          >     
           </Panel>
 
           {/* 4️⃣ WARRANTY PANEL */}
@@ -284,75 +170,6 @@ const OrderTrackingDetail: React.FC = () => {
                 handleSuccess("Warranty Details", values, warrantyForm)
               }
              > 
-              {/* <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item
-                    name="warrantyCertificateNo"
-                    label="Warranty Certificate No"
-                    rules={[{ required: true, message: "Enter certificate number" }]}
-                  >
-                    <Input placeholder="Enter Certificate Number" />
-                  </Form.Item>
-                </Col>
-
-                <Col span={8}>
-                  <Form.Item name="issueDate" label="Issue Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-
-                <Col span={8}>
-                  <Form.Item name="warrantyStartDate" label="Warranty Start Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="warrantyEndDate" label="Warranty End Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-
-                <Col span={16}>
-                  <Form.Item
-                    name="sharedStatus"
-                    label="Warranty Certificate Shared with Client"
-                  >
-                    <Select placeholder="Select Status">
-                      <Option value="Done">Done</Option>
-                      <Option value="Pending">Pending</Option>
-                      <Option value="Hold">Hold</Option>
-                      <Option value="Cancelled">Cancelled</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item name="remarks" label="Remarks">
-                    <Input.TextArea rows={2} placeholder="Enter remarks..." />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row justify="end">
-                <Col>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{
-                      backgroundColor: "#6a1b9a",
-                      borderColor: "#6a1b9a",
-                      borderRadius: 8,
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Col>
-              </Row> */}
           </Form> 
           </Panel>
         </Collapse>
