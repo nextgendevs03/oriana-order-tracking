@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import WarrantyCertificate from "../Components/WarrantyCertificate/WarrantyCertificate";
+import ModalWarrantyCertificate from "../Components/WarrantyCertificate/Modals/ModalWarrantyCertificate";
 import {
   Layout,
   Typography,
@@ -525,10 +527,26 @@ const OrderTrackingDetail: React.FC = () => {
     </Row>
   </Form>
 </Panel>
+       
 
 
-
-
+<Panel
+              header={
+                <Row align="middle" justify="space-between" style={{ width: "100%" }}>
+                  <Col>
+                    <CheckCircleOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+                    <Text strong>Warrenty Certificate</Text>
+                  </Col>
+                  <Col>
+                    <Tag color="default">Pending</Tag>
+                    <EyeOutlined />
+                  </Col>
+                </Row>
+              }
+              key="4"
+            >
+<WarrantyCertificate/>
+</Panel>
 
 
 

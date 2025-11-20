@@ -4,6 +4,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import React from "react";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
+import WarrantyCertificate from "./Components/WarrantyCertificate/WarrantyCertificate";
+// import ModalWarrantyCertificate from "./Components/WarrantyCertificate/Modals/ModalWarrantyCertificate";
 const App: React.FC = () => {
   return (
     <div>
