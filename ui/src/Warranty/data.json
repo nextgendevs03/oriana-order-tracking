@@ -1,0 +1,10 @@
+{
+    "itemId": "ITEM-001",
+
+    "warrantyCertificateNo": "WCN-45231",
+    "issueDate": "2025-01-10",
+    "warrantyStartDate": "2025-01-11",
+    "warrantyEndDate": "2027-01-11",
+    "sharedStatus": "Done",
+    "remarks": "Certificate sent to client"
+  }
