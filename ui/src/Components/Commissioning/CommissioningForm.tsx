@@ -1,11 +1,8 @@
 import React, { useState } from "react";
-import { Card, Button, Collapse } from "antd";
-
+import { Card, Button, Table, Space, Popconfirm } from "antd";
 import ModalCommissioning from "./Modals/ModalCommissioning";
-
-const { Panel } = Collapse;
-
-export interface CommissioningData {
+export interface CommissioningDataType {
+    key: number;
     expectedDate: string;
     ticketNo: string;
     engineer: string;
@@ -17,47 +14,93 @@ export interface CommissioningData {
     remarks: string;
 }
 
-const CommissioningData: React.FC = () => {
+const CommissioningForm: React.FC = () => {
     const [modalOpen, setModalOpen] = useState(false);
-    const [records, setRecords] = useState<CommissioningData[]>([]);
+    const [records, setRecords] = useState<CommissioningDataType[]>([]);
+    const [editRecord, setEditRecord] = useState<CommissioningDataType | null>(null);
 
-    const handleAdd = () => setModalOpen(true);
-
-    const handleSubmit = (data: CommissioningData) => {
-        setRecords([...records, data]);
-        setModalOpen(false);
+    const handleAdd = () => {
+        setEditRecord(null);
+        setModalOpen(true);
     };
 
-    return (
+    const handleSubmit = (data: CommissioningDataType) => {
+        if (editRecord) {
+            // Edit mode
+            setRecords((prev) =>
+                prev.map((item) =>
+                    item.key === editRecord.key ? { ...editRecord, ...data } : item
+                )
+            );
+        } else {
+            // Add new, ensure key is not overwritten by data.key
+            const { key, ...restData } = data;
+            setRecords([...records, { key: Date.now(), ...restData }]);
+        }
 
+        setModalOpen(false);
+        setEditRecord(null);
+    };
+
+    const handleEdit = (record: CommissioningDataType) => {
+        setEditRecord(record);
+        setModalOpen(true);
+    };
+
+    const handleDelete = (key: number) => {
+        setRecords(records.filter((r) => r.key !== key));
+    };
+
+    const columns = [
+        { title: "Expected Date", dataIndex: "expectedDate" },
+        { title: "Ticket No", dataIndex: "ticketNo" },
+        { title: "Engineer", dataIndex: "engineer" },
+        { title: "Confirmed Date", dataIndex: "confirmedDate" },
+        { title: "Issues", dataIndex: "issues" },
+        { title: "Solution", dataIndex: "solution" },
+        { title: "Commissioning Date", dataIndex: "commissioningDate" },
+        { title: "Status", dataIndex: "status" },
+        { title: "Remarks", dataIndex: "remarks" },
+        {
+            title: "Actions",
+            render: (_: any, record: CommissioningDataType) => (
+                <Space>
+                    <Button type="link" onClick={() => handleEdit(record)}>Edit</Button>
+                    <Popconfirm
+                        title="Are you sure you want to delete?"
+                        onConfirm={() => handleDelete(record.key)}
+                    >
+                        <Button type="link" danger>Delete</Button>
+                    </Popconfirm>
+                </Space>
+            )
+        }
+    ];
+
+    return (
         <Card>
             <Button type="primary" onClick={handleAdd}>
                 Add Commissioning Details
             </Button>
 
-            <Collapse style={{ marginTop: 20 }}>
-                {records.map((item, index) => (
-                    <Panel header={`Entry ${index + 1}`} key={index}>
-                        <p><b>Expected Commissioning Date :</b> {item.expectedDate}</p>
-                        <p><b>Service Ticket No :</b> {item.ticketNo}</p>
-                        <p><b>Service Engineer Assigned :</b> {item.engineer}</p>
-                        <p><b>Confirmed Commissioning Date :</b> {item.confirmedDate}</p>
-                        <p><b>Issues :</b> {item.issues}</p>
-                        <p><b>Solution :</b> {item.solution}</p>
-                        <p><b>Commissioning Date :</b> {item.commissioningDate}</p>
-                        <p><b>Status :</b> {item.status}</p>
-                        <p><b>Remarks :</b> {item.remarks}</p>
-                    </Panel>
-                ))}
-            </Collapse>
+            <Table
+                style={{ marginTop: 20 }}
+                dataSource={records}
+                columns={columns}
+                pagination={false}
+            />
 
             <ModalCommissioning
                 open={modalOpen}
-                onClose={() => setModalOpen(false)}
+                onClose={() => {
+                    setModalOpen(false);
+                    setEditRecord(null);
+                }}
                 onSubmit={handleSubmit}
+                editRecord={editRecord}
             />
         </Card>
     );
-};
+}
 
-export default CommissioningData;
+export default CommissioningForm;
