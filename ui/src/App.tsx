@@ -16,19 +16,6 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/ordertracking" element={<OrderTrackingDetail />} />
         <Route path="/purchasedetailform" element={<PurchaseDetailsForm />} />
-
-        Purchase Details Form + Item Management
-        {/* <Route
-          path="/PurchaseDetailsForm"
-          element={
-            <div style={{ padding: 20 }}>
-              <PurchaseDetailsForm
-                form={undefined as any} // 🔹 if using AntD Form instance, pass it properly
-              />
-              <ParentComponent />
-            </div>
-          }
-        /> */}
       </Routes>
     </BrowserRouter>
   );

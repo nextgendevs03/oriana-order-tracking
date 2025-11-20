@@ -6,16 +6,31 @@ import ItemTable from "./ItemsTable";
 const ParentComponent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [items, setItems] = useState<ItemFormValues[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  // Add new item
-  const handleAddItem = (item: ItemFormValues) => {
-    setItems([...items, item]);
+  // Add or update item
+  const handleAddOrUpdateItem = (item: ItemFormValues) => {
+    if (editingIndex !== null) {
+      const newItems = [...items];
+      newItems[editingIndex] = item;
+      setItems(newItems);
+      setEditingIndex(null);
+    } else {
+      setItems([...items, item]);
+    }
+    setIsModalOpen(false);
   };
 
   // Delete item by index
   const handleDelete = (index: number) => {
     const newItems = items.filter((_, i) => i !== index);
     setItems(newItems);
+  };
+
+  // Edit item
+  const handleEdit = (index: number) => {
+    setEditingIndex(index);
+    setIsModalOpen(true);
   };
 
   return (
@@ -28,13 +43,16 @@ const ParentComponent: React.FC = () => {
           </Button>
         }
       >
-        <ItemTable data={items} onDelete={handleDelete} />
+        <ItemTable data={items} onDelete={handleDelete} onEdit={handleEdit} />
       </Card>
 
       <ItemModal
         visible={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddItem}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingIndex(null);
+        }}
+        onSubmit={handleAddOrUpdateItem}
       />
     </div>
   );

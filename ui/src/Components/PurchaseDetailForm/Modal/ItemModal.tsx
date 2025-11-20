@@ -11,6 +11,8 @@ export interface ItemFormValues {
   spareQty: number;
   totalQty: number;
   paymentStatus: string;
+  pricePerUnit: number;
+  totalPrice: number;   // ⭐ NEW FIELD
   warranty: string;
   remarks?: string;
 }
@@ -44,27 +46,27 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
       onOk={handleSubmit}
       okText="Save"
       width={520}
-
-     
       centered
-      style={{ marginTop: "-30px" }}   
-
-     
+      style={{ marginTop: "-30px" }}
       getContainer={false}
-
       bodyStyle={{
         padding: "16px 20px",
         maxHeight: "65vh",
-        overflowY: "auto",  
+        overflowY: "auto",
       }}
     >
       <Form
         form={form}
         layout="vertical"
         onValuesChange={(changed, allValues) => {
-          const { quantity = 0, spareQty = 0 } = allValues;
+          const { quantity = 0, spareQty = 0, pricePerUnit = 0 } = allValues;
+
+          const totalQty = quantity + spareQty;
+          const totalPrice = totalQty * pricePerUnit;
+
           form.setFieldsValue({
-            totalQty: quantity + spareQty,
+            totalQty,
+            totalPrice,
           });
         }}
       >
@@ -75,11 +77,31 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
             gap: "12px",
           }}
         >
-          <Form.Item name="category" label="Category" rules={[{ required: true }]}>
-            <Input placeholder="Enter category" />
+          {/* Category */}
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true }]}
+          >
+            <Select placeholder="Select Category" showSearch>
+              <Option value="Inverter">Inverter</Option>
+              <Option value="Panel">Panel</Option>
+              <Option value="DC Cable">DC Cable</Option>
+              <Option value="AC Cable">AC Cable</Option>
+              <Option value="MC4 Connector">MC4 Connector</Option>
+              <Option value="SPD">SPD</Option>
+              <Option value="Earthing Kit">Earthing Kit</Option>
+              <Option value="Display Unit">Display Unit</Option>
+              <Option value="WiFi Dongle">WiFi Dongle</Option>
+            </Select>
           </Form.Item>
 
-          <Form.Item name="oemName" label="OEM Name" rules={[{ required: true }]}>
+          {/* OEM Name */}
+          <Form.Item
+            name="oemName"
+            label="OEM Name"
+            rules={[{ required: true }]}
+          >
             <Select placeholder="Select OEM">
               <Option value="Sieneng">Sieneng</Option>
               <Option value="Solis">Solis</Option>
@@ -87,23 +109,56 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="productModel" label="Product Model" rules={[{ required: true }]}>
-            <Input placeholder="Enter product model" />
+          {/* Product Model */}
+          <Form.Item
+            name="productModel"
+            label="Product Model"
+            rules={[{ required: true }]}
+          >
+            <Select placeholder="Select Product Model" showSearch>
+              <Option value="SPD Type 1">SPD Type 1</Option>
+              <Option value="SPD Type 2">SPD Type 2</Option>
+              <Option value="ACDB">ACDB</Option>
+              <Option value="DCDB">DCDB</Option>
+              <Option value="MC4 Connector">MC4 Connector</Option>
+              <Option value="WiFi Dongle">WiFi Dongle</Option>
+              <Option value="Display Unit">Display Unit</Option>
+            </Select>
           </Form.Item>
 
-          <Form.Item name="quantity" label="Quantity" rules={[{ required: true }]}>
+          {/* Quantity */}
+          <Form.Item
+            name="quantity"
+            label="Quantity"
+            rules={[{ required: true }]}
+          >
             <InputNumber min={1} style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item name="spareQty" label="Spare Quantity" rules={[{ required: true }]}>
+          {/* Spare Qty */}
+          <Form.Item
+            name="spareQty"
+            label="Spare Quantity"
+            rules={[{ required: true }]}
+          >
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
 
-          <Form.Item name="totalQty" label="Total Quantity" rules={[{ required: true }]}>
+          {/* Total Qty */}
+          <Form.Item
+            name="totalQty"
+            label="Total Quantity"
+            rules={[{ required: true }]}
+          >
             <InputNumber style={{ width: "100%" }} disabled />
           </Form.Item>
 
-          <Form.Item name="paymentStatus" label="Payment Status" rules={[{ required: true }]}>
+          {/* Payment Status */}
+          <Form.Item
+            name="paymentStatus"
+            label="Payment Status"
+            rules={[{ required: true }]}
+          >
             <Select placeholder="Select payment status">
               <Option value="Advance">Advance</Option>
               <Option value="Received">Received</Option>
@@ -111,7 +166,38 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="warranty" label="Warranty" rules={[{ required: true }]}>
+          {/* Price per Unit */}
+          <Form.Item
+            name="pricePerUnit"
+            label="Price"
+            rules={[{ required: true }]}
+          >
+            <InputNumber
+              min={0}
+              style={{ width: "100%" }}
+              placeholder="Enter price per unit"
+            />
+          </Form.Item>
+
+          {/* ⭐ NEW — TOTAL PRICE */}
+          <Form.Item
+            name="totalPrice"
+            label="Total Price"
+            rules={[{ required: true }]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              disabled
+              placeholder="Auto calculated"
+            />
+          </Form.Item>
+
+          {/* Warranty */}
+          <Form.Item
+            name="warranty"
+            label="Warranty"
+            rules={[{ required: true }]}
+          >
             <Select placeholder="Select warranty">
               <Option value="1 Year">1 Year</Option>
               <Option value="2 Years">2 Years</Option>
@@ -120,6 +206,7 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
           </Form.Item>
         </div>
 
+        {/* Remarks */}
         <Form.Item name="remarks" label="Remarks" style={{ marginTop: 10 }}>
           <Input.TextArea rows={2} />
         </Form.Item>
@@ -129,4 +216,3 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
 };
 
 export default ItemModal;
- 
