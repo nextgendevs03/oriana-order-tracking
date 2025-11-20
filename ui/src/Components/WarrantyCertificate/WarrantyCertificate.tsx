@@ -8,22 +8,30 @@ const WarrantyCertificate: React.FC = () => {
     const [editingRecord, setEditingRecord] = useState<any | null>(null);
 
     const handleAdd = () => {
-        setEditingRecord(null); // Clear previous edit data
+        setEditingRecord(null);
         setOpen(true);
     };
 
     const handleSubmit = (values: any) => {
+        // ✅ Convert Dates to String before saving
+        const formattedValues = {
+            ...values,
+            issueDate: values.issueDate ? values.issueDate.format("YYYY-MM-DD") : "",
+            startDate: values.startDate ? values.startDate.format("YYYY-MM-DD") : "",
+            endDate: values.endDate ? values.endDate.format("YYYY-MM-DD") : "",
+        };
+
         if (editingRecord) {
-            // Update existing
+            // Update record
             setData((prev) =>
                 prev.map((item) =>
-                    item.key === editingRecord.key ? { ...item, ...values } : item
+                    item.key === editingRecord.key ? { ...item, ...formattedValues } : item
                 )
             );
             message.success("Record updated successfully");
         } else {
-            // Add new
-            setData([...data, { key: Date.now(), ...values }]);
+            // Add new record
+            setData([...data, { key: Date.now(), ...formattedValues }]);
             message.success("Record added successfully");
         }
         setOpen(false);
@@ -70,7 +78,6 @@ const WarrantyCertificate: React.FC = () => {
 
     return (
         <div>
-
             <Button type="primary" onClick={handleAdd}>
                 Add Warranty Certificate
             </Button>
