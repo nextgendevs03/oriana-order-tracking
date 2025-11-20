@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   Layout,
   Typography,
@@ -29,6 +30,7 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import ParentComponent from "../Components/Dispatch/ParentComponent";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -287,15 +289,28 @@ const OrderTrackingDetail: React.FC = () => {
               </Form>
             </Panel>
 
-            {/* Dispatch Panel */}
-            <Panel
+             {/* Dispatch Panel */}
+
+             
+
+             
+             <Panel
+
+  
+
+
+
               header={
                 <Row align="middle" justify="space-between" style={{ width: "100%" }}>
                   <Col>
                     <TruckOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
                     <Text strong>Dispatch Details</Text>
                   </Col>
-                  <Col>
+
+
+                
+                  
+                   <Col>
                     <Tag color="orange">In Progress</Tag>
                     <EyeOutlined />
                   </Col>
@@ -303,6 +318,11 @@ const OrderTrackingDetail: React.FC = () => {
               }
               key="2"
             >
+
+
+
+
+{/*               
               <Form<DispatchFormValues>
                 layout="vertical"
                 form={dispatchForm}
@@ -333,15 +353,47 @@ const OrderTrackingDetail: React.FC = () => {
                   <Col span={8}><Form.Item name="dispatchDate" label="Date"><DatePicker style={{ width: "100%" }} /></Form.Item></Col>
                 </Row>
 
-                <Row justify="end">
+                // <Row justify="end">
+                //   <Col>
+                //     <Button type="primary" htmlType="submit" style={{ backgroundColor: "#6a1b9a", borderColor: "#6a1b9a", borderRadius: 8 }}>
+                //       Submit
+                //     </Button>
+                //   </Col>
+                // </Row>
+              </Form> */}
+
+
+{/* this will Dispatch  END Submit form   */}
+               {/* <Row justify="end">
+                   <Col>
+                   <Button type="primary" htmlType="submit" style={{ backgroundColor: "#6a1b9a", borderColor: "#6a1b9a", borderRadius: 8 }}>
+                      Submit
+                    </Button>
+                   </Col>
+                </Row>  */}
+
+
+
+<ParentComponent/>
+<Row justify="end">
                   <Col>
-                    <Button type="primary" htmlType="submit" style={{ backgroundColor: "#6a1b9a", borderColor: "#6a1b9a", borderRadius: 8 }}>
+                    <Button 
+                      type="primary" 
+                      htmlType="submit" 
+                      style={{ backgroundColor: "#6a1b9a", borderColor: "#6a1b9a", borderRadius: 8 }}
+                    >
                       Submit
                     </Button>
                   </Col>
                 </Row>
-              </Form>
-            </Panel>
+
+
+            </Panel>  
+
+
+
+
+
 
             {/* Delivery Panel
             <Panel
