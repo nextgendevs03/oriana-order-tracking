@@ -171,9 +171,9 @@ const OrderTrackingDetail: React.FC = () => {
               }
              > 
           </Form> 
+          <ParentComponent/> 
           </Panel>
         </Collapse>
-       <ParentComponent/>
 
         {/* Submitted Data */}
         {submittedData.length > 0 && (

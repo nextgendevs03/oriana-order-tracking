@@ -1,3 +1,4 @@
+// Updated WarrantyForm with Multi-Select Item Dropdown placeholder
 import React from "react";
 import { Form, Input, DatePicker, Select, Button, Card } from "antd";
 
@@ -5,14 +6,14 @@ const { Option } = Select;
 
 interface Props {
   onSubmit: (values: any) => void;
+  selectedItems?: string[]; // ⭐ items from ItemModal
 }
 
-const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
+const WarrantyForm: React.FC<Props> = ({ onSubmit, selectedItems = [] }) => {
   const [form] = Form.useForm();
 
   const handleFinish = (values: any) => {
-    console.log("Form Submitted Values:", values);
-    onSubmit(values);
+    onSubmit({ ...values, selectedItems }); // ⭐ include selected items
     form.resetFields();
   };
 
@@ -23,8 +24,6 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
         margin: "20px auto",
         borderRadius: 12,
         padding: 20,
-
-        // ⭐ Added for scroll fix
         maxHeight: "65vh",
         overflowY: "auto",
       }}
@@ -42,7 +41,31 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
             remark: "",
           }}
         >
-          {/* Warranty Certificate Number */}
+          {/* ⭐ Multi‑Check Dropdown Inside Warranty Form */
+          <Form.Item
+            name="selectedItems"
+            label="Select Items"
+            rules={[{ required: true, message: "Please select items" }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="Select warranty items"
+              allowClear
+            >
+              <Option value="ITEM-01">Motor</Option>
+              <Option value="ITEM-02">Pump</Option>
+              <Option value="ITEM-03">Control Panel</Option>
+              <Option value="ITEM-04">Cable</Option>
+              <Option value="ITEM-05">Switch Gear</Option>
+              <Option value="ITEM-06">Starter</Option>
+              <Option value="ITEM-07">Pipe</Option>
+              <Option value="ITEM-08">Valve</Option>
+              <Option value="ITEM-09">Sensor</Option>
+              <Option value="ITEM-10">Relay</Option>
+            </Select>
+          </Form.Item>}
+          
+
           <Form.Item
             name="warrantyCertificateNo"
             label="Warranty Certificate No"
@@ -51,7 +74,6 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
             <Input placeholder="Enter warranty certificate number" />
           </Form.Item>
 
-          {/* Start Date */}
           <Form.Item
             name="warrantyStartDate"
             label="Warranty Start Date"
@@ -60,7 +82,6 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
 
-          {/* End Date */}
           <Form.Item
             name="warrantyEndDate"
             label="Warranty End Date"
@@ -69,12 +90,10 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
 
-          {/* Issue Date */}
           <Form.Item name="issueDate" label="Issue Date">
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
 
-          {/* Shared Status Dropdown */}
           <Form.Item name="sharedStatus" label="Shared Status">
             <Select placeholder="Select shared status">
               <Option value="Done">Done</Option>
@@ -84,12 +103,10 @@ const WarrantyForm: React.FC<Props> = ({ onSubmit }) => {
             </Select>
           </Form.Item>
 
-          {/* Remark */}
           <Form.Item name="remark" label="Remark">
             <Input.TextArea rows={3} placeholder="Enter remark" />
           </Form.Item>
 
-          {/* Submit Button */}
           <Form.Item>
             <Button type="primary" htmlType="submit" style={{ width: "100%" }}>
               Submit

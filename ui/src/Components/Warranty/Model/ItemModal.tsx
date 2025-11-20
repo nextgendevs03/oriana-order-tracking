@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Checkbox, Button } from "antd";
+import { Select, Button } from "antd";
 
 interface Props {
   onSubmit: (items: any[]) => void;
@@ -19,29 +19,36 @@ const ItemModal: React.FC<Props> = ({ onSubmit }) => {
     { id: "ITEM-10", name: "Relay" }
   ];
 
-  const [selected, setSelected] = useState<any[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const handleNext = () => {
+    const selectedItems = items.filter((item) =>
+      selected.includes(item.id)
+    );
+    onSubmit(selectedItems);
+  };
 
   return (
-    <div>
-      <Checkbox.Group
+    <div style={{ padding: 10 }}>
+      <Select
+        mode="multiple"
+        allowClear
+        placeholder="Select Items"
         style={{ width: "100%" }}
-        onChange={(values) =>
-          setSelected(items.filter((item) => values.includes(item.id)))
-        }
+        value={selected}
+        onChange={(value) => setSelected(value)}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {items.map((item) => (
-            <Checkbox key={item.id} value={item.id}>
-              {item.name}
-            </Checkbox>
-          ))}
-        </div>
-      </Checkbox.Group>
+        {items.map((item) => (
+          <Select.Option key={item.id} value={item.id}>
+            {item.name}
+          </Select.Option>
+        ))}
+      </Select>
 
       <Button
         type="primary"
-        style={{ marginTop: 20 }}
-        onClick={() => onSubmit(selected)}
+        style={{ marginTop: 20, width: "100%" }}
+        onClick={handleNext}
       >
         Next
       </Button>

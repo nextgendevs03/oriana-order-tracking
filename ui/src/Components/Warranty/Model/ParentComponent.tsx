@@ -1,45 +1,39 @@
 import React, { useState } from "react";
 import { Button, Modal, Table, Popconfirm } from "antd";
-import ItemModal from "./ItemModal";
 import WarrantyModal from "./WarrantyModal";
 
 const WarrantyParent: React.FC = () => {
-  const [itemModalOpen, setItemModalOpen] = useState(false);
   const [warrantyModalOpen, setWarrantyModalOpen] = useState(false);
 
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [warrantyData, setWarrantyData] = useState<any[]>([]);
 
-  const handleItemsSelected = (items: any[]) => {
-    setSelectedItems(items);
-    setItemModalOpen(false);
-    setWarrantyModalOpen(true);
-  };
-
+  // Directly submit warranty form
   const handleWarrantySubmit = (formValues: any) => {
-    const mapped = selectedItems.map((item) => ({
-      itemId: item.id,
-      itemName: item.name,
-      quantity: item.qty || 1,
-      warrantyCertificateNo: formValues.warrantyCertificateNo || "",
-      warrantyStartDate: formValues.warrantyStartDate
-        ? formValues.warrantyStartDate.format("YYYY-MM-DD")
-        : "",
-      warrantyEndDate: formValues.warrantyEndDate
-        ? formValues.warrantyEndDate.format("YYYY-MM-DD")
-        : "",
-      issueDate: formValues.issueDate
-        ? formValues.issueDate.format("YYYY-MM-DD")
-        : "",
-      sharedStatus: formValues.sharedStatus || "",
-      remark: formValues.remark || ""
-    }));
+    const mapped = [
+      {
+        itemId: "AUTO", // You can replace this if needed
+        itemName: "Warranty Item",
+        quantity: 1,
+        warrantyCertificateNo: formValues.warrantyCertificateNo || "",
+        warrantyStartDate: formValues.warrantyStartDate
+          ? formValues.warrantyStartDate.format("YYYY-MM-DD")
+          : "",
+        warrantyEndDate: formValues.warrantyEndDate
+          ? formValues.warrantyEndDate.format("YYYY-MM-DD")
+          : "",
+        issueDate: formValues.issueDate
+          ? formValues.issueDate.format("YYYY-MM-DD")
+          : "",
+        sharedStatus: formValues.sharedStatus || "",
+        remark: formValues.remark || "",
+      },
+    ];
 
     setWarrantyData((prev) => [...prev, ...mapped]);
     setWarrantyModalOpen(false);
   };
 
-  // Delete row by itemId
+  // Delete row
   const handleDelete = (itemId: string) => {
     setWarrantyData((prev) => prev.filter((item) => item.itemId !== itemId));
   };
@@ -68,43 +62,24 @@ const WarrantyParent: React.FC = () => {
             Delete
           </Button>
         </Popconfirm>
-      )
-    }
+      ),
+    },
   ];
 
   return (
     <div>
-      <Button
+       <Button
         type="primary"
-        onClick={() => setItemModalOpen(true)}
+        onClick={() => setWarrantyModalOpen(true)}
         style={{ marginBottom: 20 }}
       >
-        Add Item
-      </Button>
+         Warranty Detail 
+      </Button> 
 
-      <Table
-        dataSource={warrantyData}
-        columns={columns}
-        rowKey="itemId"
-        bordered
-      />
-
-      {/* Item Selection Modal */}
-      <Modal
-        title="Select Items"
-        open={itemModalOpen}
-        centered
-        footer={null}
-        width={400}
-        onCancel={() => setItemModalOpen(false)}
-        bodyStyle={{ maxHeight: "80vh", overflowY: "auto", paddingRight: "10px" }}
-      >
-        <ItemModal onSubmit={handleItemsSelected} />
-      </Modal>
+      <Table dataSource={warrantyData} columns={columns} rowKey="itemId" bordered />
 
       {/* Warranty Form Modal */}
       <Modal
-        // title="Warranty Form"
         open={warrantyModalOpen}
         centered
         footer={null}
