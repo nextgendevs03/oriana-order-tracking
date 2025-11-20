@@ -12,10 +12,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ordertracking" element={<OrderTrackingDetail />} />
-          <Route  path="/precommissioning"
-             element={<PreCommissioningForm serialNumbers={["SN001", "SN002"]} />}
-/>
+          <Route path="/ordertracking" element={<OrderTrackingDetail />} />    
         </Routes>
        </BrowserRouter>
     </div>

@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import { Button, Collapse, Card, Descriptions } from "antd";
+import { Button, Table, Space, Popconfirm } from "antd";
 import ModalPreCommissioning from "./Modals/ModalPreCommissioning";
-
-const { Panel } = Collapse;
 
 interface PreCommissionData {
   serialNumber: string;
@@ -16,7 +14,7 @@ interface PreCommissionData {
 }
 
 interface Props {
-  serialNumbers: string[];    // auto-populated list of serials
+  serialNumbers: string[];
 }
 
 const PreCommissioningForm: React.FC<Props> = ({ serialNumbers }) => {
@@ -24,65 +22,60 @@ const PreCommissioningForm: React.FC<Props> = ({ serialNumbers }) => {
   const [records, setRecords] = useState<PreCommissionData[]>([]);
 
   const handleAddRecord = (data: PreCommissionData) => {
+    // Add 'key' property in the table data, but keep the records strictly typed
     setRecords([...records, data]);
     setIsModalOpen(false);
   };
 
+  const columns = [
+    { title: "Serial Number", dataIndex: "serialNumber" },
+    { title: "Contact Person", dataIndex: "contactPerson" },
+    { title: "PPM Shared With Client", dataIndex: "sheetSharedClient" },
+    { title: "PPM Received From Client", dataIndex: "sheetReceivedClient" },
+    { title: "PPM Shared With OEM", dataIndex: "sheetSharedOEM" },
+    { title: "OEM Ticket No", dataIndex: "ticketNo" },
+    { title: "Status", dataIndex: "status" },
+    { title: "Remarks", dataIndex: "remarks" },
+
+    {
+      title: "Actions",
+      render: (_: any, record: any) => (
+        <Space>
+          <Button type="link">Edit</Button>
+
+          <Popconfirm
+            title="Are you sure?"
+            onConfirm={() =>
+              setRecords(records.filter(r => r.serialNumber !== record.serialNumber))
+            }
+          >
+            <Button type="link" danger>Delete</Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <div style={{ padding: 20 }}>
-      {/* Add Button */}
       <Button type="primary" onClick={() => setIsModalOpen(true)}>
         Add Pre-Commissioning
       </Button>
 
-      {/* Modal */}
+      <Table
+        style={{ marginTop: 20 }}
+        columns={columns}
+        dataSource={records}
+        pagination={false}
+      />
+
       <ModalPreCommissioning
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddRecord}
         serialNumbers={serialNumbers}
+        editingData={null}
       />
-
-      {/* Collapsible Records */}
-      <div style={{ marginTop: 20 }}>
-        <Collapse accordion>
-          {records.map((item, index) => (
-            <Panel header={`Serial: ${item.serialNumber}`} key={index}>
-              <Card>
-                <Descriptions column={1}>
-                  <Descriptions.Item label="Contact Person">
-                    {item.contactPerson}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label="PPM Shared With Client">
-                    {item.sheetSharedClient}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label="PPM Received From Client">
-                    {item.sheetReceivedClient}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label="PPM Shared With OEM">
-                    {item.sheetSharedOEM}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label="OEM Ticket No">
-                    {item.ticketNo}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label="Status">
-                    {item.status}
-                  </Descriptions.Item>
-
-                  <Descriptions.Item label="Remarks">
-                    {item.remarks || "-"}
-                  </Descriptions.Item>
-                </Descriptions>
-              </Card>
-            </Panel>
-          ))}
-        </Collapse>
-      </div>
     </div>
   );
 };
