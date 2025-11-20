@@ -430,7 +430,7 @@ const OrderTrackingDetail: React.FC = () => {
     <Row align="middle" justify="space-between" style={{ width: "100%" }}>
       <Col>
         <CheckCircleOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
-        <Text strong>Delivery Confirmation</Text>
+        <Text strong>Documents Details</Text>
       </Col>
       <Col>
         <Tag color="default">Pending</Tag>
