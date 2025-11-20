@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import React from "react";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
+
 const App: React.FC = () => {
   return (
     <div>
