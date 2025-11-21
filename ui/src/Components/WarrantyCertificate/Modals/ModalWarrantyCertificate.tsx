@@ -19,9 +19,7 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
 }) => {
     const [form] = Form.useForm();
 
-    // Helper to safely convert strings to dayjs
-    const toDayjs = (dateStr: string | undefined) =>
-        dateStr ? dayjs(dateStr) : null;
+    const toDayjs = (dateStr: string | undefined) => (dateStr ? dayjs(dateStr) : null);
 
     useEffect(() => {
         if (editingRecord) {
@@ -37,7 +35,6 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
     }, [editingRecord, form]);
 
     const handleFinish = (values: any) => {
-        // Convert DatePickers to string before sending to parent
         const formattedValues = {
             ...values,
             issueDate: values.issueDate ? values.issueDate.format("YYYY-MM-DD") : "",
@@ -61,23 +58,22 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
         >
             <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "10px" }}>
                 <Form form={form} layout="vertical" onFinish={handleFinish}>
-                    {/* Select Items */}
                     <Form.Item
                         name="selectedItems"
                         label="Select Items"
                         rules={[{ required: true, message: "Please select items" }]}
                     >
                         <Select mode="multiple" placeholder="Select warranty items" allowClear>
-                            <Option value="ITEM-01">Motor</Option>
-                            <Option value="ITEM-02">Pump</Option>
-                            <Option value="ITEM-03">Control Panel</Option>
-                            <Option value="ITEM-04">Cable</Option>
-                            <Option value="ITEM-05">Switch Gear</Option>
-                            <Option value="ITEM-06">Starter</Option>
-                            <Option value="ITEM-07">Pipe</Option>
-                            <Option value="ITEM-08">Valve</Option>
-                            <Option value="ITEM-09">Sensor</Option>
-                            <Option value="ITEM-10">Relay</Option>
+                            <Option value="Motor">Motor</Option>
+                            <Option value="Pump">Pump</Option>
+                            <Option value="Control Panel">Control Panel</Option>
+                            <Option value="Cable">Cable</Option>
+                            <Option value="Switch Gear">Switch Gear</Option>
+                            <Option value="Starter">Starter</Option>
+                            <Option value="Pipe">Pipe</Option>
+                            <Option value="Valve">Valve</Option>
+                            <Option value="Sensor">Sensor</Option>
+                            <Option value="Relay">Relay</Option>
                         </Select>
                     </Form.Item>
 
@@ -113,7 +109,6 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
                         <DatePicker style={{ width: "100%" }} />
                     </Form.Item>
 
-                    {/* Shared With Client */}
                     <Form.Item
                         name="sharedWithClient"
                         label="Warranty Certificate Shared with Client"
@@ -142,4 +137,3 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
 };
 
 export default ModalWarrantyCertificate;
-

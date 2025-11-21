@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Button, Table, Space, Popconfirm, message } from "antd";
 import ModalWarrantyCertificate from "./Modals/ModalWarrantyCertificate";
-import dayjs from "dayjs";
 
 const WarrantyCertificate: React.FC = () => {
     const [open, setOpen] = useState(false);
@@ -14,24 +13,42 @@ const WarrantyCertificate: React.FC = () => {
     };
 
     const handleSubmit = (values: any) => {
+        // map selectedItems into separate rows
+        const items = values.selectedItems.map((item: string) => ({
+            key: Date.now() + Math.random(), // unique key for each row
+            certificateNo: values.certificateNo,
+            issueDate: values.issueDate,
+            startDate: values.startDate,
+            endDate: values.endDate,
+            sharedWithClient: values.sharedWithClient,
+            remarks: values.remarks,
+            itemName: item, // individual item
+        }));
+
         if (editingRecord) {
-            // Update existing record
+            // remove old rows of this certificate
             setData((prev) =>
-                prev.map((item) =>
-                    item.key === editingRecord.key ? { ...item, ...values } : item
-                )
+                prev.filter((d) => d.key !== editingRecord.key).concat(items)
             );
             message.success("Record updated successfully");
         } else {
-            // Add new record
-            setData([...data, { key: Date.now(), ...values }]);
+            setData([...data, ...items]);
             message.success("Record added successfully");
         }
+
         setOpen(false);
     };
 
     const handleEdit = (record: any) => {
-        setEditingRecord(record);
+        // Prepare editing record: collect all rows of this certificate
+        const relatedRows = data.filter(
+            (d) => d.certificateNo === record.certificateNo
+        );
+        const editRecord = {
+            ...relatedRows[0],
+            selectedItems: relatedRows.map((r) => r.itemName),
+        };
+        setEditingRecord(editRecord);
         setOpen(true);
     };
 
@@ -41,6 +58,7 @@ const WarrantyCertificate: React.FC = () => {
     };
 
     const columns = [
+        { title: "Item Name", dataIndex: "itemName" },
         { title: "Certificate No.", dataIndex: "certificateNo" },
         { title: "Issue Date", dataIndex: "issueDate" },
         { title: "Start Date", dataIndex: "startDate" },
@@ -91,4 +109,3 @@ const WarrantyCertificate: React.FC = () => {
 };
 
 export default WarrantyCertificate;
-
