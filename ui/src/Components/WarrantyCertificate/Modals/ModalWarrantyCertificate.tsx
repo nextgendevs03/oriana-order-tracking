@@ -58,24 +58,72 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
         >
             <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "10px" }}>
                 <Form form={form} layout="vertical" onFinish={handleFinish}>
+
+                    {/* ================= MULTI CHECKBOX DROPDOWN ================= */}
                     <Form.Item
                         name="selectedItems"
                         label="Select Items"
                         rules={[{ required: true, message: "Please select items" }]}
                     >
-                        <Select mode="multiple" placeholder="Select warranty items" allowClear>
-                            <Option value="Motor">Motor</Option>
-                            <Option value="Pump">Pump</Option>
-                            <Option value="Control Panel">Control Panel</Option>
-                            <Option value="Cable">Cable</Option>
-                            <Option value="Switch Gear">Switch Gear</Option>
-                            <Option value="Starter">Starter</Option>
-                            <Option value="Pipe">Pipe</Option>
-                            <Option value="Valve">Valve</Option>
-                            <Option value="Sensor">Sensor</Option>
-                            <Option value="Relay">Relay</Option>
+                        <Select
+                            mode="multiple"
+                            placeholder="Select warranty items"
+                            allowClear
+                            optionLabelProp="label"
+                        >
+                            <Option value="Motor" label="Motor">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Motor
+                            </Option>
+
+                            <Option value="Pump" label="Pump">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Pump
+                            </Option>
+
+                            <Option value="Control Panel" label="Control Panel">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Control Panel
+                            </Option>
+
+                            <Option value="Cable" label="Cable">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Cable
+                            </Option>
+
+                            <Option value="Switch Gear" label="Switch Gear">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Switch Gear
+                            </Option>
+
+                            <Option value="Starter" label="Starter">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Starter
+                            </Option>
+
+                            <Option value="Pipe" label="Pipe">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Pipe
+                            </Option>
+
+                            <Option value="Valve" label="Valve">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Valve
+                            </Option>
+
+                            <Option value="Sensor" label="Sensor">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Sensor
+                            </Option>
+
+                            <Option value="Relay" label="Relay">
+                                <input type="checkbox" style={{ marginRight: 8 }} />
+                                Relay
+                            </Option>
                         </Select>
                     </Form.Item>
+
+                    {/* ============================================================= */}
 
                     <Form.Item
                         label="Warranty Certificate No."
@@ -130,6 +178,7 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
                             {editingRecord ? "Update" : "Submit"}
                         </Button>
                     </Form.Item>
+
                 </Form>
             </div>
         </Modal>
