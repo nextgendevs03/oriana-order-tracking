@@ -19,13 +19,17 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
 }) => {
     const [form] = Form.useForm();
 
+    // Helper to safely convert strings to dayjs
+    const toDayjs = (dateStr: string | undefined) =>
+        dateStr ? dayjs(dateStr) : null;
+
     useEffect(() => {
         if (editingRecord) {
             form.setFieldsValue({
                 ...editingRecord,
-                installationDate: editingRecord.installationDate
-                    ? dayjs(editingRecord.installationDate)
-                    : null,
+                issueDate: toDayjs(editingRecord.issueDate),
+                startDate: toDayjs(editingRecord.startDate),
+                endDate: toDayjs(editingRecord.endDate),
             });
         } else {
             form.resetFields();
@@ -33,7 +37,15 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
     }, [editingRecord, form]);
 
     const handleFinish = (values: any) => {
-        onSubmit(values);
+        // Convert DatePickers to string before sending to parent
+        const formattedValues = {
+            ...values,
+            issueDate: values.issueDate ? values.issueDate.format("YYYY-MM-DD") : "",
+            startDate: values.startDate ? values.startDate.format("YYYY-MM-DD") : "",
+            endDate: values.endDate ? values.endDate.format("YYYY-MM-DD") : "",
+        };
+
+        onSubmit(formattedValues);
         form.resetFields();
     };
 
@@ -44,17 +56,10 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
             onCancel={onClose}
             footer={null}
             destroyOnClose
-            centered   
-            width={600} 
+            centered
+            width={600}
         >
-            {/* Scrollable Form Container */}
-            <div
-                style={{
-                    maxHeight: "60vh",
-                    overflowY: "auto",
-                    paddingRight: "10px",
-                }}
-            >
+            <div style={{ maxHeight: "60vh", overflowY: "auto", paddingRight: "10px" }}>
                 <Form form={form} layout="vertical" onFinish={handleFinish}>
                     {/* Select Items */}
                     <Form.Item
@@ -137,3 +142,4 @@ const ModalWarrantyCertificate: React.FC<ModalProps> = ({
 };
 
 export default ModalWarrantyCertificate;
+

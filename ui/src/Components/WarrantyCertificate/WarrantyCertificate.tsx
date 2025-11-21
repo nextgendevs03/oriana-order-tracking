@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button, Table, Space, Popconfirm, message } from "antd";
 import ModalWarrantyCertificate from "./Modals/ModalWarrantyCertificate";
+import dayjs from "dayjs";
 
 const WarrantyCertificate: React.FC = () => {
     const [open, setOpen] = useState(false);
@@ -13,25 +14,17 @@ const WarrantyCertificate: React.FC = () => {
     };
 
     const handleSubmit = (values: any) => {
-        // ✅ Convert Dates to String before saving
-        const formattedValues = {
-            ...values,
-            issueDate: values.issueDate ? values.issueDate.format("YYYY-MM-DD") : "",
-            startDate: values.startDate ? values.startDate.format("YYYY-MM-DD") : "",
-            endDate: values.endDate ? values.endDate.format("YYYY-MM-DD") : "",
-        };
-
         if (editingRecord) {
-            // Update record
+            // Update existing record
             setData((prev) =>
                 prev.map((item) =>
-                    item.key === editingRecord.key ? { ...item, ...formattedValues } : item
+                    item.key === editingRecord.key ? { ...item, ...values } : item
                 )
             );
             message.success("Record updated successfully");
         } else {
             // Add new record
-            setData([...data, { key: Date.now(), ...formattedValues }]);
+            setData([...data, { key: Date.now(), ...values }]);
             message.success("Record added successfully");
         }
         setOpen(false);
@@ -54,7 +47,6 @@ const WarrantyCertificate: React.FC = () => {
         { title: "End Date", dataIndex: "endDate" },
         { title: "Shared With Client", dataIndex: "sharedWithClient" },
         { title: "Remarks", dataIndex: "remarks" },
-
         {
             title: "Actions",
             render: (_: any, record: any) => (
@@ -62,7 +54,6 @@ const WarrantyCertificate: React.FC = () => {
                     <Button type="link" onClick={() => handleEdit(record)}>
                         Edit
                     </Button>
-
                     <Popconfirm
                         title="Are you sure to delete?"
                         onConfirm={() => handleDelete(record.key)}
@@ -100,3 +91,4 @@ const WarrantyCertificate: React.FC = () => {
 };
 
 export default WarrantyCertificate;
+
