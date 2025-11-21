@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import PurchaseDetailsForm from "../Components/PurchaseDetailForm/PurchaseDetailsForm";
-import ParentComponent from "../Components/PurchaseDetailForm/Modal/Parent Component";
 import {
   Layout,
   Typography,
@@ -31,8 +30,6 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
-import ItemModal from "../Components/PurchaseDetailForm/Modal/ItemModal";
-import ItemTable from "../Components/PurchaseDetailForm/Modal/ItemsTable";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;

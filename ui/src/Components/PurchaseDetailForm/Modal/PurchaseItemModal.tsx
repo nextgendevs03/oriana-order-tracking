@@ -12,7 +12,7 @@ export interface ItemFormValues {
   totalQty: number;
   paymentStatus: string;
   pricePerUnit: number;
-  totalPrice: number;   // ⭐ NEW FIELD
+  totalPrice: number; 
   warranty: string;
   remarks?: string;
 }
@@ -23,7 +23,7 @@ interface Props {
   onSubmit: (values: ItemFormValues) => void;
 }
 
-const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
+const PurchaseItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
   const [form] = Form.useForm<ItemFormValues>();
 
   const handleSubmit = () => {
@@ -40,7 +40,7 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
 
   return (
     <Modal
-      title="Add Item Details"
+      title="Add Purchase Item"
       open={visible}
       onCancel={onClose}
       onOk={handleSubmit}
@@ -179,7 +179,7 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
             />
           </Form.Item>
 
-          {/* ⭐ NEW — TOTAL PRICE */}
+          {/* TOTAL PRICE */}
           <Form.Item
             name="totalPrice"
             label="Total Price"
@@ -215,4 +215,4 @@ const ItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
   );
 };
 
-export default ItemModal;
+export default PurchaseItemModal;

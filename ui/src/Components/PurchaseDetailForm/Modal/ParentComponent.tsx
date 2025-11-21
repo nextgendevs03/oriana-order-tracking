@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Card } from "antd";
-import ItemModal, { ItemFormValues } from "./ItemModal";
-import ItemTable from "./ItemsTable";
+import ItemModal, { ItemFormValues } from "./PurchaseItemModal";
+import ItemTable from "./PurchaseItemsTable";
 
 const ParentComponent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

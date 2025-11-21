@@ -1,14 +1,14 @@
 import React from "react";
 import { Table, Button, Space } from "antd";
-import { ItemFormValues } from "./ItemModal";
+import { ItemFormValues } from "./PurchaseItemModal"; 
 
 interface Props {
   data: ItemFormValues[];
   onDelete: (index: number) => void;
-  onEdit: (index: number) => void;   // ⭐ NEW: Edit support
+  onEdit: (index: number) => void;   
 }
 
-const ItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
+const PurchaseItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
   const columns = [
     { title: "Category", dataIndex: "category", key: "category" },
     { title: "OEM Name", dataIndex: "oemName", key: "oemName" },
@@ -18,12 +18,7 @@ const ItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
     { title: "Total Qty", dataIndex: "totalQty", key: "totalQty" },
     { title: "Payment Status", dataIndex: "paymentStatus", key: "paymentStatus" },
     { title: "Warranty", dataIndex: "warranty", key: "warranty" },
-    { title: "Remarks", dataIndex: "remarks", key: "remarks" },
-
-    // ⭐ NEW — Price / Unit
     { title: "Price", dataIndex: "pricePerUnit", key: "pricePerUnit" },
-
-    // ⭐ NEW — Total Price Auto Calculation
     {
       title: "Total Price",
       key: "totalPrice",
@@ -31,7 +26,8 @@ const ItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
         (record.totalQty * (record.pricePerUnit || 0)).toFixed(2),
     },
 
-    // ⭐ ACTION (EDIT + DELETE)
+    { title: "Remarks", dataIndex: "remarks", key: "remarks" },
+   
     {
       title: "Action",
       key: "action",
@@ -40,7 +36,6 @@ const ItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
           <Button type="primary" onClick={() => onEdit(index)}>
             Edit
           </Button>
-
           <Button danger onClick={() => onDelete(index)}>
             Delete
           </Button>
@@ -59,4 +54,4 @@ const ItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
   );
 };
 
-export default ItemTable;
+export default PurchaseItemTable;
