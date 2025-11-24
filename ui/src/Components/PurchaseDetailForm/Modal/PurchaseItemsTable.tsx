@@ -1,11 +1,10 @@
 import React from "react";
 import { Table, Button, Space } from "antd";
-import { ItemFormValues } from "./PurchaseItemModal"; 
-
+import { ItemFormValues } from "./PurchaseItemModal";
 interface Props {
   data: ItemFormValues[];
   onDelete: (index: number) => void;
-  onEdit: (index: number) => void;   
+  onEdit: (index: number) => void;
 }
 
 const PurchaseItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
@@ -16,7 +15,6 @@ const PurchaseItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
     { title: "Quantity", dataIndex: "quantity", key: "quantity" },
     { title: "Spare Qty", dataIndex: "spareQty", key: "spareQty" },
     { title: "Total Qty", dataIndex: "totalQty", key: "totalQty" },
-    { title: "Payment Status", dataIndex: "paymentStatus", key: "paymentStatus" },
     { title: "Warranty", dataIndex: "warranty", key: "warranty" },
     { title: "Price", dataIndex: "pricePerUnit", key: "pricePerUnit" },
     {
@@ -26,8 +24,6 @@ const PurchaseItemTable: React.FC<Props> = ({ data, onDelete, onEdit }) => {
         (record.totalQty * (record.pricePerUnit || 0)).toFixed(2),
     },
 
-    { title: "Remarks", dataIndex: "remarks", key: "remarks" },
-   
     {
       title: "Action",
       key: "action",

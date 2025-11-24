@@ -153,19 +153,6 @@ const PurchaseItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
             <InputNumber style={{ width: "100%" }} disabled />
           </Form.Item>
 
-          {/* Payment Status */}
-          <Form.Item
-            name="paymentStatus"
-            label="Payment Status"
-            rules={[{ required: true }]}
-          >
-            <Select placeholder="Select payment status">
-              <Option value="Advance">Advance</Option>
-              <Option value="Received">Received</Option>
-              <Option value="Pending">Pending</Option>
-            </Select>
-          </Form.Item>
-
           {/* Price per Unit */}
           <Form.Item
             name="pricePerUnit"
@@ -205,11 +192,6 @@ const PurchaseItemModal: React.FC<Props> = ({ visible, onClose, onSubmit }) => {
             </Select>
           </Form.Item>
         </div>
-
-        {/* Remarks */}
-        <Form.Item name="remarks" label="Remarks" style={{ marginTop: 10 }}>
-          <Input.TextArea rows={2} />
-        </Form.Item>
       </Form>
     </Modal>
   );
