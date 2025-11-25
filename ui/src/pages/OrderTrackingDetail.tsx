@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import PurchaseDetailsForm from "../Components/PurchaseDetailForm/PurchaseDetailsForm";
+import PurchaseDetailsForm from "../Components/PurchaseDetailsForm";
 import {
   Layout,
   Typography,

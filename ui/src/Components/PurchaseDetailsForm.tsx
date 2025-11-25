@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Form, Input, DatePicker, Radio, Select, Row, Col, Button, Card } from "antd";
 import type { FormInstance } from "antd";
 import moment, { Moment } from "moment";
-import ParentComponent from "./Modal/ParentComponent";
+import ParentComponent from "./PurchaseDetailForm/Modal/ParentComponent";
 
 const { Option } = Select;
 

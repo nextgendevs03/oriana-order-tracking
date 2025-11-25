@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
-import PurchaseDetailsForm from "./Components/PurchaseDetailForm/PurchaseDetailsForm";
 
 const App: React.FC = () => {
   return (
