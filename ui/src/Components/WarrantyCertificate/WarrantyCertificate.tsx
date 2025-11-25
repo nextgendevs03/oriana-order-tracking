@@ -1,89 +1,67 @@
 import React, { useState } from "react";
-import { Button, Table, Space, Popconfirm, message } from "antd";
+import { Button, message } from "antd";
 import ModalWarrantyCertificate from "./Modals/ModalWarrantyCertificate";
+import WarrantyCertificateTable from "./WarrantyCertificateTable";
 
 const WarrantyCertificate: React.FC = () => {
-    const [open, setOpen] = useState(false);
-    const [data, setData] = useState<any[]>([]);
-    const [editingRecord, setEditingRecord] = useState<any | null>(null);
+
+    // ⭐ Your requested naming style
+    const [warrantyCertificateOpen, setWarrantyCertificateOpen] = useState(false);
+    const [warrantyCertificateData, setWarrantyCertificateData] = useState<any[]>([]);
+    const [warrantyCertificateEditingRecord, setWarrantyCertificateEditingRecord] = useState<any | null>(null);
 
     const handleAdd = () => {
-        setEditingRecord(null);
-        setOpen(true);
+        setWarrantyCertificateEditingRecord(null);
+        setWarrantyCertificateOpen(true);
     };
 
     const handleSubmit = (values: any) => {
-        // map selectedItems into separate rows
         const items = values.selectedItems.map((item: string) => ({
-            key: Date.now() + Math.random(), // unique key for each row
+            key: Date.now() + Math.random(),
             certificateNo: values.certificateNo,
             issueDate: values.issueDate,
             startDate: values.startDate,
             endDate: values.endDate,
             sharedWithClient: values.sharedWithClient,
             remarks: values.remarks,
-            itemName: item, // individual item
+            itemName: item,
         }));
 
-        if (editingRecord) {
-            // remove old rows of this certificate
-            setData((prev) =>
-                prev.filter((d) => d.key !== editingRecord.key).concat(items)
+        if (warrantyCertificateEditingRecord) {
+            setWarrantyCertificateData((prev) =>
+                prev
+                    .filter((d) => d.key !== warrantyCertificateEditingRecord.key)
+                    .concat(items)
             );
             message.success("Record updated successfully");
         } else {
-            setData([...data, ...items]);
+            setWarrantyCertificateData([...warrantyCertificateData, ...items]);
             message.success("Record added successfully");
         }
 
-        setOpen(false);
+        setWarrantyCertificateOpen(false);
     };
 
     const handleEdit = (record: any) => {
-        // Prepare editing record: collect all rows of this certificate
-        const relatedRows = data.filter(
+        const relatedRows = warrantyCertificateData.filter(
             (d) => d.certificateNo === record.certificateNo
         );
+
         const editRecord = {
             ...relatedRows[0],
             selectedItems: relatedRows.map((r) => r.itemName),
         };
-        setEditingRecord(editRecord);
-        setOpen(true);
+
+        setWarrantyCertificateEditingRecord(editRecord);
+        setWarrantyCertificateOpen(true);
     };
 
     const handleDelete = (key: number) => {
-        setData(data.filter((item) => item.key !== key));
+        setWarrantyCertificateData(
+            warrantyCertificateData.filter((item) => item.key !== key)
+        );
         message.success("Record deleted");
     };
-
-    const columns = [
-        { title: "Item Name", dataIndex: "itemName" },
-        { title: "Certificate No.", dataIndex: "certificateNo" },
-        { title: "Issue Date", dataIndex: "issueDate" },
-        { title: "Start Date", dataIndex: "startDate" },
-        { title: "End Date", dataIndex: "endDate" },
-        { title: "Shared With Client", dataIndex: "sharedWithClient" },
-        { title: "Remarks", dataIndex: "remarks" },
-        {
-            title: "Actions",
-            render: (_: any, record: any) => (
-                <Space>
-                    <Button type="link" onClick={() => handleEdit(record)}>
-                        Edit
-                    </Button>
-                    <Popconfirm
-                        title="Are you sure to delete?"
-                        onConfirm={() => handleDelete(record.key)}
-                    >
-                        <Button type="link" danger>
-                            Delete
-                        </Button>
-                    </Popconfirm>
-                </Space>
-            ),
-        },
-    ];
 
     return (
         <div>
@@ -91,17 +69,16 @@ const WarrantyCertificate: React.FC = () => {
                 Add Warranty Certificate
             </Button>
 
-            <Table
-                style={{ marginTop: 20 }}
-                columns={columns}
-                dataSource={data}
-                pagination={false}
+            <WarrantyCertificateTable
+                data={warrantyCertificateData}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
             />
 
             <ModalWarrantyCertificate
-                open={open}
-                editingRecord={editingRecord}
-                onClose={() => setOpen(false)}
+                open={warrantyCertificateOpen}
+                editingRecord={warrantyCertificateEditingRecord}
+                onClose={() => setWarrantyCertificateOpen(false)}
                 onSubmit={handleSubmit}
             />
         </div>
