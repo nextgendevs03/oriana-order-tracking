@@ -1,10 +1,8 @@
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import React from "react";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
-import PreCommissioningForm from "./Components/PreCommissioning/PreCommissioningForm";
 const App: React.FC = () => {
   return (
     <div>
@@ -12,12 +10,11 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ordertracking" element={<OrderTrackingDetail />} />    
+          <Route path="/ordertracking" element={<OrderTrackingDetail />} />
         </Routes>
-       </BrowserRouter>
+      </BrowserRouter>
     </div>
   );
 };
 
 export default App;
-

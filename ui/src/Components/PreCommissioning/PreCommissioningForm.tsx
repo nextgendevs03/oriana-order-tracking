@@ -1,80 +1,74 @@
 import React, { useState } from "react";
-import { Button, Table, Space, Popconfirm } from "antd";
-import ModalPreCommissioning from "./Modals/ModalPreCommissioning";
+import { Button } from "antd";
+import PreCommissioningModal, {
+  PreCommissionData,
+} from "./Modals/PreCommissioningModal";
+import PreCommissioningTable from "./PreCommissioningTable";
 
-interface PreCommissionData {
-  serialNumber: string;
-  contactPerson: string;
-  sheetSharedClient: string;
-  sheetReceivedClient: string;
-  sheetSharedOEM: string;
-  ticketNo: string;
-  status: string;
-  remarks?: string;
-}
-
-interface Props {
+interface PreCommissioningProps {
   serialNumbers: string[];
 }
 
-const PreCommissioningForm: React.FC<Props> = ({ serialNumbers }) => {
+const PreCommissioningForm: React.FC<PreCommissioningProps> = ({
+  serialNumbers,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [records, setRecords] = useState<PreCommissionData[]>([]);
+  const [editingData, setEditingData] = useState<PreCommissionData | null>(
+    null
+  );
 
-  const handleAddRecord = (data: PreCommissionData) => {
-    // Add 'key' property in the table data, but keep the records strictly typed
-    setRecords([...records, data]);
+  // Called by Modal when Add or Update happens
+  const handleAddOrUpdate = (data: PreCommissionData) => {
+    if (editingData) {
+      // update existing record by serialNumber
+      setRecords((prev) =>
+        prev.map((r) =>
+          r.serialNumber === editingData.serialNumber ? data : r
+        )
+      );
+    } else {
+      // add new
+      setRecords((prev) => [...prev, data]);
+    }
+
+    setEditingData(null);
     setIsModalOpen(false);
   };
 
-  const columns = [
-    { title: "Serial Number", dataIndex: "serialNumber" },
-    { title: "Contact Person", dataIndex: "contactPerson" },
-    { title: "PPM Shared With Client", dataIndex: "sheetSharedClient" },
-    { title: "PPM Received From Client", dataIndex: "sheetReceivedClient" },
-    { title: "PPM Shared With OEM", dataIndex: "sheetSharedOEM" },
-    { title: "OEM Ticket No", dataIndex: "ticketNo" },
-    { title: "Status", dataIndex: "status" },
-    { title: "Remarks", dataIndex: "remarks" },
-
-    {
-      title: "Actions",
-      render: (_: any, record: any) => (
-        <Space>
-          <Button type="link">Edit</Button>
-
-          <Popconfirm
-            title="Are you sure?"
-            onConfirm={() =>
-              setRecords(records.filter(r => r.serialNumber !== record.serialNumber))
-            }
-          >
-            <Button type="link" danger>Delete</Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  // Called by Table when Edit is clicked
+  const handleEdit = (record: PreCommissionData) => {
+    setEditingData(record);
+    setIsModalOpen(true);
+  };
 
   return (
     <div style={{ padding: 20 }}>
-      <Button type="primary" onClick={() => setIsModalOpen(true)}>
+      <Button
+        type="primary"
+        onClick={() => {
+          setEditingData(null);
+          setIsModalOpen(true);
+        }}
+      >
         Add Pre-Commissioning
       </Button>
 
-      <Table
-        style={{ marginTop: 20 }}
-        columns={columns}
-        dataSource={records}
-        pagination={false}
+      <PreCommissioningTable
+        records={records}
+        setRecords={setRecords}
+        onEdit={handleEdit}
       />
 
-      <ModalPreCommissioning
+      <PreCommissioningModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddRecord}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingData(null);
+        }}
+        onSubmit={handleAddOrUpdate}
         serialNumbers={serialNumbers}
-        editingData={null}
+        editingData={editingData}
       />
     </div>
   );
