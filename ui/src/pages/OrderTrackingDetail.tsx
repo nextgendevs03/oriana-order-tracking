@@ -29,7 +29,7 @@ import {
   UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
-import ModalDocuments from "../Components/Documents/Modals/ModalDocuments";
+import ModalDocuments from "../Components/Documents/Modals/DocumentModal";
 import DocumentForm from "../Components/Documents/DocumentsForm";
 
 const { Header, Content } = Layout;

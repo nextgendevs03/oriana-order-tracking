@@ -1,20 +1,21 @@
 import React, { useState } from "react";
-import { Button, Table, Popconfirm, Tag } from "antd";
-import ModalDocuments, { DocumentFormValues } from "./Modals/ModalDocuments";
+import { Button } from "antd";
+import DocumentModal, { DocumentFormValues } from "./Modals/DocumentModal";
+import DocumentTable from "./DocumentTable";
 
 const DocumentForm: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [documents, setDocuments] = useState<DocumentFormValues[]>([]);
-  const [editingRecord, setEditingRecord] = useState<DocumentFormValues | null>(null);
+  const [editingRecord, setEditingRecord] = useState<DocumentFormValues | null>(
+    null
+  );
 
   const handleSubmit = (data: DocumentFormValues) => {
     if (editingRecord) {
-      // 🔥 Update existing row
       setDocuments((prev) =>
         prev.map((item) => (item.key === data.key ? data : item))
       );
     } else {
-      // Add new record
       setDocuments((prev) => [...prev, data]);
     }
 
@@ -22,65 +23,14 @@ const DocumentForm: React.FC = () => {
     setOpen(false);
   };
 
+  const handleEdit = (record: DocumentFormValues) => {
+    setEditingRecord(record);
+    setOpen(true);
+  };
+
   const handleDelete = (key: number | undefined) => {
     setDocuments((prev) => prev.filter((item) => item.key !== key));
   };
-
-  const columns = [
-    {
-      title: "Invoice No",
-      dataIndex: "taxInvoiceNo",
-    },
-    {
-      title: "Dispatch Date",
-      dataIndex: "dispatchDate",
-      render: (date: any) => date?.format("YYYY-MM-DD"),
-    },
-    {
-      title: "Dispatch Count",
-      dataIndex: "dispatchCount",
-    },
-    {
-      title: "Status",
-      dataIndex: "dispatchStatus",
-      render: (status: string) => {
-        const color =
-          status === "Delivered"
-            ? "green"
-            : status === "Dispatched"
-            ? "blue"
-            : "gold";
-        return <Tag color={color}>{status}</Tag>;
-      },
-    },
-    {
-      title: "Actions",
-      render: (_: any, record: DocumentFormValues) => (
-        <>
-          <Button
-            type="link"
-            onClick={() => {
-              setEditingRecord(record);
-              setOpen(true);
-            }}
-          >
-            Edit
-          </Button>
-
-          <Popconfirm
-            title="Delete this document?"
-            okText="Yes"
-            cancelText="No"
-            onConfirm={() => handleDelete(record.key)}
-          >
-            <Button type="link" danger>
-              Delete
-            </Button>
-          </Popconfirm>
-        </>
-      ),
-    },
-  ];
 
   return (
     <div style={{ padding: 20 }}>
@@ -94,15 +44,13 @@ const DocumentForm: React.FC = () => {
         Add Document
       </Button>
 
-      <Table
-        style={{ marginTop: 20 }}
-        columns={columns}
-        dataSource={documents}
-        rowKey="key"
-        bordered
+      <DocumentTable
+        documents={documents}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
       />
 
-      <ModalDocuments
+      <DocumentModal
         open={open}
         editingRecord={editingRecord}
         onClose={() => {
@@ -116,6 +64,3 @@ const DocumentForm: React.FC = () => {
 };
 
 export default DocumentForm;
-
-
-
