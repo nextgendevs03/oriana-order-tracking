@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Card, Button, Table, Space, Popconfirm } from "antd";
-import ModalCommissioning from "./Modals/ModalCommissioning";
+import { Card, Button } from "antd";
+import CommissioningModal from "./Modals/CommissioningModal";
 import CommissioningTable from "./CommissioningTable";
 export interface CommissioningDataType {
   key: number;
@@ -66,7 +66,7 @@ const CommissioningForm: React.FC = () => {
         handleDelete={handleDelete}
       />
 
-      <ModalCommissioning
+      <CommissioningModal
         open={CommissioningmodalOpen}
         onClose={() => {
           setCommissioningModalOpen(false);
