@@ -527,7 +527,7 @@ const OrderTrackingDetail: React.FC = () => {
                   <CheckCircleOutlined
                     style={{ color: "#6a1b9a", marginRight: 8 }}
                   />
-                  <Text strong>Document Confirmation</Text>
+                  <Text strong>Dispatch Confirmation</Text>
                 </Col>
                 <Col>
                   <Tag color="default">Pending</Tag>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Button, Table, Popconfirm, Space } from "antd";
-import ModalDispatch, { DispatchFormData } from "./Modals/ModalDispatch";
+import { Button } from "antd";
+import DispatchModal, { DispatchFormData } from "./Modals/DispatchModal";
+import DispatchTable from "./DispatchTable";
 
 interface DispatchFormProps {
   products: string[];
@@ -22,7 +23,7 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ products }) => {
       updated[editIndex] = data;
       setDispatches(updated);
     } else {
-      setDispatches([...dispatches, data]);
+      setDispatches((prev) => [...prev, data]);
     }
     setIsModalOpen(false);
   };
@@ -31,68 +32,23 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ products }) => {
     setDispatches(dispatches.filter((_, i) => i !== index));
   };
 
-  const tableData = dispatches.map((item, idx) => ({
-    key: idx,
-    product: item.product,
-    projectName: item.projectName,
-    projectLocation: item.projectLocation,
-    deliveryQuantity: item.deliveryQuantity,
-    dispatchDate: item.confirmDispatchDate.format("YYYY-MM-DD"),
-  }));
-
-  const columns = [
-    { title: "Product", dataIndex: "product", width: 120 },
-    { title: "Project Name", dataIndex: "projectName", width: 150 },
-    { title: "Project Location", dataIndex: "projectLocation", width: 150 },
-    { title: "Quantity", dataIndex: "deliveryQuantity", width: 100 },
-    { title: "Dispatch Date", dataIndex: "dispatchDate", width: 150 },
-
-    {
-      title: "Actions",
-      width: 180,
-      render: (_: any, __: any, index: number) => (
-        <Space>
-          <Button
-            type="link"
-            onClick={() => {
-              setEditIndex(index);
-              setIsModalOpen(true);
-            }}
-          >
-            Edit
-          </Button>
-
-          <Popconfirm
-            title="Delete this record?"
-            okText="Yes"
-            cancelText="No"
-            onConfirm={() => handleDelete(index)}
-          >
-            <Button type="link" danger>
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
   return (
     <div style={{ padding: 20 }}>
       <Button type="primary" onClick={handleAdd} style={{ marginBottom: 15 }}>
         Add Dispatch
       </Button>
 
-      {/* TABLE FIXED HEIGHT + FULL WIDTH */}
-      <Table
-        columns={columns}
-        dataSource={tableData}
-        bordered
-        pagination={{ pageSize: 5 }}
-        style={{ width: "100%", background: "#fff" }}
+      {/* ⬇ Reusable Table Component */}
+      <DispatchTable
+        data={dispatches}
+        onEdit={(index) => {
+          setEditIndex(index);
+          setIsModalOpen(true);
+        }}
+        onDelete={handleDelete}
       />
 
-      <ModalDispatch
+      <DispatchModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
