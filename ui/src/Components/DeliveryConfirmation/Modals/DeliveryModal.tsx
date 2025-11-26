@@ -10,14 +10,14 @@ export interface DeliveryFormData {
   proofOfDelivery: string;
 }
 
-interface ModalDeliveryProps {
+interface DeliveryModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: DeliveryFormData) => void;
   initialValues: DeliveryFormData | null;
 }
 
-const ModalDelivery: React.FC<ModalDeliveryProps> = ({
+const ModalDelivery: React.FC<DeliveryModalProps> = ({
   open,
   onClose,
   onSubmit,
@@ -88,4 +88,3 @@ const ModalDelivery: React.FC<ModalDeliveryProps> = ({
 };
 
 export default ModalDelivery;
-
