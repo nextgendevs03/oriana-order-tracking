@@ -12,7 +12,7 @@ const App: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/ordertracking" element={<OrderTrackingDetail />} />
         </Routes>
-       </BrowserRouter>
+      </BrowserRouter>
     </div>
   );
 };
