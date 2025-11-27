@@ -7,6 +7,7 @@ export interface ItemFormValues {
   quantity: number;
   spareQty: number;
   totalQty: number;
+  totalPrice: number;
   warranty: string;
   pricePerUnit: number;
 }

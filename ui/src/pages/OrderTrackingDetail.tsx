@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import PurchaseDetailsForm from "../Components/PurchaseDetail/PurchaseDetailForm";   
+import PurchaseDetailsForm from "../Components/PurchaseDetail/PurchaseDetailForm";
 import {
   Layout,
   Typography,
@@ -70,7 +70,11 @@ const OrderTrackingDetail: React.FC = () => {
 
   return (
     <Layout
-      style={{ minHeight: "100vh", backgroundColor: "#f9f7ff", padding: "24px" }}
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f9f7ff",
+        padding: "24px",
+      }}
     >
       <Content style={{ marginTop: 24 }}>
         <Card
@@ -91,12 +95,22 @@ const OrderTrackingDetail: React.FC = () => {
           <Text type="secondary">ABC Corporation</Text>
         </div>
 
-        <Collapse bordered={false} style={{ marginTop: 24 }} expandIconPosition="start">
+        <Collapse
+          bordered={false}
+          style={{ marginTop: 24 }}
+          expandIconPosition="start"
+        >
           <Panel
             header={
-              <Row align="middle" justify="space-between" style={{ width: "100%" }}>
+              <Row
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
                 <Col>
-                  <ShoppingOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+                  <ShoppingOutlined
+                    style={{ color: "#6a1b9a", marginRight: 8 }}
+                  />
                   <Text strong>Purchase Details</Text>
                 </Col>
                 <Col>
@@ -108,12 +122,16 @@ const OrderTrackingDetail: React.FC = () => {
             key="1"
           >
             {/* ⭐ PURCHASE DETAILS FORM */}
-            <PurchaseDetailsForm form={purchaseForm} />
+            <PurchaseDetailsForm />
           </Panel>
 
           <Panel
             header={
-              <Row align="middle" justify="space-between" style={{ width: "100%" }}>
+              <Row
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
                 <Col>
                   <TruckOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
                   <Text strong>Dispatch Details</Text>
@@ -129,9 +147,15 @@ const OrderTrackingDetail: React.FC = () => {
 
           <Panel
             header={
-              <Row align="middle" justify="space-between" style={{ width: "100%" }}>
+              <Row
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
                 <Col>
-                  <CheckCircleOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+                  <CheckCircleOutlined
+                    style={{ color: "#6a1b9a", marginRight: 8 }}
+                  />
                   <Text strong>Delivery Confirmation</Text>
                 </Col>
                 <Col>
