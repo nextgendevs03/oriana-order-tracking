@@ -29,6 +29,7 @@ import {
   LeftOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import PreCommissioningForm from "../Components/PreCommissioning/PreCommissioningForm";
 import DocumentForm from "../Components/Documents/DocumentsForm";
 import DeliveryForm from "../Components/DeliveryConfirmation/DeliveryForm";
 import DispatchForm from "../Components/DispatchDetails/DispatchForm";
@@ -220,6 +221,28 @@ const OrderTrackingDetail: React.FC = () => {
             key="4"
           >
             <DocumentForm />
+          </Panel>
+
+          {/* Pre-Commissioning */}
+          <Panel
+           header={
+            <Row
+              align="middle"
+              justify="space-between"
+              style={{ width: "100%" }}
+            >
+              <Col>
+                <TruckOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+                <Text strong>Pre-Commissioning</Text>
+              </Col>
+              <Col>
+                <Tag color="orange">In Progress</Tag>
+                <EyeOutlined />
+              </Col>
+            </Row>
+          }
+          key="5">
+				   <PreCommissioningForm serialNumbers={[]} />
           </Panel>
         </Collapse>
 
