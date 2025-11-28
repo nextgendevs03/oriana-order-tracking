@@ -1,12 +1,17 @@
 import React from "react";
-import { Layout, Typography, Avatar, Space } from "antd";
+import { Layout, Typography, Avatar, Space, Button } from "antd";
 import SidebarMenu from "../Components/SidebarMenu";
+ import { useNavigate } from "react-router-dom";
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const Dashboard: React.FC = () => {
+const navigate = useNavigate();
+
   const username = localStorage.getItem("loggedUser") || "Guest";
 
   return (
+
+   
     <Layout style={{ minHeight: "100vh" }}>
       {/* Sidebar */}
       <Sider>
@@ -75,8 +80,25 @@ const Dashboard: React.FC = () => {
         <Content style={{ padding: 20 }}>
           <Title level={2}>Welcome, {username}! 🎉</Title>
           <p>Your dashboard is now ready with the logo and Order Tracking text side by side.</p>
+
+          <Button
+              type="primary"
+            //  icon={<PlusOutlined />}
+              style={{  
+                backgroundColor: "#4b6cb7",
+                borderRadius: 8,
+                padding: "0 16px",
+                fontWeight: 600,
+              }}
+              onClick={() => navigate("/ordertracking")}
+            >
+              ADD Purchase Detail
+            </Button>
+
         </Content>
+       
       </Layout>
+
     </Layout>
   );
 };
