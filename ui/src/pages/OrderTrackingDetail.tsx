@@ -29,6 +29,8 @@ import {
   LeftOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import CommissioningData from "../Components/Commissioning/CommissioningForm";
+import CommissioningForm from "../Components/Commissioning/CommissioningForm";
 import PreCommissioningForm from "../Components/PreCommissioning/PreCommissioningForm";
 import DocumentForm from "../Components/Documents/DocumentsForm";
 import DeliveryForm from "../Components/DeliveryConfirmation/DeliveryForm";
@@ -225,24 +227,49 @@ const OrderTrackingDetail: React.FC = () => {
 
           {/* Pre-Commissioning */}
           <Panel
-           header={
-            <Row
-              align="middle"
-              justify="space-between"
-              style={{ width: "100%" }}
-            >
-              <Col>
-                <TruckOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
-                <Text strong>Pre-Commissioning</Text>
-              </Col>
-              <Col>
-                <Tag color="orange">In Progress</Tag>
-                <EyeOutlined />
-              </Col>
-            </Row>
-          }
-          key="5">
-				   <PreCommissioningForm serialNumbers={[]} />
+            header={
+              <Row
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
+                <Col>
+                  <TruckOutlined style={{ color: "#6a1b9a", marginRight: 8 }} />
+                  <Text strong>Pre-Commissioning</Text>
+                </Col>
+                <Col>
+                  <Tag color="orange">In Progress</Tag>
+                  <EyeOutlined />
+                </Col>
+              </Row>
+            }
+            key="5"
+          >
+            <PreCommissioningForm serialNumbers={[]} />
+          </Panel>
+
+          <Panel
+            header={
+              <Row
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
+                <Col>
+                  <CheckCircleOutlined
+                    style={{ color: "#6a1b9a", marginRight: 8 }}
+                  />
+                  <Text strong> Commisioning </Text>
+                </Col>
+                <Col>
+                  <Tag color="default">Pending</Tag>
+                  <EyeOutlined />
+                </Col>
+              </Row>
+            }
+            key="6"
+          >
+            <CommissioningForm />
           </Panel>
         </Collapse>
 
