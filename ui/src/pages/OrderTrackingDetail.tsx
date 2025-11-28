@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import WarrantyCertificate from "../Components/WarrantyCertificate/WarrantyCertificate";
 import PurchaseDetailsForm from "../Components/PurchaseDetail/PurchaseDetailForm";
 import {
   Layout,
@@ -270,6 +271,30 @@ const OrderTrackingDetail: React.FC = () => {
             key="6"
           >
             <CommissioningForm />
+          </Panel>
+
+          <Panel
+            header={
+              <Row
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
+                <Col>
+                  <CheckCircleOutlined
+                    style={{ color: "#6a1b9a", marginRight: 8 }}
+                  />
+                  <Text strong>Warrenty Certificate</Text>
+                </Col>
+                <Col>
+                  <Tag color="default">Pending</Tag>
+                  <EyeOutlined />
+                </Col>
+              </Row>
+            }
+            key="7"
+          >
+            <WarrantyCertificate />
           </Panel>
         </Collapse>
 
