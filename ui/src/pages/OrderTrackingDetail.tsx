@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PurchaseDetailsForm from "../Components/PurchaseDetail/PurchaseDetailForm";
 import {
   Layout,
   Typography,
@@ -36,70 +37,17 @@ const { Title, Text } = Typography;
 const { Panel } = Collapse;
 const { Option } = Select;
 
-// TypeScript Interfaces
-interface PurchaseFormValues {
-  orderId: string;
-  date?: string;
-  salesPerson?: string;
-  clientName?: string;
-  osgPiNo?: string;
-  osgPiDate?: string;
-  poStatus?: string;
-  clientPoNo?: string;
-  poDate?: string;
-  dispatchType?: "Single" | "Multiple";
-  clientAddress?: string;
-  clientContact?: string;
-  oemName?: string;
-  productModel?: string;
-  totalQty?: number;
-  spareQty?: number;
-  warranty?: string;
-  dispatchPlanDate?: string;
-  siteLocation?: string;
-  onSiteSupport?: "Yes" | "No" | "Maybe";
-  confirmDispatchDate?: string;
-  paymentStatus?: string;
-  remarks?: string;
-}
-
-interface DispatchFormValues {
-  orderId: string;
-  deliveryCount?: number;
-  dispatchType?: "Single" | "Multiple";
-  siteProjectName?: string;
-  siteProjectLocation?: string;
-  siteAddress?: string;
-  siteMapLink?: string;
-  deliveryQty?: number;
-  confirmDispatchDate?: string;
-  dispatchDate?: string;
-}
-
-interface DeliveryFormValues {
-  orderId: string;
-  noDuesClearance?: string;
-  taxInvoiceNo?: string;
-  invoiceDate?: string;
-  ewayBill?: string;
-  deliveryChallan?: string;
-  dispatchDate?: string;
-  packingList?: any;
-}
-
 type UserRole = "Sales Person" | "Delivery Person";
 
 const OrderTrackingDetail: React.FC = () => {
   const [role, setRole] = useState<UserRole>("Sales Person");
 
-  const [purchaseForm] = Form.useForm<PurchaseFormValues>();
-  const [dispatchForm] = Form.useForm<DispatchFormValues>();
-  const [deliveryForm] = Form.useForm<DeliveryFormValues>();
+  const [purchaseForm] = Form.useForm<any>();
+  const [dispatchForm] = Form.useForm<any>();
+  const [deliveryForm] = Form.useForm<any>();
 
-  // Frontend store for submitted forms
   const [submittedData, setSubmittedData] = useState<any[]>([]);
 
-  // Common Success Handler
   const handleSuccess = <T,>(
     formName: string,
     values: T,
@@ -111,7 +59,6 @@ const OrderTrackingDetail: React.FC = () => {
     form.resetFields();
   };
 
-  // Dropdown menu
   const menu = (
     <Menu
       onClick={(e: { key: string }) => setRole(e.key as UserRole)}
@@ -179,7 +126,6 @@ const OrderTrackingDetail: React.FC = () => {
           style={{ marginTop: 24 }}
           expandIconPosition="start"
         >
-          {/* Purchase Panel */}
           <Panel
             header={
               <Row
@@ -201,220 +147,10 @@ const OrderTrackingDetail: React.FC = () => {
             }
             key="1"
           >
-            <Form<PurchaseFormValues>
-              layout="vertical"
-              form={purchaseForm}
-              onFinish={(values: PurchaseFormValues) =>
-                handleSuccess("Purchase Details", values, purchaseForm)
-              }
-            >
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item
-                    name="orderId"
-                    label="Order ID"
-                    rules={[{ required: true }]}
-                  >
-                    <Input placeholder="Enter Order ID" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="date" label="Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="salesPerson" label="Sales Person">
-                    <Select placeholder="Select">
-                      <Option value="Ajay">Ajay</Option>
-                      <Option value="Kishor">Kishor</Option>
-                      <Option value="Ajay2">Ajay2</Option>
-                      <Option value="Kishor2">Kishor2</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="clientName" label="Client Name">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="osgPiNo" label="OSG PI No">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="osgPiDate" label="OSG PI Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="poStatus" label="PO Status">
-                    <Select placeholder="Select">
-                      <Option value="PO Received">PO Received</Option>
-                      <Option value="PO Confirmed on Phone">
-                        PO Confirmed on Phone
-                      </Option>
-                      <Option value="On Call">On Call</Option>
-                      <Option value="On Mail">On Mail</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="clientPoNo" label="Client PO No">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="poDate" label="PO Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="dispatchType" label="No Of Dispatch">
-                    <Radio.Group>
-                      <Radio value="Single">Single</Radio>
-                      <Radio value="Multiple">Multiple</Radio>
-                    </Radio.Group>
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="clientAddress" label="Client Address">
-                    <Input.TextArea rows={1} />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="clientContact"
-                    label="Client Point of Contact"
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="oemName" label="OEM Name">
-                    <Select placeholder="Select">
-                      <Option value="Sieneng">Sieneng</Option>
-                      <Option value="Solis">Solis</Option>
-                      <Option value="Jio">Jio</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="productModel" label="Product Model">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="totalQty" label="Total Quantity Ordered">
-                    <Input type="number" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="spareQty" label="Spare Quantity">
-                    <Input type="number" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="warranty" label="Warranty Period">
-                    <Select>
-                      <Option value="1 Year">1 Year</Option>
-                      <Option value="2 Years">2 Years</Option>
-                      <Option value="3 Years">3 Years</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item name="dispatchPlanDate" label="Dispatch Plan Date">
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item name="siteLocation" label="Site Location">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="onSiteSupport"
-                    label="On Site Support Required"
-                  >
-                    <Radio.Group>
-                      <Radio value="Yes">Yes</Radio>
-                      <Radio value="No">No</Radio>
-                      <Radio value="Maybe">Maybe</Radio>
-                    </Radio.Group>
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item
-                    name="confirmDispatchDate"
-                    label="Confirm Dispatch Date"
-                  >
-                    <DatePicker style={{ width: "100%" }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item
-                    name="paymentStatus"
-                    label="Payment Receipt Status"
-                  >
-                    <Select>
-                      <Option value="Advance">Advance</Option>
-                      <Option value="Received">Received</Option>
-                      <Option value="Pending">Pending</Option>
-                      <Option value="15 Days Credit">15 Days Credit</Option>
-                      <Option value="30 Days Credit">30 Days Credit</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={16}>
-                  <Form.Item name="remarks" label="Remark">
-                    <Input.TextArea rows={2} placeholder="Enter remarks..." />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row justify="end">
-                <Col>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    style={{
-                      backgroundColor: "#6a1b9a",
-                      borderColor: "#6a1b9a",
-                      borderRadius: 8,
-                    }}
-                  >
-                    Submit
-                  </Button>
-                </Col>
-              </Row>
-            </Form>
+            {/* ⭐ PURCHASE DETAILS FORM */}
+            <PurchaseDetailsForm />
           </Panel>
 
-          {/* Dispatch Panel */}
           <Panel
             header={
               <Row
@@ -527,7 +263,7 @@ const OrderTrackingDetail: React.FC = () => {
                   <CheckCircleOutlined
                     style={{ color: "#6a1b9a", marginRight: 8 }}
                   />
-                  <Text strong>Dispatch Confirmation</Text>
+                  <Text strong>Delivery Confirmation</Text>
                 </Col>
                 <Col>
                   <Tag color="default">Pending</Tag>
@@ -539,7 +275,6 @@ const OrderTrackingDetail: React.FC = () => {
           ></Panel>
         </Collapse>
 
-        {/* Frontend preview */}
         {submittedData.length > 0 && (
           <div style={{ marginTop: 24 }}>
             <Title level={4}>Submitted Data</Title>
