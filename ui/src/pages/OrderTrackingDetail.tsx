@@ -27,16 +27,15 @@ import {
   CheckCircleOutlined,
   EyeOutlined,
   LeftOutlined,
-  UploadOutlined,
   DownOutlined,
 } from "@ant-design/icons";
+import DocumentForm from "../Components/Documents/DocumentsForm";
 import DeliveryForm from "../Components/DeliveryConfirmation/DeliveryForm";
 import DispatchForm from "../Components/DispatchDetails/DispatchForm";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
-const { Option } = Select;
 
 type UserRole = "Sales Person" | "Delivery Person";
 
@@ -197,6 +196,30 @@ const OrderTrackingDetail: React.FC = () => {
             key="4"
           >
             <DeliveryForm />
+          </Panel>
+
+          <Panel
+            header={
+              <Row
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
+                <Col>
+                  <CheckCircleOutlined
+                    style={{ color: "#6a1b9a", marginRight: 8 }}
+                  />
+                  <Text strong>Document Confirmation</Text>
+                </Col>
+                <Col>
+                  <Tag color="default">Pending</Tag>
+                  <EyeOutlined />
+                </Col>
+              </Row>
+            }
+            key="4"
+          >
+            <DocumentForm />
           </Panel>
         </Collapse>
 
