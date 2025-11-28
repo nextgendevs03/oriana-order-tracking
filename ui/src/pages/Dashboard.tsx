@@ -1,29 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 import { Layout, Typography, Avatar, Space, Button } from "antd";
+import { MenuOutlined } from "@ant-design/icons"; // Hamburger icon
 import SidebarMenu from "../Components/SidebarMenu";
- import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 const Dashboard: React.FC = () => {
-const navigate = useNavigate();
-
+  const navigate = useNavigate();
   const username = localStorage.getItem("loggedUser") || "Guest";
+  const [collapsed, setCollapsed] = useState<boolean>(false);
 
   return (
-
-   
     <Layout style={{ minHeight: "100vh" }}>
       {/* Sidebar */}
-      <Sider>
-        <div
-          style={{
-            height: 60,
-            margin: 16,
-            background: "rgba(255,255,255,0.2)",
-            borderRadius: 8,
-          }}
-        />
-        <SidebarMenu />
+      <Sider collapsible collapsed={collapsed} trigger={null}>
+        <SidebarMenu collapsed={collapsed} />
       </Sider>
 
       <Layout>
@@ -38,23 +30,13 @@ const navigate = useNavigate();
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
           }}
         >
-          {/* LEFT LOGO + ORDER TRACKING SIDE BY SIDE */}
+          {/* LEFT: Hamburger + Logo + Order Tracking */}
           <Space size="large" align="center">
-            {/* Logo */}
-            <Title
-              level={3}
-              style={{
-                margin: 0,
-                background: "linear-gradient(90deg, #4b6cb7, #182848)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                fontWeight: 800,
-                letterSpacing: 2,
-                textTransform: "uppercase",
-              }}
-            >
-              OSG ORIANA INDIA
-            </Title>
+            {/* Hamburger Icon */}
+            <MenuOutlined
+              style={{ fontSize: 24, cursor: "pointer" }}
+              onClick={() => setCollapsed(!collapsed)}
+            />
 
             {/* Order Tracking */}
             <Text
@@ -75,37 +57,9 @@ const navigate = useNavigate();
             <Text strong>{username}</Text>
           </Space>
         </Header>
-
-        {/* MAIN CONTENT */}
-        <Content style={{ padding: 20 }}>
-          <Title level={2}>Welcome, {username}! 🎉</Title>
-          <p>Your dashboard is now ready with the logo and Order Tracking text side by side.</p>
-
-          <Button
-              type="primary"
-            //  icon={<PlusOutlined />}
-              style={{  
-                backgroundColor: "#4b6cb7",
-                borderRadius: 8,
-                padding: "0 16px",
-                fontWeight: 600,
-              }}
-              onClick={() => navigate("/ordertracking")}
-            >
-              ADD Purchase Detail
-            </Button>
-
-        </Content>
-       
       </Layout>
-
     </Layout>
   );
 };
 
 export default Dashboard;
-
-
-
-
-
