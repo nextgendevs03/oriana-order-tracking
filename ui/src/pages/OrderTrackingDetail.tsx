@@ -1,43 +1,28 @@
 import React, { useState } from "react";
 import WarrantyCertificate from "../Components/WarrantyCertificate/WarrantyCertificate";
-import PurchaseDetailsForm from "../Components/PurchaseDetail/PurchaseDetailForm";
 import {
   Layout,
   Typography,
-  Button,
   Card,
   Collapse,
   Tag,
   Row,
   Col,
-  Avatar,
-  Form,
-  Input,
-  DatePicker,
-  Radio,
-  Select,
-  Upload,
-  message,
-  Dropdown,
-  Menu,
 } from "antd";
-import type { FormInstance } from "antd";
 import {
   ShoppingOutlined,
   TruckOutlined,
   CheckCircleOutlined,
   EyeOutlined,
-  LeftOutlined,
-  DownOutlined,
 } from "@ant-design/icons";
-import CommissioningData from "../Components/Commissioning/CommissioningForm";
 import CommissioningForm from "../Components/Commissioning/CommissioningForm";
 import PreCommissioningForm from "../Components/PreCommissioning/PreCommissioningForm";
 import DocumentForm from "../Components/Documents/DocumentsForm";
 import DeliveryForm from "../Components/DeliveryConfirmation/DeliveryForm";
-import DispatchForm from "../Components/DispatchDetails/DispatchForm";
+import PurchaseOrderDetails from "../Components/PurchaseOrderDetails/PurchaseOrderDetails";
+import DispatchDetails from "../Components/DispatchDetails/DispatchDetails";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
@@ -48,85 +33,9 @@ const OrderTrackingDetail: React.FC = () => {
 
   const [submittedData, setSubmittedData] = useState<any[]>([]);
 
-  const handleSuccess = <T,>(
-    formName: string,
-    values: T,
-    form: FormInstance<T>
-  ) => {
-    console.log(`${formName} Submitted:`, values);
-    message.success(`${formName} submitted successfully!`);
-    setSubmittedData((prev) => [...prev, { formName, ...values }]);
-    form.resetFields();
-  };
-
-  const menu = (
-    <Menu
-      onClick={(e: { key: string }) => setRole(e.key as UserRole)}
-      items={[
-        { key: "Sales Person", label: "Sales Person" },
-        { key: "Delivery Person", label: "Delivery Person" },
-      ]}
-    />
-  );
 
   return (
-    <Layout
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#f9f7ff",
-        padding: "24px",
-      }}
-    >
-      {/* Header */}
-      <Header
-        style={{
-          background: "#fff",
-          borderRadius: "12px",
-          padding: "16px 32px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-        }}
-      >
-        <Title level={4} style={{ margin: 0, color: "#000000" }}>
-          Order Tracking System
-        </Title>
-
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <Dropdown overlay={menu} trigger={["click"]}>
-            <Button
-              style={{
-                borderColor: "#1890ff",
-                color: "#1890ff",
-                marginRight: 16,
-              }}
-            >
-              {role} <DownOutlined />
-            </Button>
-          </Dropdown>
-          <Avatar style={{ backgroundColor: "#1890ff" }}>
-            {role === "Sales Person" ? "SP" : "DP"}
-          </Avatar>
-        </div>
-      </Header>
-
-      {/* Content */}
-      <Content style={{ marginTop: 24 }}>
-        <Card
-          style={{ borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
-        >
-          <Text style={{ color: "#1890ff", cursor: "pointer" }}>
-            <LeftOutlined style={{ marginRight: 4 }} /> Back to Dashboard
-          </Text>
-        </Card>
-        <div style={{ marginTop: 12 }}>
-          <Title level={4} style={{ margin: 0 }}>
-            Order ORD-001
-          </Title>
-          <Text type="secondary">ABC Corporation</Text>
-        </div>
-
+    <>
         <Collapse
           bordered={false}
           style={{ marginTop: 24 }}
@@ -153,10 +62,8 @@ const OrderTrackingDetail: React.FC = () => {
             }
             key="1"
           >
-            {/* ⭐ PURCHASE DETAILS FORM */}
-            <PurchaseDetailsForm />
+            <PurchaseOrderDetails />
           </Panel>
-
           <Panel
             header={
               <Row
@@ -176,7 +83,7 @@ const OrderTrackingDetail: React.FC = () => {
             }
             key="2"
           >
-            <DispatchForm products={[]} />
+            <DispatchDetails />
           </Panel>
 
           {/* Delivery Panel */}
@@ -309,8 +216,8 @@ const OrderTrackingDetail: React.FC = () => {
             ))}
           </div>
         )}
-      </Content>
-    </Layout>
+     
+    </>
   );
 };
 

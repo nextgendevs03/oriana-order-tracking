@@ -1,16 +1,40 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import LayoutPage from "./pages/LayoutPage";
 import React from "react";
+// import CreatePO from "./pages/CreatePO";
+// import PODetails from "./pages/PODetails";
+ import Dashboard from "./pages/Dashboard";
+import CreatePurchaseOrderForm from "./Components/PurchaseOrderDetails/CreatePurchaseOrderForm";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
+// import Settings from "./pages/Settings";
+
 const App: React.FC = () => {
   return (
     <div>
       <BrowserRouter>
         <Routes>
+          {/* Public Route */}
           <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ordertracking" element={<OrderTrackingDetail />} />
+          
+          {/* Protected Routes with Layout */}
+          <Route path="/dashboard" element={<LayoutPage />}>
+            <Route index element={<Dashboard />} />
+          </Route>
+          <Route path="/create-po" element={<LayoutPage />}>
+            <Route index element={<CreatePurchaseOrderForm />} />
+          </Route>
+          <Route path="/po-details/:poId" element={<LayoutPage />}>
+            <Route index element={<OrderTrackingDetail />} />
+          </Route> 
+          {/* <Route path="/settings" element={<LayoutPage />}>
+            <Route index element={<Settings />} />
+          </Route>
+          
+          */}
+          
+          {/* Fallback redirect */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </div>
