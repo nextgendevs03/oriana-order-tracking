@@ -1,67 +1,209 @@
-import React from "react";
-import { Table, Button, Space } from "antd";
+import { Table, Select, InputNumber, Button } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
+
+const { Option } = Select;
+
 export interface ItemFormValues {
   category: string;
   oemName: string;
   productModel: string;
-  quantity: number;
-  spareQty: number;
-  totalQty: number;
-  totalPrice: number;
+  quantity?: number;
+  spareQty?: number;
+  totalQty?: number;
+  pricePerUnit?: number;
+  totalPrice?: number;
   warranty: string;
-  pricePerUnit: number;
 }
 
-export interface PurchaseItemTableProps {
-  data: ItemFormValues[];
-  onDelete: (index: number) => void;
-  onEdit: (index: number) => void;
-}
+const inputStyle: React.CSSProperties = {
+  width: 120,
+};
 
-const PurchaseItemTable: React.FC<PurchaseItemTableProps> = ({
-  data,
-  onDelete,
-  onEdit,
-}) => {
-  const columns = [
-    { title: "Category", dataIndex: "category", key: "category" },
-    { title: "OEM Name", dataIndex: "oemName", key: "oemName" },
-    { title: "Product Model", dataIndex: "productModel", key: "productModel" },
-    { title: "Quantity", dataIndex: "quantity", key: "quantity" },
-    { title: "Spare Qty", dataIndex: "spareQty", key: "spareQty" },
-    { title: "Total Qty", dataIndex: "totalQty", key: "totalQty" },
-    { title: "Warranty", dataIndex: "warranty", key: "warranty" },
-    { title: "Price", dataIndex: "pricePerUnit", key: "pricePerUnit" },
+const selectStyle: React.CSSProperties = {
+  width: 150,
+};
 
+const PurchaseItemTable = ({ data, onUpdate, onDelete }: any) => {
+  const handleChange = (
+    index: number,
+    field: keyof ItemFormValues,
+    value: any
+  ) => {
+    const row = { ...data[index], [field]: value };
+
+    row.totalQty = (row.quantity || 0) + (row.spareQty || 0);
+    row.totalPrice = (row.totalQty || 0) * (row.pricePerUnit || 0);
+
+    onUpdate(index, row);
+  };
+
+  const columns: any = [
     {
-      title: "Total Price",
-      key: "totalPrice",
-      render: (_: any, record: ItemFormValues) =>
-        (record.totalQty * (record.pricePerUnit || 0)).toFixed(2),
+      title: "Category",
+      width: 150,
+      render: (_: any, row: ItemFormValues, index: number) => (
+        <Select
+          style={selectStyle}
+          placeholder="Select"
+          value={row.category}
+          onChange={(v) => handleChange(index, "category", v)}
+        >
+          <Option value="Inverter">Inverter</Option>
+            <Option value="Panel">Panel</Option>
+            <Option value="DC Cable">DC Cable</Option>
+            <Option value="AC Cable">AC Cable</Option>
+            <Option value="MC4 Connector">MC4 Connector</Option>
+            <Option value="SPD">SPD</Option>
+            <Option value="Earthing Kit">Earthing Kit</Option>
+            <Option value="Display Unit">Display Unit</Option>         
+        </Select>
+      ),
     },
 
     {
-      title: "Action",
-      key: "action",
-      render: (_: any, __: any, index: number) => (
-        <Space>
-          <Button type="primary" onClick={() => onEdit(index)}>
-            Edit
-          </Button>
-          <Button danger onClick={() => onDelete(index)}>
-            Delete
-          </Button>
-        </Space>
+      title: "OEM Name",
+      width: 150,
+      render: (_: any, row: ItemFormValues, index: number) => (
+        <Select
+          style={selectStyle}
+          placeholder="Select"
+          value={row.oemName}
+          onChange={(v) => handleChange(index, "oemName", v)}
+        >
+          <Option value="Sieneng">Sieneng</Option>
+          <Option value="Solis">Solis</Option>
+          <Option value="Jio">Jio</Option>
+        </Select>
+      ),
+    },
+
+    {
+      title: "Product",
+      width: 150,
+      render: (_: any, row: ItemFormValues, index: number) => (
+        <Select
+          style={selectStyle}
+          placeholder="Select"
+          value={row.productModel}
+          onChange={(v) => handleChange(index, "productModel", v)}
+        >
+          <Option value="SPD Type 1">SPD Type 1</Option>
+            <Option value="SPD Type 2">SPD Type 2</Option>
+            <Option value="ACDB">ACDB</Option>
+            <Option value="DCDB">DCDB</Option>
+            <Option value="MC4 Connector">MC4 Connector</Option>
+            <Option value="WiFi Dongle">WiFi Dongle</Option>
+            <Option value="Display Unit">Display Unit</Option>
+        </Select>
+      ),
+    },
+
+    {
+      title: "Quantity",
+      width: 120,
+      render: (_: any, row: ItemFormValues, index: number) => (
+        <InputNumber
+          style={inputStyle}
+          min={1}
+          value={row.quantity ?? undefined}
+          placeholder=""
+          onChange={(v) => handleChange(index, "quantity", v)}
+        />
+      ),
+    },
+
+    {
+      title: "Spare Quantity",
+      width: 140,
+      render: (_: any, row: ItemFormValues, index: number) => (
+        <InputNumber
+          style={inputStyle}
+          min={0}
+          value={row.spareQty ?? undefined}
+          placeholder=""
+          onChange={(v) => handleChange(index, "spareQty", v)}
+        />
+      ),
+    },
+
+    {
+      title: "Total Quantity",
+      width: 140,
+      render: (_: any, row: ItemFormValues) => (
+        <InputNumber
+          style={inputStyle}
+          value={row.totalQty ?? undefined}
+          disabled
+        />
+      ),
+    },
+
+    {
+      title: "Price per Unit",
+      width: 140,
+      render: (_: any, row: ItemFormValues, index: number) => (
+        <InputNumber
+          style={inputStyle}
+          min={0}
+          value={row.pricePerUnit ?? undefined}
+          placeholder=""
+          onChange={(v) => handleChange(index, "pricePerUnit", v)}
+        />
+      ),
+    },
+
+    {
+      title: "Total Price",
+      width: 140,
+      render: (_: any, row: ItemFormValues) => (
+        <InputNumber
+          style={inputStyle}
+          value={row.totalPrice ?? undefined}
+          disabled
+        />
+      ),
+    },
+
+    {
+      title: "Warranty",
+      width: 150,
+      render: (_: any, row: ItemFormValues, index: number) => (
+        <Select
+          style={selectStyle}
+          placeholder="Select"
+          value={row.warranty}
+          onChange={(v) => handleChange(index, "warranty", v)}
+        >
+          <Option value="1 Year">1 Year</Option>
+          <Option value="2 Years">2 Years</Option>
+          <Option value="3 Years">3 Years</Option>
+        </Select>
+      ),
+    },
+
+    {
+      title: "Delete",
+      width: 80,
+      render: (_: any, __: any, i: number) => (
+        <Button
+          danger
+          type="text"
+          icon={<DeleteOutlined />}
+          onClick={() => onDelete(i)}
+        />
       ),
     },
   ];
 
   return (
     <Table
-      dataSource={data}
+      size="small"
       columns={columns}
-      rowKey={(_, i) => i?.toString() ?? "0"}
+      dataSource={data}
       pagination={false}
+      rowKey={(_, i) => String(i)}
+      scroll={{ x: 1500 }}
+      style={{ borderRadius: 8 }}
     />
   );
 };

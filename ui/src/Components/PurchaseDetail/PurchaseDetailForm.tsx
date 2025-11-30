@@ -10,11 +10,9 @@ import {
   Button,
   Card,
 } from "antd";
-import type { FormInstance } from "antd";
-import { Moment } from "moment";
-import PurchaseItemModal, { ItemFormValues } from "./Modal/PurchaseItemModal";
-import PurchaseItemTable from "./PurchaseItemTable";
+import type { Moment } from "moment";
 import PurchaseItemForm from "./PurchaseItemForm";
+
 const { Option } = Select;
 
 export interface PurchaseFormValues {
@@ -40,9 +38,14 @@ export interface PurchaseFormValues {
 
 const PurchaseDetailsForm: React.FC = () => {
   const loggedInUser = localStorage.getItem("userName") || "Unknown";
-
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [form] = Form.useForm<PurchaseFormValues>();
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  // Auto fill sales person
+  useEffect(() => {
+    form.setFieldsValue({ salesPerson: loggedInUser });
+  }, []);
 
   const handleSubmit = (values: PurchaseFormValues) => {
     const poData = {
@@ -54,13 +57,11 @@ const PurchaseDetailsForm: React.FC = () => {
       confirmDispatchDate: values.confirmDispatchDate?.format("YYYY-MM-DD"),
     };
 
-    const cleaned = Object.fromEntries(
-      Object.entries(poData).filter(([_, v]) => v)
-    );
+    const cleaned = Object.fromEntries(Object.entries(poData).filter(([_, v]) => v));
     setSubmittedData(cleaned);
-
     form.resetFields();
     form.setFieldsValue({ salesPerson: loggedInUser });
+    setIsFormValid(false);
   };
 
   const renderDatePicker = (name: keyof PurchaseFormValues) => {
@@ -74,98 +75,159 @@ const PurchaseDetailsForm: React.FC = () => {
     );
   };
 
+  // Check form validity live
+  const handleFormChange = async () => {
+    try {
+      await form.validateFields();
+      setIsFormValid(true);
+    } catch {
+      setIsFormValid(false);
+    }
+  };
+
   return (
     <>
-      <Form layout="vertical" form={form} onFinish={handleSubmit}>
-        {/* Row 1 */}
+      <Form
+        layout="vertical"
+        form={form}
+        onFinish={handleSubmit}
+        onValuesChange={handleFormChange}
+      >
+        {/* Line 1 */}
         <Row gutter={16}>
-          <Col span={8}>
+          <Col span={12}>
             <Form.Item
               name="orderId"
               label="Order ID"
+              rules={[{ required: true, message: "Order ID required" }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="date"
+              label="Date"
+              rules={[{ required: true, message: "Date required" }]}
+            >
+              {renderDatePicker("date")}
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Line 2 */}
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="salesPerson"
+              label="Sales Person"
+              rules={[{ required: true }]}
+            >
+              <Input disabled style={{ background: "#f5f5f5" }} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="clientName"
+              label="Client Name"
               rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="date" label="Date">
-              {renderDatePicker("date")}
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="salesPerson" label="Sales Person">
-              <Input
-                disabled
-                style={{ background: "#f5f5f5" }}
-                defaultValue={loggedInUser}
-              />
-            </Form.Item>
-          </Col>
         </Row>
 
-        {/* Row 2 */}
+        {/* Line 3 */}
         <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="clientName" label="Client Name">
+          <Col span={12}>
+            <Form.Item
+              name="osgPiNo"
+              label="OSG PI No"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="osgPiNo" label="OSG PI No">
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="osgPiDate" label="OSG PI Date">
+          <Col span={12}>
+            <Form.Item
+              name="osgPiDate"
+              label="OSG PI Date"
+              rules={[{ required: true }]}
+            >
               {renderDatePicker("osgPiDate")}
             </Form.Item>
           </Col>
         </Row>
 
-        {/* Row 3 */}
+        {/* Line 4 */}
         <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="poStatus" label="PO Status">
+          <Col span={12}>
+            <Form.Item
+              name="poStatus"
+              label="PO Status"
+              rules={[{ required: true }]}
+            >
               <Select placeholder="Select">
                 <Option value="PO Received">PO Received</Option>
-                <Option value="PO Confirmed on Phone">
-                  PO Confirmed on Phone
-                </Option>
+                <Option value="PO Confirmed on Phone">PO Confirmed on Phone</Option>
                 <Option value="On Call">On Call</Option>
                 <Option value="On Mail">On Mail</Option>
               </Select>
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="clientPoNo" label="Client PO No">
+          <Col span={12}>
+            <Form.Item
+              name="clientPoNo"
+              label="Client PO No"
+              rules={[{ required: true }]}
+            >
               <Input />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item name="poDate" label="PO Date">
-              {renderDatePicker("poDate")}
             </Form.Item>
           </Col>
         </Row>
 
-        {/* Row 4 */}
+        {/* Line 5 */}
         <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="dispatchType" label="No Of Dispatch">
+          <Col span={12}>
+            <Form.Item
+              name="poDate"
+              label="PO Date"
+              rules={[{ required: true }]}
+            >
+              {renderDatePicker("poDate")}
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="dispatchType"
+              label="No Of Dispatch"
+              rules={[{ required: true }]}
+            >
               <Radio.Group>
                 <Radio value="Single">Single</Radio>
                 <Radio value="Multiple">Multiple</Radio>
               </Radio.Group>
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="clientAddress" label="Client Address">
+        </Row>
+
+        {/* Line 6 */}
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="clientAddress"
+              label="Client Address"
+              rules={[{ required: true }]}
+            >
               <Input.TextArea rows={1} />
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="clientContact" label="Client Point of Contact">
+          <Col span={12}>
+            <Form.Item
+              name="clientContact"
+              label="Client Contact"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -174,20 +236,36 @@ const PurchaseDetailsForm: React.FC = () => {
         {/* Items Table */}
         <PurchaseItemForm />
 
-        {/* Row 5 */}
+        {/* Line 7 */}
         <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="dispatchPlanDate" label="Dispatch Plan Date">
+          <Col span={12}>
+            <Form.Item
+              name="dispatchPlanDate"
+              label="Dispatch Plan Date"
+              rules={[{ required: true }]}
+            >
               {renderDatePicker("dispatchPlanDate")}
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="siteLocation" label="Site Location">
+          <Col span={12}>
+            <Form.Item
+              name="siteLocation"
+              label="Site Location"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="onSiteSupport" label="On Site Support Required">
+        </Row>
+
+        {/* Line 8 */}
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="onSiteSupport"
+              label="On Site Support"
+              rules={[{ required: true }]}
+            >
               <Radio.Group>
                 <Radio value="Yes">Yes</Radio>
                 <Radio value="No">No</Radio>
@@ -195,17 +273,25 @@ const PurchaseDetailsForm: React.FC = () => {
               </Radio.Group>
             </Form.Item>
           </Col>
-        </Row>
-
-        {/* Row 6 */}
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item name="confirmDispatchDate" label="Confirm Dispatch Date">
+          <Col span={12}>
+            <Form.Item
+              name="confirmDispatchDate"
+              label="Confirm Dispatch Date"
+              rules={[{ required: true }]}
+            >
               {renderDatePicker("confirmDispatchDate")}
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="paymentStatus" label="Payment Receipt Status">
+        </Row>
+
+        {/* Line 9 */}
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="paymentStatus"
+              label="Payment Receipt Status"
+              rules={[{ required: true }]}
+            >
               <Select>
                 <Option value="Advance">Advance</Option>
                 <Option value="Received">Received</Option>
@@ -218,8 +304,11 @@ const PurchaseDetailsForm: React.FC = () => {
               </Select>
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item name="remarks" label="Remark">
+          <Col span={12}>
+            <Form.Item
+              name="remarks"
+              label="Remark"
+            >
               <Input.TextArea rows={1} placeholder="Enter remarks..." />
             </Form.Item>
           </Col>
@@ -231,9 +320,10 @@ const PurchaseDetailsForm: React.FC = () => {
             <Button
               type="primary"
               htmlType="submit"
+              disabled={!isFormValid}
               style={{
-                backgroundColor: "#6a1b9a",
-                borderColor: "#6a1b9a",
+                backgroundColor: "#1677ff",
+                borderColor: "#1677ff",
                 borderRadius: 8,
               }}
             >
