@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+layers/shared/nodejs/node_modules/
+
+# Build output
+dist/
+layers/shared/nodejs/dist/
+app-manifest.json
+
+# Environment files
+.env
+.env.local
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# CDK
+cdk.out/
+cdk/env.local.json
+
+# Misc
+*.zip
+.cache/
+

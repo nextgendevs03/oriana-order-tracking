@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+layers/shared/nodejs/node_modules/
+
+# Build output
+dist/
+layers/shared/nodejs/dist/
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# TypeScript cache
+*.tsbuildinfo
+
