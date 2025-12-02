@@ -1,0 +1,30 @@
+{
+  "name": "oriana-order-tracking",
+  "version": "1.0.0",
+  "description": "Oriana Order Tracking - Full Stack Application",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "lint:api": "cd api && npm run lint",
+    "lint:fix:api": "cd api && npm run lint:fix",
+    "format:api": "cd api && npm run format",
+    "test:api": "cd api && npm run test",
+    "build:api": "cd api && npm run build:all",
+    "build:cdk": "cd cdk && npm run build",
+    "build:ui": "cd ui && npm run build",
+    "build": "npm run build:api && npm run build:cdk"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "api/**/*.ts": [
+      "npx --prefix api eslint --fix",
+      "npx --prefix api prettier --write"
+    ],
+    "cdk/**/*.ts": [
+      "npx --prefix cdk prettier --write"
+    ]
+  }
+}
