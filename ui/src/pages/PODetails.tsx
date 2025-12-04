@@ -1,0 +1,1692 @@
+import React, { useState, useMemo } from "react";
+import {
+  Collapse,
+  Typography,
+  Descriptions,
+  Tag,
+  Table,
+  Empty,
+  Button,
+  Popconfirm,
+  Space,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FileTextOutlined,
+  CheckCircleOutlined,
+  ToolOutlined,
+  EyeOutlined,
+  LockOutlined,
+} from "@ant-design/icons";
+import { useParams } from "react-router-dom";
+import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { deleteDispatchDetail, deletePreCommissioning, updatePO, updateDispatchDetail } from "../store/poSlice";
+import type { ColumnsType } from "antd/es/table";
+import type { POItem, DispatchDetail, PreCommissioning } from "../store/poSlice";
+import DispatchFormModal from "../Components/DispatchFormModal";
+import DispatchDocumentFormModal from "../Components/DispatchDocumentFormModal";
+import DeliveryConfirmationFormModal from "../Components/DeliveryConfirmationFormModal";
+import PreCommissioningFormModal from "../Components/PreCommissioningFormModal";
+import CommissioningFormModal from "../Components/CommissioningFormModal";
+import WarrantyCertificateFormModal from "../Components/WarrantyCertificateFormModal";
+import DispatchDetailsModal, { DispatchDetailsTab } from "../Components/DispatchDetailsModal";
+import ServiceDetailsModal, { ServiceDetailsTab } from "../Components/ServiceDetailsModal";
+import {
+  selectDispatchStatusInfo,
+  selectDocumentStatus,
+  selectDeliveryStatus,
+  selectPreCommissioningStatusInfo,
+  selectCommissioningStatusInfo,
+  selectWarrantyStatusInfo,
+} from "../store/poSelectors";
+
+const { Title } = Typography;
+const { Panel } = Collapse;
+
+const PODetails: React.FC = () => {
+  const { poId } = useParams<{ poId: string }>();
+  const dispatch = useAppDispatch();
+  const [isDispatchModalVisible, setIsDispatchModalVisible] = useState(false);
+  const [editingDispatch, setEditingDispatch] = useState<DispatchDetail | null>(
+    null
+  );
+  const [isDocumentModalVisible, setIsDocumentModalVisible] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<DispatchDetail | null>(
+    null
+  );
+  const [isDeliveryModalVisible, setIsDeliveryModalVisible] = useState(false);
+  const [editingDelivery, setEditingDelivery] = useState<DispatchDetail | null>(
+    null
+  );
+  const [isPreCommissioningModalVisible, setIsPreCommissioningModalVisible] =
+    useState(false);
+  const [editingPreCommissioning, setEditingPreCommissioning] =
+    useState<PreCommissioning | null>(null);
+  const [isCommissioningModalVisible, setIsCommissioningModalVisible] =
+    useState(false);
+  const [editingCommissioning, setEditingCommissioning] =
+    useState<PreCommissioning | null>(null);
+  const [isWarrantyModalVisible, setIsWarrantyModalVisible] =
+    useState(false);
+  const [editingWarranty, setEditingWarranty] =
+    useState<PreCommissioning | null>(null);
+  // Unified Dispatch Details View Modal
+  const [isDispatchDetailsModalVisible, setIsDispatchDetailsModalVisible] =
+    useState(false);
+  const [viewingDispatchDetails, setViewingDispatchDetails] =
+    useState<DispatchDetail | null>(null);
+  const [dispatchDetailsTab, setDispatchDetailsTab] =
+    useState<DispatchDetailsTab>("dispatch");
+  // Unified Service Details View Modal
+  const [isServiceDetailsModalVisible, setIsServiceDetailsModalVisible] =
+    useState(false);
+  const [viewingServiceDetails, setViewingServiceDetails] =
+    useState<PreCommissioning | null>(null);
+  const [serviceDetailsTab, setServiceDetailsTab] =
+    useState<ServiceDetailsTab>("precommissioning");
+
+  // Fetch PO from poList using poId from route params
+  const poList = useAppSelector((state) => state.po.poList);
+  const dispatchDetails = useAppSelector((state) => state.po.dispatchDetails);
+  const preCommissioningDetails = useAppSelector(
+    (state) => state.po.preCommissioningDetails
+  );
+
+  // Find the PO by ID
+  const selectedPO = poList.find((po) => po.id === poId);
+
+  // Filter dispatch details for current PO
+  const currentPODispatches = dispatchDetails.filter(
+    (dispatchItem) => dispatchItem.poId === poId
+  );
+
+  const handleEditDispatch = (record: DispatchDetail) => {
+    setEditingDispatch(record);
+    setIsDispatchModalVisible(true);
+  };
+
+  const handleDeleteDispatch = (dispatchId: string) => {
+    dispatch(deleteDispatchDetail(dispatchId));
+  };
+
+  // Delete document details - clears document related fields from dispatch
+  const handleDeleteDocumentDetails = (dispatchId: string) => {
+    const targetDispatch = currentPODispatches.find((d) => d.id === dispatchId);
+    if (targetDispatch) {
+      // Clear serial numbers from dispatched items
+      const clearedDispatchedItems = targetDispatch.dispatchedItems.map((item) => ({
+        ...item,
+        serialNumbers: undefined,
+      }));
+      
+      const updatedDispatch: DispatchDetail = {
+        ...targetDispatch,
+        dispatchedItems: clearedDispatchedItems,
+        // Clear all document fields
+        noDuesClearance: undefined,
+        docOsgPiNo: undefined,
+        docOsgPiDate: undefined,
+        taxInvoiceNumber: undefined,
+        invoiceDate: undefined,
+        ewayBill: undefined,
+        deliveryChallan: undefined,
+        dispatchDate: undefined,
+        packagingList: undefined,
+        dispatchFromLocation: undefined,
+        dispatchStatus: undefined,
+        dispatchLrNo: undefined,
+        dispatchRemarks: undefined,
+        dispatchDocuments: undefined,
+        documentUpdatedAt: undefined,
+      };
+      dispatch(updateDispatchDetail(updatedDispatch));
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsDispatchModalVisible(false);
+    setEditingDispatch(null);
+  };
+
+  const handleAddDispatch = () => {
+    setEditingDispatch(null);
+    setIsDispatchModalVisible(true);
+  };
+
+  // Unified view handler for dispatch details modal
+  const handleViewDispatchDetails = (record: DispatchDetail, tab: DispatchDetailsTab) => {
+    setViewingDispatchDetails(record);
+    setDispatchDetailsTab(tab);
+    setIsDispatchDetailsModalVisible(true);
+  };
+
+  const handleCloseDispatchDetailsModal = () => {
+    setIsDispatchDetailsModalVisible(false);
+    setViewingDispatchDetails(null);
+  };
+
+  // Unified view handler for service details modal
+  const handleViewServiceDetails = (record: PreCommissioning, tab: ServiceDetailsTab) => {
+    setViewingServiceDetails(record);
+    setServiceDetailsTab(tab);
+    setIsServiceDetailsModalVisible(true);
+  };
+
+  const handleCloseServiceDetailsModal = () => {
+    setIsServiceDetailsModalVisible(false);
+    setViewingServiceDetails(null);
+  };
+
+  // Document modal handlers
+  const handleAddDocument = () => {
+    setEditingDocument(null);
+    setIsDocumentModalVisible(true);
+  };
+
+  const handleEditDocument = (record: DispatchDetail) => {
+    setEditingDocument(record);
+    setIsDocumentModalVisible(true);
+  };
+
+  const handleCloseDocumentModal = () => {
+    setIsDocumentModalVisible(false);
+    setEditingDocument(null);
+  };
+
+  // Get dispatches with documents for the table (check if dispatchStatus exists)
+  const dispatchesWithDocuments = useMemo(() => {
+    return currentPODispatches.filter((d) => !!d.dispatchStatus);
+  }, [currentPODispatches]);
+
+  // Get dispatches eligible for delivery confirmation (dispatchStatus === "done")
+  const dispatchesForDeliveryConfirmation = useMemo(() => {
+    return currentPODispatches.filter((d) => d.dispatchStatus === "done");
+  }, [currentPODispatches]);
+
+  // Get dispatches with delivery confirmation for the table (check if deliveryStatus exists)
+  const dispatchesWithDeliveryConfirmation = useMemo(() => {
+    return currentPODispatches.filter((d) => !!d.deliveryStatus);
+  }, [currentPODispatches]);
+
+  // Delivery confirmation modal handlers
+  const handleAddDeliveryConfirmation = () => {
+    setEditingDelivery(null);
+    setIsDeliveryModalVisible(true);
+  };
+
+  const handleEditDeliveryConfirmation = (record: DispatchDetail) => {
+    setEditingDelivery(record);
+    setIsDeliveryModalVisible(true);
+  };
+
+  const handleCloseDeliveryModal = () => {
+    setIsDeliveryModalVisible(false);
+    setEditingDelivery(null);
+  };
+
+  // Get dispatches eligible for pre-commissioning (deliveryStatus === "done")
+  const dispatchesForPreCommissioning = useMemo(() => {
+    return currentPODispatches.filter((d) => d.deliveryStatus === "done");
+  }, [currentPODispatches]);
+
+  // Get pre-commissioning entries for current PO
+  const currentPOPreCommissioning = useMemo(() => {
+    return preCommissioningDetails.filter((pc) => pc.poId === poId);
+  }, [preCommissioningDetails, poId]);
+
+  // Pre-commissioning modal handlers
+  const handleAddPreCommissioning = () => {
+    setEditingPreCommissioning(null);
+    setIsPreCommissioningModalVisible(true);
+  };
+
+  const handleEditPreCommissioning = (record: PreCommissioning) => {
+    setEditingPreCommissioning(record);
+    setIsPreCommissioningModalVisible(true);
+  };
+
+  const handleDeletePreCommissioning = (pcId: string) => {
+    dispatch(deletePreCommissioning(pcId));
+  };
+
+  const handleClosePreCommissioningModal = () => {
+    setIsPreCommissioningModalVisible(false);
+    setEditingPreCommissioning(null);
+  };
+
+  // Get pre-commissioning entries with "Done" preCommissioningStatus for commissioning
+  const preCommissioningForCommissioning = useMemo(() => {
+    return preCommissioningDetails.filter(
+      (pc) => pc.poId === poId && pc.preCommissioningStatus === "Done"
+    );
+  }, [preCommissioningDetails, poId]);
+
+  // Get commissioned entries (those with commissioningStatus)
+  const commissionedEntries = useMemo(() => {
+    return preCommissioningDetails.filter(
+      (pc) => pc.poId === poId && pc.commissioningStatus
+    );
+  }, [preCommissioningDetails, poId]);
+
+  // Commissioning modal handlers
+  const handleAddCommissioning = () => {
+    setEditingCommissioning(null);
+    setIsCommissioningModalVisible(true);
+  };
+
+  const handleEditCommissioning = (record: PreCommissioning) => {
+    setEditingCommissioning(record);
+    setIsCommissioningModalVisible(true);
+  };
+
+  const handleCloseCommissioningModal = () => {
+    setIsCommissioningModalVisible(false);
+    setEditingCommissioning(null);
+  };
+
+  // Get records with commissioningStatus === "Done" for warranty
+  const commissioningForWarranty = useMemo(() => {
+    return preCommissioningDetails.filter(
+      (pc) => pc.poId === poId && pc.commissioningStatus === "Done"
+    );
+  }, [preCommissioningDetails, poId]);
+
+  // Get warranty entries (those with warrantyStatus)
+  const warrantyEntries = useMemo(() => {
+    return preCommissioningDetails.filter(
+      (pc) => pc.poId === poId && pc.warrantyStatus
+    );
+  }, [preCommissioningDetails, poId]);
+
+  // ============= ACCORDION STATUS FROM SELECTORS =============
+
+  const dispatchStatusInfo = useAppSelector(selectDispatchStatusInfo(poId || ""));
+  const documentStatus = useAppSelector(selectDocumentStatus(poId || ""));
+  const deliveryConfirmationStatus = useAppSelector(selectDeliveryStatus(poId || ""));
+  const preCommissioningAccordionStatus = useAppSelector(selectPreCommissioningStatusInfo(poId || ""));
+  const commissioningAccordionStatus = useAppSelector(selectCommissioningStatusInfo(poId || ""));
+  const warrantyAccordionStatus = useAppSelector(selectWarrantyStatusInfo(poId || ""));
+
+  // Check if all accordions are in "Done" state
+  const allAccordionsDone = useMemo(() => {
+    return (
+      dispatchStatusInfo.status === "Done" &&
+      documentStatus === "Done" &&
+      deliveryConfirmationStatus === "Done" &&
+      preCommissioningAccordionStatus === "Done" &&
+      commissioningAccordionStatus === "Done" &&
+      warrantyAccordionStatus === "Done"
+    );
+  }, [
+    dispatchStatusInfo.status,
+    documentStatus,
+    deliveryConfirmationStatus,
+    preCommissioningAccordionStatus,
+    commissioningAccordionStatus,
+    warrantyAccordionStatus,
+  ]);
+
+  // Check if PO is already closed
+  const isPOClosed = selectedPO?.poStatus === "closed";
+
+  // Handle Close PO
+  const handleClosePO = () => {
+    if (selectedPO && allAccordionsDone) {
+      const updatedPO = {
+        ...selectedPO,
+        poStatus: "closed",
+      };
+      dispatch(updatePO(updatedPO));
+    }
+  };
+
+  // Helper function to get status tag color
+  const getAccordionStatusColor = (status: string) => {
+    switch (status) {
+      case "Done":
+        return "green";
+      case "In-Progress":
+        return "orange";
+      case "Not Started":
+      default:
+        return "default";
+    }
+  };
+
+  // Helper function to render accordion header with status
+  const renderAccordionHeader = (title: string, status: string) => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+      <span>{title}</span>
+      <Tag color={getAccordionStatusColor(status)} style={{ marginLeft: "auto", marginRight: "16px" }}>
+        {status}
+      </Tag>
+    </div>
+  );
+
+  // Warranty modal handlers
+  const handleAddWarranty = () => {
+    setEditingWarranty(null);
+    setIsWarrantyModalVisible(true);
+  };
+
+  const handleEditWarranty = (record: PreCommissioning) => {
+    setEditingWarranty(record);
+    setIsWarrantyModalVisible(true);
+  };
+
+  const handleCloseWarrantyModal = () => {
+    setIsWarrantyModalVisible(false);
+    setEditingWarranty(null);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "po_received":
+        return "green";
+      case "po_confirmed_phone":
+        return "blue";
+      case "on_call":
+        return "orange";
+      case "on_mail":
+        return "purple";
+      case "closed":
+        return "red";
+      default:
+        return "default";
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case "advanced":
+      case "received":
+        return "green";
+      case "pending":
+        return "orange";
+      case "15_dc":
+      case "30_dc":
+        return "blue";
+      case "lc":
+        return "purple";
+      default:
+        return "default";
+    }
+  };
+
+  const formatLabel = (value: string) => {
+    if (!value) return "";
+    return value
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const itemColumns: ColumnsType<POItem> = [
+    {
+      title: "Category",
+      dataIndex: "category",
+      key: "category",
+      render: (value) => formatLabel(value || ""),
+    },
+    {
+      title: "OEM Name",
+      dataIndex: "oemName",
+      key: "oemName",
+      render: (value) => formatLabel(value || ""),
+    },
+    {
+      title: "Product",
+      dataIndex: "product",
+      key: "product",
+      render: (value) => formatLabel(value || ""),
+    },
+    {
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+    },
+    {
+      title: "Spare Qty",
+      dataIndex: "spareQuantity",
+      key: "spareQuantity",
+    },
+    {
+      title: "Total Qty",
+      dataIndex: "totalQuantity",
+      key: "totalQuantity",
+    },
+    {
+      title: "Price/Unit",
+      dataIndex: "pricePerUnit",
+      key: "pricePerUnit",
+      render: (value) => `₹${value?.toLocaleString() || 0}`,
+    },
+    {
+      title: "Total Price",
+      dataIndex: "totalPrice",
+      key: "totalPrice",
+      render: (value) => `₹${value?.toLocaleString() || 0}`,
+    },
+    {
+      title: "GST %",
+      dataIndex: "gstPercent",
+      key: "gstPercent",
+      render: (value) => value ? `${value}%` : "-",
+    },
+    {
+      title: "Final Price",
+      dataIndex: "finalPrice",
+      key: "finalPrice",
+      render: (value) => value ? `₹${value?.toLocaleString()}` : "-",
+    },
+    {
+      title: "Warranty",
+      dataIndex: "warranty",
+      key: "warranty",
+      render: (value) => formatLabel(value || ""),
+    },
+  ];
+
+  const dispatchColumns: ColumnsType<DispatchDetail> = [
+    {
+      title: "Dispatch ID",
+      dataIndex: "id",
+      key: "id",
+      width: 130,
+      fixed: "left",
+    },
+    {
+      title: "Dispatched Date",
+      dataIndex: "confirmDispatchDate",
+      key: "confirmDispatchDate",
+      width: 130,
+      fixed: "left",
+    },
+    {
+      title: "Project Name",
+      dataIndex: "projectName",
+      key: "projectName",
+      width: 180,
+    },
+    {
+      title: "Dispatched Items",
+      dataIndex: "dispatchedItems",
+      key: "dispatchedItems",
+      width: 250,
+      render: (items: DispatchDetail["dispatchedItems"]) =>
+        items?.map((item, index) => (
+          <div key={index}>
+            <Tag color="blue">
+              {formatLabel(item.product)}: {item.quantity}
+            </Tag>
+          </div>
+        )) || "-",
+    },
+    {
+      title: "Contact",
+      dataIndex: "deliveryContact",
+      key: "deliveryContact",
+      width: 150,
+      fixed: "left",
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 120,
+      render: (_, record) => {
+        // Disable edit if dispatch status is "done"
+        const isDispatchDone = record.dispatchStatus === "done";
+        // Disable delete if dispatch status is "done" OR delivery status exists
+        const hasDeliveryStatus = !!record.deliveryStatus;
+        const isDeleteDisabled = isDispatchDone || hasDeliveryStatus;
+        const deleteDisabledReason = hasDeliveryStatus 
+          ? "Delete disabled - Delivery confirmation exists" 
+          : isDispatchDone 
+          ? "Delete disabled - Dispatch status is Done" 
+          : "Delete";
+        return (
+          <Space size="small">
+            <Button
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewDispatchDetails(record, "dispatch")}
+              style={{ padding: 0, color: "#1890ff" }}
+              title="View Details"
+            />
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEditDispatch(record)}
+              style={{ padding: 0 }}
+              disabled={isDispatchDone}
+              title={isDispatchDone ? "Editing disabled - Dispatch status is Done" : "Edit"}
+            />
+            <Popconfirm
+              title="Delete Dispatch"
+              description="Are you sure you want to delete this dispatch? This will remove all dispatch details data."
+              onConfirm={() => handleDeleteDispatch(record.id)}
+              okText="Yes"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+              disabled={isDeleteDisabled}
+            >
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+                style={{ padding: 0 }}
+                disabled={isDeleteDisabled}
+                title={deleteDisabledReason}
+              />
+            </Popconfirm>
+          </Space>
+        );
+      },
+    },
+  ];
+
+  // Dispatch Document table columns (flat properties)
+  const documentColumns: ColumnsType<DispatchDetail> = [
+    {
+      title: "Dispatch ID",
+      dataIndex: "id",
+      key: "id",
+      width: 130,
+      fixed: "left",
+      render: (value: string) => <Tag color="blue">{value}</Tag>,
+    },
+    {
+      title: "Dispatched Items",
+      dataIndex: "dispatchedItems",
+      key: "dispatchedItems",
+      width: 180,
+      fixed: "left",
+      render: (items: DispatchDetail["dispatchedItems"]) =>
+        items?.map((item, index) => (
+          <div key={index}>
+            <Tag color="geekblue">
+              {formatLabel(item.product)}: {item.quantity}
+            </Tag>
+          </div>
+        )) || "-",
+    },
+    {
+      title: "No Due Clearance",
+      dataIndex: "noDuesClearance",
+      key: "noDuesClearance",
+      width: 140,
+      render: (value: string) => {
+        const colorMap: Record<string, string> = {
+          pending: "orange",
+          approved: "green",
+          rejected: "red",
+          on_hold: "blue",
+        };
+        return <Tag color={colorMap[value] || "default"}>{formatLabel(value || "")}</Tag>;
+      },
+    },
+    {
+      title: "Tax Invoice No",
+      dataIndex: "taxInvoiceNumber",
+      key: "taxInvoiceNumber",
+      width: 140,
+    },
+    {
+      title: "Invoice Date",
+      dataIndex: "invoiceDate",
+      key: "invoiceDate",
+      width: 120,
+    },
+    {
+      title: "E-way Bill",
+      dataIndex: "ewayBill",
+      key: "ewayBill",
+      width: 130,
+    },
+    {
+      title: "Delivery Challan",
+      dataIndex: "deliveryChallan",
+      key: "deliveryChallan",
+      width: 140,
+    },
+    {
+      title: "Dispatch Date",
+      dataIndex: "dispatchDate",
+      key: "dispatchDate",
+      width: 120,
+    },
+    {
+      title: "Dispatch Status",
+      dataIndex: "dispatchStatus",
+      key: "dispatchStatus",
+      width: 130,
+      fixed: "right",
+      render: (value: string) => {
+        const colorMap: Record<string, string> = {
+          done: "green",
+          pending: "orange",
+          hold: "blue",
+          cancelled: "red",
+        };
+        return <Tag color={colorMap[value] || "default"}>{formatLabel(value || "")}</Tag>;
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 120,
+      render: (_, record) => {
+        const isDeliveryDone = record.deliveryStatus === "done";
+        const hasDeliveryConfirmation = !!record.deliveryStatus;
+        return (
+          <Space size="small">
+            <Button
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewDispatchDetails(record, "documents")}
+              style={{ padding: 0, color: "#1890ff" }}
+              title="View Details"
+            />
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEditDocument(record)}
+              style={{ padding: 0 }}
+              disabled={isDeliveryDone}
+              title={isDeliveryDone ? "Editing disabled - Delivery is done" : "Edit"}
+            />
+            <Popconfirm
+              title="Delete Document Details"
+              description="Are you sure you want to delete this document details? This will remove all document data."
+              onConfirm={() => handleDeleteDocumentDetails(record.id)}
+              okText="Yes"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+              disabled={hasDeliveryConfirmation}
+            >
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+                style={{ padding: 0 }}
+                disabled={hasDeliveryConfirmation}
+                title={hasDeliveryConfirmation ? "Delete disabled - Delivery confirmation exists" : "Delete"}
+              />
+            </Popconfirm>
+          </Space>
+        );
+      },
+    },
+  ];
+
+  // Delivery Confirmation table columns (flat properties)
+  const deliveryConfirmationColumns: ColumnsType<DispatchDetail> = [
+    {
+      title: "Dispatch ID",
+      dataIndex: "id",
+      key: "id",
+      width: 150,
+      fixed: "left",
+    },
+    {
+      title: "Dispatched Items",
+      dataIndex: "dispatchedItems",
+      key: "dispatchedItems",
+      width: 200,
+      render: (items: DispatchDetail["dispatchedItems"]) =>
+        items?.map((item, index) => (
+          <div key={index}>
+            <Tag color="blue">
+              {formatLabel(item.product)}: {item.quantity}
+            </Tag>
+          </div>
+        )) || "-",
+    },
+    {
+      title: "Date of Delivery",
+      dataIndex: "dateOfDelivery",
+      key: "dateOfDelivery",
+      width: 140,
+    },
+    {
+      title: "Delivery Status",
+      dataIndex: "deliveryStatus",
+      key: "deliveryStatus",
+      width: 140,
+      render: (value: string) => {
+        const colorMap: Record<string, string> = {
+          done: "green",
+          pending: "orange",
+          hold: "blue",
+          cancelled: "red",
+        };
+        return (
+          <Tag color={colorMap[value] || "default"}>
+            {formatLabel(value || "")}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Proof of Delivery",
+      dataIndex: "proofOfDelivery",
+      key: "proofOfDelivery",
+      width: 250,
+      ellipsis: true,
+    },
+    {
+      title: "Updated At",
+      dataIndex: "deliveryUpdatedAt",
+      key: "deliveryUpdatedAt",
+      width: 180,
+      render: (value: string) =>
+        value ? new Date(value).toLocaleString() : "-",
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 100,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDispatchDetails(record, "delivery")}
+            style={{ padding: 0, color: "#1890ff" }}
+            title="View Details"
+          />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEditDeliveryConfirmation(record)}
+            style={{ padding: 0 }}
+            title="Edit"
+          />
+        </Space>
+      ),
+    },
+  ];
+
+  // Pre-Commissioning table columns
+  const preCommissioningColumns: ColumnsType<PreCommissioning> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: 120,
+      fixed: "left",
+    },
+    {
+      title: "Dispatch ID",
+      dataIndex: "dispatchId",
+      key: "dispatchId",
+      width: 130,
+    },
+    {
+      title: "Serial Number",
+      dataIndex: "serialNumber",
+      key: "serialNumber",
+      width: 140,
+    },
+    {
+      title: "Product",
+      dataIndex: "product",
+      key: "product",
+      width: 120,
+      render: (value: string) => formatLabel(value || ""),
+    },
+    {
+      title: "PC Contact",
+      dataIndex: "pcContact",
+      key: "pcContact",
+      width: 140,
+    },
+    {
+      title: "Service Engineer",
+      dataIndex: "serviceEngineerAssigned",
+      key: "serviceEngineerAssigned",
+      width: 150,
+    },
+    {
+      title: "PPM/Checklist",
+      dataIndex: "ppmChecklist",
+      key: "ppmChecklist",
+      width: 130,
+      ellipsis: true,
+    },
+    {
+      title: "PPM Confirmation",
+      dataIndex: "ppmConfirmationStatus",
+      key: "ppmConfirmationStatus",
+      width: 140,
+      render: (value: string) => {
+        const colorMap: Record<string, string> = {
+          pending: "orange",
+          confirmed: "green",
+          rejected: "red",
+          in_progress: "blue",
+        };
+        return (
+          <Tag color={colorMap[value] || "default"}>
+            {formatLabel(value || "")}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Pre-comm. Status",
+      dataIndex: "preCommissioningStatus",
+      key: "preCommissioningStatus",
+      width: 140,
+      render: (value: string) => {
+        const colorMap: Record<string, string> = {
+          Done: "green",
+          Pending: "orange",
+          Hold: "blue",
+          Cancelled: "red",
+        };
+        return (
+          <Tag color={colorMap[value] || "default"}>
+            {value || "-"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Remarks",
+      dataIndex: "remarks",
+      key: "remarks",
+      width: 150,
+      ellipsis: true,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 120,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewServiceDetails(record, "precommissioning")}
+            style={{ padding: 0, color: "#1890ff" }}
+            title="View Details"
+          />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEditPreCommissioning(record)}
+            style={{ padding: 0 }}
+            title="Edit"
+          />
+          <Popconfirm
+            title="Delete Pre-Commissioning"
+            description="Are you sure you want to delete this entry?"
+            onConfirm={() => handleDeletePreCommissioning(record.id)}
+            okText="Yes"
+            cancelText="No"
+            okButtonProps={{ danger: true }}
+          >
+            <Button
+              type="link"
+              danger
+              icon={<DeleteOutlined />}
+              style={{ padding: 0 }}
+              title="Delete"
+            />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  // Commissioning table columns
+  const commissioningColumns: ColumnsType<PreCommissioning> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: 120,
+      fixed: "left",
+    },
+    {
+      title: "Serial Number",
+      dataIndex: "serialNumber",
+      key: "serialNumber",
+      width: 140,
+    },
+    {
+      title: "Product",
+      dataIndex: "product",
+      key: "product",
+      width: 120,
+      render: (value: string) => formatLabel(value || ""),
+    },
+    {
+      title: "ECD from Client",
+      dataIndex: "commissioningEcdFromClient",
+      key: "commissioningEcdFromClient",
+      width: 150,
+    },
+    {
+      title: "Service Ticket No",
+      dataIndex: "commissioningServiceTicketNo",
+      key: "commissioningServiceTicketNo",
+      width: 150,
+    },
+    {
+      title: "CCD from Client",
+      dataIndex: "commissioningCcdFromClient",
+      key: "commissioningCcdFromClient",
+      width: 150,
+    },
+    {
+      title: "Issues",
+      dataIndex: "commissioningIssues",
+      key: "commissioningIssues",
+      width: 150,
+      ellipsis: true,
+    },
+    {
+      title: "Solution",
+      dataIndex: "commissioningSolution",
+      key: "commissioningSolution",
+      width: 150,
+      ellipsis: true,
+    },
+    {
+      title: "Info Generated",
+      dataIndex: "commissioningInfoGenerated",
+      key: "commissioningInfoGenerated",
+      width: 140,
+    },
+    {
+      title: "Comm. Date",
+      dataIndex: "commissioningDate",
+      key: "commissioningDate",
+      width: 120,
+    },
+    {
+      title: "Comm. Status",
+      dataIndex: "commissioningStatus",
+      key: "commissioningStatus",
+      width: 130,
+      render: (value: string) => {
+        const colorMap: Record<string, string> = {
+          Done: "green",
+          Pending: "orange",
+          Hold: "blue",
+          Cancelled: "red",
+        };
+        return (
+          <Tag color={colorMap[value] || "default"}>
+            {value || "-"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Remarks",
+      dataIndex: "commissioningRemarks",
+      key: "commissioningRemarks",
+      width: 150,
+      ellipsis: true,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 100,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewServiceDetails(record, "commissioning")}
+            style={{ padding: 0, color: "#1890ff" }}
+            title="View Details"
+          />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEditCommissioning(record)}
+            style={{ padding: 0 }}
+            title="Edit"
+          />
+        </Space>
+      ),
+    },
+  ];
+
+  // Warranty Certificate table columns
+  const warrantyColumns: ColumnsType<PreCommissioning> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: 120,
+      fixed: "left",
+    },
+    {
+      title: "Serial Number",
+      dataIndex: "serialNumber",
+      key: "serialNumber",
+      width: 140,
+    },
+    {
+      title: "Product",
+      dataIndex: "product",
+      key: "product",
+      width: 120,
+      render: (value: string) => formatLabel(value || ""),
+    },
+    {
+      title: "Certificate No",
+      dataIndex: "warrantyCertificateNo",
+      key: "warrantyCertificateNo",
+      width: 150,
+    },
+    {
+      title: "Issue Date",
+      dataIndex: "warrantyIssueDate",
+      key: "warrantyIssueDate",
+      width: 120,
+    },
+    {
+      title: "Start Date",
+      dataIndex: "warrantyStartDate",
+      key: "warrantyStartDate",
+      width: 120,
+    },
+    {
+      title: "End Date",
+      dataIndex: "warrantyEndDate",
+      key: "warrantyEndDate",
+      width: 120,
+    },
+    {
+      title: "Warranty Status",
+      dataIndex: "warrantyStatus",
+      key: "warrantyStatus",
+      width: 130,
+      render: (value: string) => {
+        const colorMap: Record<string, string> = {
+          Done: "green",
+          Pending: "orange",
+          Hold: "blue",
+          Cancelled: "red",
+        };
+        return (
+          <Tag color={colorMap[value] || "default"}>
+            {value || "-"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 100,
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewServiceDetails(record, "warranty")}
+            style={{ padding: 0, color: "#1890ff" }}
+            title="View Details"
+          />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEditWarranty(record)}
+            style={{ padding: 0 }}
+            title="Edit"
+          />
+        </Space>
+      ),
+    },
+  ];
+
+  if (!selectedPO) {
+    return (
+      <div
+        style={{
+          padding: "1rem",
+          background: "#fff",
+          minHeight: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Empty description="PO not found. Please select a valid PO from the dashboard." />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        padding: "1rem",
+        background: "#fff",
+        minHeight: "100%",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Title level={3} style={{ margin: 0 }}>
+            PO Details - {selectedPO.id}
+          </Title>
+          <Tag
+            color={isPOClosed ? "red" : "green"}
+            style={{ fontSize: "14px", padding: "4px 12px" }}
+          >
+            {isPOClosed ? "Closed" : "Active PO"}
+          </Tag>
+        </div>
+        <Popconfirm
+          title="Close PO"
+          description="Are you sure you want to close this PO? This action cannot be undone."
+          onConfirm={handleClosePO}
+          okText="Yes, Close PO"
+          cancelText="Cancel"
+          okButtonProps={{ danger: true }}
+          disabled={!allAccordionsDone || isPOClosed}
+        >
+          <Button
+            type="primary"
+            danger
+            icon={<LockOutlined />}
+            disabled={!allAccordionsDone || isPOClosed}
+            style={{
+              borderRadius: 8,
+              fontWeight: 600,
+            }}
+            title={
+              isPOClosed
+                ? "PO is already closed"
+                : !allAccordionsDone
+                  ? "Complete all sections before closing PO"
+                  : "Close this PO"
+            }
+          >
+            {isPOClosed ? "PO Closed" : "Close PO"}
+          </Button>
+        </Popconfirm>
+      </div>
+
+      <Collapse defaultActiveKey={["1"]} accordion={false}>
+        {/* PO Information Accordion */}
+        <Panel header="PO Information" key="1">
+          <Descriptions
+            bordered
+            column={{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }}
+            size="small"
+            labelStyle={{ fontWeight: 600, backgroundColor: "#fafafa" }}
+          >
+            <Descriptions.Item label="OSG Order ID">
+              <Tag color="blue">{selectedPO.id}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Date">{selectedPO.date}</Descriptions.Item>
+            <Descriptions.Item label="Client Name">
+              {selectedPO.clientName}
+            </Descriptions.Item>
+            <Descriptions.Item label="OSG PI No">
+              {selectedPO.osgPiNo}
+            </Descriptions.Item>
+            <Descriptions.Item label="OSG PI Date">
+              {selectedPO.osgPiDate}
+            </Descriptions.Item>
+            <Descriptions.Item label="Client PO No">
+              {selectedPO.clientPoNo}
+            </Descriptions.Item>
+            <Descriptions.Item label="Client PO Date">
+              {selectedPO.clientPoDate}
+            </Descriptions.Item>
+            <Descriptions.Item label="PO Status">
+              <Tag color={getStatusColor(selectedPO.poStatus)}>
+                {formatLabel(selectedPO.poStatus)}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="No of Dispatch">
+              <Tag color="cyan">{formatLabel(selectedPO.noOfDispatch)}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Client Address" span={2}>
+              {selectedPO.clientAddress}
+            </Descriptions.Item>
+            <Descriptions.Item label="Client Contact">
+              {selectedPO.clientContact}
+            </Descriptions.Item>
+            <Descriptions.Item label="Site Location">
+              {selectedPO.siteLocation}
+            </Descriptions.Item>
+            <Descriptions.Item label="OSC Support">
+              <Tag color={selectedPO.oscSupport === "yes" ? "green" : "orange"}>
+                {formatLabel(selectedPO.oscSupport)}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Payment Status">
+              <Tag color={getPaymentStatusColor(selectedPO.paymentStatus)}>
+                {formatLabel(selectedPO.paymentStatus)}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Dispatch Plan Date">
+              {selectedPO.dispatchPlanDate}
+            </Descriptions.Item>
+            <Descriptions.Item label="Confirm Dispatch Date">
+              {selectedPO.confirmDateOfDispatch}
+            </Descriptions.Item>
+            <Descriptions.Item label="Remarks" span={3}>
+              {selectedPO.remarks}
+            </Descriptions.Item>
+            <Descriptions.Item label="Created At">
+              {selectedPO.createdAt}
+            </Descriptions.Item>
+          </Descriptions>
+
+          {/* Item Details Table */}
+          {selectedPO.poItems && selectedPO.poItems.length > 0 && (
+            <div style={{ marginTop: "1.5rem" }}>
+              <Title level={5} style={{ marginBottom: "1rem" }}>
+                Item Details
+              </Title>
+              <Table
+                columns={itemColumns}
+                dataSource={selectedPO.poItems.map((item, index) => ({
+                  ...item,
+                  key: index,
+                }))}
+                pagination={false}
+                bordered
+                size="small"
+                scroll={{ x: 900 }}
+              />
+            </div>
+          )}
+        </Panel>
+
+        {/* Dispatch Details Accordion */}
+        <Panel header={renderAccordionHeader("Dispatch Details", dispatchStatusInfo.status)} key="2">
+          {/* Add Dispatch Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "1rem",
+            }}
+          >
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAddDispatch}
+              style={{
+                backgroundColor: "#4b6cb7",
+                borderRadius: 8,
+                fontWeight: 600,
+              }}
+            >
+              Add Dispatch
+            </Button>
+          </div>
+
+          {/* Dispatch Details Table or Empty State */}
+          {currentPODispatches.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={dispatchColumns}
+                dataSource={currentPODispatches.map((dispatchItem) => ({
+                  ...dispatchItem,
+                  key: dispatchItem.id,
+                }))}
+                pagination={false}
+                bordered
+                size="small"
+                scroll={{ x: 900 }}
+                tableLayout="fixed"
+              />
+            </div>
+          ) : (
+            <Empty description="No dispatch details available" />
+          )}
+        </Panel>
+
+        {/* Dispatch Document Accordion */}
+        <Panel header={renderAccordionHeader("Dispatch Document", documentStatus)} key="3">
+          {/* Update Document Details Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "1rem",
+            }}
+          >
+            <Button
+              type="primary"
+              icon={<FileTextOutlined />}
+              onClick={handleAddDocument}
+              style={{
+                backgroundColor: "#4b6cb7",
+                borderRadius: 8,
+                fontWeight: 600,
+              }}
+            >
+              Update Document Details
+            </Button>
+          </div>
+
+          {/* Dispatch Documents Table or Empty State */}
+          {dispatchesWithDocuments.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={documentColumns}
+                dataSource={dispatchesWithDocuments.map((dispatchItem) => ({
+                  ...dispatchItem,
+                  key: dispatchItem.id,
+                }))}
+                pagination={false}
+                bordered
+                size="small"
+                scroll={{ x: 1400 }}
+                tableLayout="fixed"
+              />
+            </div>
+          ) : (
+            <Empty description="No dispatch documents available" />
+          )}
+        </Panel>
+
+        {/* Delivery Confirmation Accordion */}
+        <Panel header={renderAccordionHeader("Delivery Confirmation", deliveryConfirmationStatus)} key="4">
+          {/* Update Delivery Information Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "1rem",
+            }}
+          >
+            <Button
+              type="primary"
+              icon={<CheckCircleOutlined />}
+              onClick={handleAddDeliveryConfirmation}
+              disabled={dispatchesForDeliveryConfirmation.length === 0}
+              style={{
+                backgroundColor: "#4b6cb7",
+                borderRadius: 8,
+                fontWeight: 600,
+              }}
+            >
+              Update Delivery Information
+            </Button>
+          </div>
+
+          {/* Delivery Confirmation Table or Empty State */}
+          {dispatchesWithDeliveryConfirmation.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={deliveryConfirmationColumns}
+                dataSource={dispatchesWithDeliveryConfirmation.map(
+                  (dispatchItem) => ({
+                    ...dispatchItem,
+                    key: dispatchItem.id,
+                  })
+                )}
+                pagination={false}
+                bordered
+                size="small"
+                scroll={{ x: 1000 }}
+                tableLayout="fixed"
+              />
+            </div>
+          ) : (
+            <Empty
+              description={
+                dispatchesForDeliveryConfirmation.length === 0
+                  ? "No dispatches with 'Done' status available for delivery confirmation"
+                  : "No delivery confirmations available"
+              }
+            />
+          )}
+        </Panel>
+
+        {/* Pre-Commissioning Accordion */}
+        <Panel header={renderAccordionHeader("Pre-Commissioning", preCommissioningAccordionStatus)} key="5">
+          {/* Update Pre-Commissioning Details Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "1rem",
+            }}
+          >
+            <Button
+              type="primary"
+              icon={<ToolOutlined />}
+              onClick={handleAddPreCommissioning}
+              disabled={dispatchesForPreCommissioning.length === 0}
+              style={{
+                backgroundColor: "#4b6cb7",
+                borderRadius: 8,
+                fontWeight: 600,
+              }}
+            >
+              Update Pre-Commissioning Details
+            </Button>
+          </div>
+
+          {/* Pre-Commissioning Table or Empty State */}
+          {currentPOPreCommissioning.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={preCommissioningColumns}
+                dataSource={currentPOPreCommissioning.map((pc) => ({
+                  ...pc,
+                  key: pc.id,
+                }))}
+                pagination={false}
+                bordered
+                size="small"
+                scroll={{ x: 1500 }}
+                tableLayout="fixed"
+              />
+            </div>
+          ) : (
+            <Empty
+              description={
+                dispatchesForPreCommissioning.length === 0
+                  ? "No dispatches with 'Done' delivery status available for pre-commissioning"
+                  : "No pre-commissioning details available"
+              }
+            />
+          )}
+        </Panel>
+
+        {/* Final Commissioning Accordion */}
+        <Panel header={renderAccordionHeader("Final Commissioning", commissioningAccordionStatus)} key="6">
+          {/* Update Commissioning Details Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "1rem",
+            }}
+          >
+            <Button
+              type="primary"
+              icon={<ToolOutlined />}
+              onClick={handleAddCommissioning}
+              disabled={preCommissioningForCommissioning.length === 0}
+              style={{
+                backgroundColor: "#4b6cb7",
+                borderRadius: 8,
+                fontWeight: 600,
+              }}
+            >
+              Update Commissioning Details
+            </Button>
+          </div>
+
+          {/* Commissioning Table or Empty State */}
+          {commissionedEntries.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={commissioningColumns}
+                dataSource={commissionedEntries.map((pc) => ({
+                  ...pc,
+                  key: pc.id,
+                }))}
+                pagination={false}
+                bordered
+                size="small"
+                scroll={{ x: 1600 }}
+                tableLayout="fixed"
+              />
+            </div>
+          ) : (
+            <Empty
+              description={
+                preCommissioningForCommissioning.length === 0
+                  ? "No pre-commissioning entries with 'Done' status available for commissioning"
+                  : "No commissioning details available"
+              }
+            />
+          )}
+        </Panel>
+
+        {/* Warranty Certificate Accordion */}
+        <Panel header={renderAccordionHeader("Warranty Certificate", warrantyAccordionStatus)} key="7">
+          {/* Update Warranty Details Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "1rem",
+            }}
+          >
+            <Button
+              type="primary"
+              icon={<FileTextOutlined />}
+              onClick={handleAddWarranty}
+              disabled={commissioningForWarranty.length === 0}
+              style={{
+                backgroundColor: "#4b6cb7",
+                borderRadius: 8,
+                fontWeight: 600,
+              }}
+            >
+              Update Warranty Details
+            </Button>
+          </div>
+
+          {/* Warranty Certificate Table or Empty State */}
+          {warrantyEntries.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <Table
+                columns={warrantyColumns}
+                dataSource={warrantyEntries.map((pc) => ({
+                  ...pc,
+                  key: pc.id,
+                }))}
+                pagination={false}
+                bordered
+                size="small"
+                scroll={{ x: 1100 }}
+                tableLayout="fixed"
+              />
+            </div>
+          ) : (
+            <Empty
+              description={
+                commissioningForWarranty.length === 0
+                  ? "No commissioning entries with 'Done' status available for warranty"
+                  : "No warranty details available"
+              }
+            />
+          )}
+        </Panel>
+      </Collapse>
+
+      {/* Dispatch Form Modal */}
+      <DispatchFormModal
+        visible={isDispatchModalVisible}
+        onClose={handleCloseModal}
+        poId={selectedPO.id}
+        poItems={selectedPO.poItems}
+        editData={editingDispatch}
+      />
+
+      {/* Dispatch Document Form Modal */}
+      <DispatchDocumentFormModal
+        visible={isDocumentModalVisible}
+        onClose={handleCloseDocumentModal}
+        dispatches={currentPODispatches}
+        editData={editingDocument}
+      />
+
+      {/* Delivery Confirmation Form Modal */}
+      <DeliveryConfirmationFormModal
+        visible={isDeliveryModalVisible}
+        onClose={handleCloseDeliveryModal}
+        dispatches={dispatchesForDeliveryConfirmation}
+        editData={editingDelivery}
+      />
+
+      {/* Pre-Commissioning Form Modal */}
+      <PreCommissioningFormModal
+        visible={isPreCommissioningModalVisible}
+        onClose={handleClosePreCommissioningModal}
+        poId={selectedPO.id}
+        dispatches={dispatchesForPreCommissioning}
+        editData={editingPreCommissioning}
+      />
+
+      {/* Commissioning Form Modal */}
+      <CommissioningFormModal
+        visible={isCommissioningModalVisible}
+        onClose={handleCloseCommissioningModal}
+        poId={selectedPO.id}
+        editData={editingCommissioning}
+      />
+
+      {/* Warranty Certificate Form Modal */}
+      <WarrantyCertificateFormModal
+        visible={isWarrantyModalVisible}
+        onClose={handleCloseWarrantyModal}
+        poId={selectedPO.id}
+        editData={editingWarranty}
+      />
+
+      {/* Unified Dispatch Details View Modal */}
+      <DispatchDetailsModal
+        visible={isDispatchDetailsModalVisible}
+        onClose={handleCloseDispatchDetailsModal}
+        dispatch={viewingDispatchDetails}
+        initialTab={dispatchDetailsTab}
+      />
+
+      {/* Unified Service Details View Modal */}
+      <ServiceDetailsModal
+        visible={isServiceDetailsModalVisible}
+        onClose={handleCloseServiceDetailsModal}
+        preCommissioning={viewingServiceDetails}
+        initialTab={serviceDetailsTab}
+      />
+    </div>
+  );
+};
+
+export default PODetails;
