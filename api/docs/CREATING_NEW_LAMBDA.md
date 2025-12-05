@@ -1,52 +1,309 @@
-# Creating a New Lambda
+# Creating a New Lambda - Complete Guide
 
-This guide explains how to create a new Lambda function in the Oriana Order Tracking API.
+This comprehensive guide explains how to create a new Lambda function and API endpoints in the Oriana Order Tracking API. It is designed for new team members and beginners.
 
-## Overview
+---
 
-The API uses a streamlined Lambda creation system that automates container setup and handler generation. You only need to create the business logic files - the framework handles the rest.
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Key Concepts](#key-concepts)
+3. [Architecture Overview](#architecture-overview)
+4. [Prerequisites](#prerequisites)
+5. [Step-by-Step Guide](#step-by-step-guide)
+6. [File Structure Summary](#file-structure-summary)
+7. [Quick Checklist](#quick-checklist)
+8. [Testing Your Lambda](#testing-your-lambda)
+9. [Local Development](#local-development)
+10. [Available Decorators](#available-decorators)
+11. [Common Patterns](#common-patterns)
+12. [Troubleshooting](#troubleshooting)
+13. [FAQ](#faq)
+
+---
+
+## Introduction
+
+### What is this project?
+
+The Oriana Order Tracking API is a serverless backend built on AWS Lambda. Each Lambda function handles a specific domain (e.g., Purchase Orders, Dispatches, Inventory) and exposes REST API endpoints.
+
+### What will you learn?
+
+By following this guide, you will learn how to:
+- Create a complete CRUD (Create, Read, Update, Delete) API
+- Work with the database using Prisma ORM
+- Use dependency injection with Inversify
+- Follow the Controller-Service-Repository pattern
+
+---
+
+## Key Concepts
+
+Before you start, understand these key terms:
+
+### Lambda Function
+A serverless function that runs in AWS. It starts when an API request comes in and stops after responding. You don't manage servers - AWS handles everything.
+
+### Controller
+Handles incoming HTTP requests. It:
+- Receives the request (GET, POST, PUT, DELETE)
+- Extracts parameters from URL, query string, or body
+- Calls the appropriate service method
+- Returns the response
+
+### Service
+Contains business logic. It:
+- Validates data
+- Orchestrates operations
+- Transforms data between formats
+- Calls repository methods
+
+### Repository
+Handles database operations. It:
+- Creates, reads, updates, deletes records
+- Builds database queries
+- Returns raw database results
+
+### Schema
+TypeScript interfaces that define the shape of:
+- **Request schemas**: What data the API expects from clients
+- **Response schemas**: What data the API returns to clients
+
+### Prisma
+An ORM (Object-Relational Mapping) tool that:
+- Defines database tables in a schema file
+- Generates TypeScript types automatically
+- Provides type-safe database queries
+
+### Dependency Injection (DI)
+A pattern where dependencies (like services, repositories) are "injected" into classes rather than created inside them. This makes code testable and loosely coupled.
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              API Gateway                                 │
+│                    (Routes HTTP requests to Lambda)                      │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           Lambda Function                                │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                         Controller                               │   │
+│  │   • Receives HTTP request                                        │   │
+│  │   • Extracts @Body, @Param, @Query                              │   │
+│  │   • Returns HTTP response                                        │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                    │                                     │
+│                                    ▼                                     │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                          Service                                 │   │
+│  │   • Business logic                                               │   │
+│  │   • Data validation                                              │   │
+│  │   • Response transformation                                      │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                    │                                     │
+│                                    ▼                                     │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                         Repository                               │   │
+│  │   • Database queries (Prisma)                                    │   │
+│  │   • CRUD operations                                              │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         PostgreSQL Database                              │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Request Flow Example
+
+```
+1. Client sends: POST /api/dispatch { "poId": "123", "carrier": "FedEx" }
+                           │
+                           ▼
+2. API Gateway routes to dispatch Lambda
+                           │
+                           ▼
+3. DispatchController.create() receives request
+   - @Body() extracts the JSON body
+                           │
+                           ▼
+4. DispatchService.createDispatch() is called
+   - Validates data
+   - Prepares data for database
+                           │
+                           ▼
+5. DispatchRepository.create() saves to database
+   - Uses Prisma to insert record
+                           │
+                           ▼
+6. Response flows back up through Service → Controller
+                           │
+                           ▼
+7. Client receives: { "id": "abc", "poId": "123", "carrier": "FedEx", ... }
+```
+
+---
 
 ## Prerequisites
 
-Before creating a new Lambda, ensure you have:
+### 1. Install Required Software
 
-- Node.js 22.x installed
-- Dependencies installed (`npm install` in the api folder)
-- Shared layer built (`npm run build:layer`)
-- Prisma client generated (`npm run db:generate`)
+| Software | Version | Download Link |
+|----------|---------|---------------|
+| Node.js | 22.x or later | [nodejs.org](https://nodejs.org/) |
+| PostgreSQL | 15+ | [postgresql.org](https://www.postgresql.org/download/) or use Docker |
+| Git | Latest | [git-scm.com](https://git-scm.com/) |
+| VS Code | Latest | [code.visualstudio.com](https://code.visualstudio.com/) |
+
+### 2. Recommended VS Code Extensions
+
+- **Prisma** - Syntax highlighting for .prisma files
+- **ESLint** - JavaScript/TypeScript linting
+- **Prettier** - Code formatting
+- **REST Client** or **Thunder Client** - Test API endpoints
+
+### 3. Project Setup
+
+```bash
+# Clone the repository (if not already done)
+git clone <repository-url>
+cd oriana-order-tracking
+
+# Install root dependencies
+npm install
+
+# Install API dependencies
+cd api
+npm install
+
+# Build the shared layer
+npm run build:layer
+
+# Generate Prisma client
+npm run db:generate
+
+# Build the API
+npm run build
+```
+
+### 4. Database Setup
+
+For local development, set up a PostgreSQL database:
+
+```bash
+# Using Docker (recommended)
+docker run --name oriana-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=oriana -p 5432:5432 -d postgres:15
+
+# Or install PostgreSQL locally and create database:
+# CREATE DATABASE oriana;
+```
+
+Create a `.env` file in the `api` folder:
+
+```env
+IS_LOCAL=true
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=oriana
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+```
+
+Run migrations to create tables:
+
+```bash
+npm run db:migrate
+```
+
+---
 
 ## Step-by-Step Guide
 
-### Step 1: Create Schema Files
+Let's create a **Dispatch** Lambda that manages shipment dispatches for purchase orders.
 
-Create request/response schemas in `src/schemas/`:
+### Step 1: Plan Your API
+
+Before writing code, plan your endpoints:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/dispatch` | Create a new dispatch |
+| GET | `/api/dispatch` | List all dispatches (with pagination) |
+| GET | `/api/dispatch/{id}` | Get dispatch by ID |
+| PUT | `/api/dispatch/{id}` | Update a dispatch |
+| DELETE | `/api/dispatch/{id}` | Delete a dispatch |
+
+### Step 2: Create Schema Files
+
+Schemas define the data structure for requests and responses.
+
+#### 2.1 Create Request Schema
+
+Create the file `src/schemas/request/DispatchRequest.ts`:
 
 ```typescript
-// src/schemas/request/DispatchRequest.ts
+/**
+ * Request schema for creating a new dispatch
+ * All required fields must be provided by the client
+ */
 export interface CreateDispatchRequest {
+  /** ID of the purchase order this dispatch belongs to */
   poId: string;
+  
+  /** Date of dispatch in YYYY-MM-DD format */
   dispatchDate: string;
+  
+  /** Carrier/shipping company name */
   carrier: string;
+  
+  /** Optional tracking number */
   trackingNumber?: string;
 }
 
+/**
+ * Request schema for updating a dispatch
+ * All fields are optional - only provided fields will be updated
+ */
 export interface UpdateDispatchRequest {
   dispatchDate?: string;
   carrier?: string;
   trackingNumber?: string;
-  status?: string;
+  status?: 'pending' | 'shipped' | 'delivered' | 'cancelled';
 }
 
+/**
+ * Request schema for listing dispatches with filters
+ */
 export interface ListDispatchRequest {
+  /** Page number (starts from 1) */
   page?: number;
+  
+  /** Number of items per page */
   limit?: number;
+  
+  /** Filter by purchase order ID */
   poId?: string;
+  
+  /** Filter by status */
   status?: string;
 }
 ```
 
+#### 2.2 Create Response Schema
+
+Create the file `src/schemas/response/DispatchResponse.ts`:
+
 ```typescript
-// src/schemas/response/DispatchResponse.ts
+/**
+ * Response schema for a single dispatch
+ */
 export interface DispatchResponse {
   id: string;
   poId: string;
@@ -58,6 +315,9 @@ export interface DispatchResponse {
   updatedAt: string;
 }
 
+/**
+ * Response schema for paginated dispatch list
+ */
 export interface DispatchListResponse {
   items: DispatchResponse[];
   pagination: {
@@ -69,20 +329,29 @@ export interface DispatchListResponse {
 }
 ```
 
-Update `src/schemas/index.ts`:
+#### 2.3 Export Schemas
+
+Update `src/schemas/index.ts` to export your new schemas:
 
 ```typescript
+// Request schemas
 export * from './request/PORequest';
-export * from './request/DispatchRequest';  // Add this
+export * from './request/DispatchRequest';  // ← Add this line
+
+// Response schemas
 export * from './response/POResponse';
-export * from './response/DispatchResponse';  // Add this
+export * from './response/DispatchResponse';  // ← Add this line
 ```
 
-### Step 2: Add Prisma Model (if new table needed)
+### Step 3: Add Prisma Model (Database Table)
 
-If your Lambda needs a new database table, add the model to `layers/shared/nodejs/prisma/schema.prisma`:
+If your Lambda needs a new database table, add it to the Prisma schema.
+
+Edit `layers/shared/nodejs/prisma/schema.prisma`:
 
 ```prisma
+// Add this model after the existing models
+
 model Dispatch {
   id              String        @id @default(uuid())
   purchaseOrderId String        @map("purchase_order_id")
@@ -100,23 +369,41 @@ model Dispatch {
 }
 ```
 
-Then run:
+> **Important:** Also add the relation to the PurchaseOrder model:
+> ```prisma
+> model PurchaseOrder {
+>   // ... existing fields ...
+>   dispatches        Dispatch[]  // ← Add this line
+> }
+> ```
+
+Run these commands to apply changes:
+
 ```bash
-npm run db:migrate    # Creates migration and updates database
-npm run db:generate   # Regenerates Prisma client with new types
+# Create migration and update database
+npm run db:migrate
+# When prompted, enter a name like: add-dispatch-table
+
+# Regenerate Prisma client with new types
+npm run db:generate
 ```
 
-### Step 3: Create Repository
+### Step 4: Create Repository
 
-Create the data access layer in `src/repositories/`:
+The repository handles all database operations.
+
+Create `src/repositories/DispatchRepository.ts`:
 
 ```typescript
-// src/repositories/DispatchRepository.ts
 import { injectable, inject } from 'inversify';
 import { PrismaClient, Dispatch, Prisma } from '@prisma/client';
 import { TYPES } from '../types/types';
 import { CreateDispatchRequest, UpdateDispatchRequest, ListDispatchRequest } from '../schemas';
 
+/**
+ * Interface defining repository methods
+ * This allows for easy mocking in tests
+ */
 export interface IDispatchRepository {
   create(data: CreateDispatchRequest): Promise<Dispatch>;
   findById(id: string): Promise<Dispatch | null>;
@@ -125,34 +412,57 @@ export interface IDispatchRepository {
   delete(id: string): Promise<boolean>;
 }
 
+/**
+ * Repository for Dispatch database operations
+ * 
+ * @injectable() - Marks this class for dependency injection
+ */
 @injectable()
 export class DispatchRepository implements IDispatchRepository {
+  /**
+   * Constructor with dependency injection
+   * @inject(TYPES.PrismaClient) - Injects the Prisma client
+   */
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
+  /**
+   * Create a new dispatch record
+   */
   async create(data: CreateDispatchRequest): Promise<Dispatch> {
     return this.prisma.dispatch.create({
       data: {
         purchaseOrderId: data.poId,
         dispatchDate: new Date(data.dispatchDate),
         carrier: data.carrier,
-        trackingNumber: data.trackingNumber,
+        trackingNumber: data.trackingNumber || null,
         status: 'pending',
       },
     });
   }
 
+  /**
+   * Find a dispatch by its ID
+   * Returns null if not found
+   */
   async findById(id: string): Promise<Dispatch | null> {
-    return this.prisma.dispatch.findUnique({ where: { id } });
+    return this.prisma.dispatch.findUnique({
+      where: { id },
+    });
   }
 
+  /**
+   * Find all dispatches with pagination and filters
+   */
   async findAll(params: ListDispatchRequest): Promise<{ rows: Dispatch[]; count: number }> {
     const { page = 1, limit = 10, poId, status } = params;
     const skip = (page - 1) * limit;
-    
+
+    // Build dynamic where clause based on filters
     const where: Prisma.DispatchWhereInput = {};
     if (poId) where.purchaseOrderId = poId;
     if (status) where.status = status;
 
+    // Execute both queries in a transaction for consistency
     const [rows, count] = await this.prisma.$transaction([
       this.prisma.dispatch.findMany({
         where,
@@ -166,10 +476,16 @@ export class DispatchRepository implements IDispatchRepository {
     return { rows, count };
   }
 
+  /**
+   * Update a dispatch record
+   * Returns null if dispatch not found
+   */
   async update(id: string, data: UpdateDispatchRequest): Promise<Dispatch | null> {
+    // Check if exists first
     const existing = await this.prisma.dispatch.findUnique({ where: { id } });
     if (!existing) return null;
-    
+
+    // Build update object with only provided fields
     return this.prisma.dispatch.update({
       where: { id },
       data: {
@@ -181,28 +497,43 @@ export class DispatchRepository implements IDispatchRepository {
     });
   }
 
+  /**
+   * Delete a dispatch record
+   * Returns true if deleted, false if not found
+   */
   async delete(id: string): Promise<boolean> {
     try {
       await this.prisma.dispatch.delete({ where: { id } });
       return true;
     } catch {
+      // Record not found or other error
       return false;
     }
   }
 }
 ```
 
-### Step 4: Create Service
+### Step 5: Create Service
 
-Create business logic layer in `src/services/`:
+The service contains business logic and transforms data.
+
+Create `src/services/DispatchService.ts`:
 
 ```typescript
-// src/services/DispatchService.ts
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
 import { IDispatchRepository } from '../repositories/DispatchRepository';
-import { CreateDispatchRequest, UpdateDispatchRequest, ListDispatchRequest, DispatchResponse, DispatchListResponse } from '../schemas';
+import {
+  CreateDispatchRequest,
+  UpdateDispatchRequest,
+  ListDispatchRequest,
+  DispatchResponse,
+  DispatchListResponse,
+} from '../schemas';
 
+/**
+ * Interface defining service methods
+ */
 export interface IDispatchService {
   createDispatch(data: CreateDispatchRequest): Promise<DispatchResponse>;
   getDispatchById(id: string): Promise<DispatchResponse | null>;
@@ -211,20 +542,34 @@ export interface IDispatchService {
   deleteDispatch(id: string): Promise<boolean>;
 }
 
+/**
+ * Service for Dispatch business logic
+ */
 @injectable()
 export class DispatchService implements IDispatchService {
-  constructor(@inject(TYPES.DispatchRepository) private repository: IDispatchRepository) {}
+  constructor(
+    @inject(TYPES.DispatchRepository) private repository: IDispatchRepository
+  ) {}
 
+  /**
+   * Create a new dispatch
+   */
   async createDispatch(data: CreateDispatchRequest): Promise<DispatchResponse> {
     const dispatch = await this.repository.create(data);
     return this.mapToResponse(dispatch);
   }
 
+  /**
+   * Get a dispatch by ID
+   */
   async getDispatchById(id: string): Promise<DispatchResponse | null> {
     const dispatch = await this.repository.findById(id);
     return dispatch ? this.mapToResponse(dispatch) : null;
   }
 
+  /**
+   * Get all dispatches with pagination
+   */
   async getAllDispatches(params: ListDispatchRequest): Promise<DispatchListResponse> {
     const { page = 1, limit = 10 } = params;
     const { rows, count } = await this.repository.findAll(params);
@@ -240,15 +585,28 @@ export class DispatchService implements IDispatchService {
     };
   }
 
-  async updateDispatch(id: string, data: UpdateDispatchRequest): Promise<DispatchResponse | null> {
+  /**
+   * Update a dispatch
+   */
+  async updateDispatch(
+    id: string,
+    data: UpdateDispatchRequest
+  ): Promise<DispatchResponse | null> {
     const dispatch = await this.repository.update(id, data);
     return dispatch ? this.mapToResponse(dispatch) : null;
   }
 
+  /**
+   * Delete a dispatch
+   */
   async deleteDispatch(id: string): Promise<boolean> {
     return this.repository.delete(id);
   }
 
+  /**
+   * Map database model to response schema
+   * This separates internal data structure from API response
+   */
   private mapToResponse(dispatch: any): DispatchResponse {
     return {
       id: dispatch.id,
@@ -264,12 +622,13 @@ export class DispatchService implements IDispatchService {
 }
 ```
 
-### Step 5: Create Controller
+### Step 6: Create Controller
 
-Create the API endpoint handler in `src/controllers/`:
+The controller handles HTTP requests and responses.
+
+Create `src/controllers/DispatchController.ts`:
 
 ```typescript
-// src/controllers/DispatchController.ts
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { APIGatewayProxyResult } from 'aws-lambda';
@@ -284,22 +643,56 @@ import {
   Body,
   createSuccessResponse,
   NotFoundError,
+  ValidationError,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IDispatchService } from '../services/DispatchService';
 import { CreateDispatchRequest, UpdateDispatchRequest } from '../schemas';
 
+/**
+ * Controller for Dispatch API endpoints
+ * 
+ * @Controller - Decorator that registers this as a controller
+ *   - path: Base URL path for all endpoints in this controller
+ *   - lambdaName: Name used for Lambda function and routing
+ */
 @Controller({ path: '/api/dispatch', lambdaName: 'dispatch' })
 @injectable()
 export class DispatchController {
-  constructor(@inject(TYPES.DispatchService) private dispatchService: IDispatchService) {}
+  constructor(
+    @inject(TYPES.DispatchService) private dispatchService: IDispatchService
+  ) {}
 
+  /**
+   * POST /api/dispatch
+   * Create a new dispatch
+   * 
+   * @Body() - Extracts and parses JSON request body
+   */
   @Post('/')
   async create(@Body() data: CreateDispatchRequest): Promise<APIGatewayProxyResult> {
+    // Validate required fields
+    if (!data.poId) {
+      throw new ValidationError('poId is required');
+    }
+    if (!data.dispatchDate) {
+      throw new ValidationError('dispatchDate is required');
+    }
+    if (!data.carrier) {
+      throw new ValidationError('carrier is required');
+    }
+
     const dispatch = await this.dispatchService.createDispatch(data);
-    return createSuccessResponse(dispatch, 201);
+    return createSuccessResponse(dispatch, 201); // 201 = Created
   }
 
+  /**
+   * GET /api/dispatch
+   * List all dispatches with optional filters
+   * 
+   * @Query('name') - Extracts query parameter from URL
+   * Example: GET /api/dispatch?page=1&limit=10&status=pending
+   */
   @Get('/')
   async getAll(
     @Query('page') page?: string,
@@ -316,207 +709,515 @@ export class DispatchController {
     return createSuccessResponse(result.items, 200, result.pagination);
   }
 
+  /**
+   * GET /api/dispatch/{id}
+   * Get a specific dispatch by ID
+   * 
+   * @Param('id') - Extracts path parameter from URL
+   * Example: GET /api/dispatch/abc-123-def
+   */
   @Get('/{id}')
   async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     const dispatch = await this.dispatchService.getDispatchById(id);
+    
     if (!dispatch) {
       throw new NotFoundError(`Dispatch with ID ${id} not found`);
     }
+    
     return createSuccessResponse(dispatch);
   }
 
+  /**
+   * PUT /api/dispatch/{id}
+   * Update a dispatch
+   * 
+   * Combines @Param for ID and @Body for update data
+   */
   @Put('/{id}')
   async update(
     @Param('id') id: string,
     @Body() data: UpdateDispatchRequest
   ): Promise<APIGatewayProxyResult> {
     const dispatch = await this.dispatchService.updateDispatch(id, data);
+    
     if (!dispatch) {
       throw new NotFoundError(`Dispatch with ID ${id} not found`);
     }
+    
     return createSuccessResponse(dispatch);
   }
 
+  /**
+   * DELETE /api/dispatch/{id}
+   * Delete a dispatch
+   */
   @Delete('/{id}')
   async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     const deleted = await this.dispatchService.deleteDispatch(id);
+    
     if (!deleted) {
       throw new NotFoundError(`Dispatch with ID ${id} not found`);
     }
+    
     return createSuccessResponse({ id, deleted: true });
   }
 }
 ```
 
-### Step 6: Update TYPES
+### Step 7: Register Types (Dependency Injection Symbols)
 
-Add symbols for the new services in `src/types/types.ts`:
+Add symbols for your new services in `src/types/types.ts`:
 
 ```typescript
 export const TYPES = {
-  // Existing
+  // Existing symbols
   POController: Symbol.for('POController'),
   POService: Symbol.for('POService'),
   PORepository: Symbol.for('PORepository'),
   PrismaClient: Symbol.for('PrismaClient'),
 
-  // New - Add these
+  // ========================================
+  // Add your new symbols below this line
+  // ========================================
+  
+  // Dispatch
   DispatchController: Symbol.for('DispatchController'),
   DispatchService: Symbol.for('DispatchService'),
   DispatchRepository: Symbol.for('DispatchRepository'),
 };
 ```
 
-### Step 7: Export Controller
+> **Why symbols?** Symbols are unique identifiers used by Inversify (dependency injection library) to wire up dependencies. Each class needs a unique symbol.
+
+### Step 8: Export Controller
 
 Add the controller export in `src/controllers/index.ts`:
 
 ```typescript
+// Purchase Order Controller
 export * from './POController';
-export * from './DispatchController';  // Add this
+
+// Add new controller exports below:
+export * from './DispatchController';  // ← Add this line
 ```
 
-### Step 8: Create Lambda Config
+> **Why export here?** The build system scans this file to discover all controllers and their routes.
 
-Create the Lambda configuration file in `src/lambdas/`:
+### Step 9: Create Lambda Configuration
+
+Create the Lambda entry point in `src/lambdas/dispatch.lambda.ts`:
 
 ```typescript
-// src/lambdas/dispatch.lambda.ts
+/**
+ * Dispatch Lambda Configuration
+ * 
+ * This file:
+ * 1. Imports all required classes
+ * 2. Registers them with the DI container
+ * 3. Creates and exports the Lambda handler
+ */
+
 import 'reflect-metadata';
 import { defineLambda, createLambdaHandler } from '@oriana/shared';
 import { TYPES } from '../types/types';
+
+// Import controller (triggers decorator registration)
 import { DispatchController } from '../controllers/DispatchController';
+
+// Import services and repositories
 import { DispatchService } from '../services/DispatchService';
 import { DispatchRepository } from '../repositories/DispatchRepository';
 
 // Define and register the lambda configuration
 defineLambda({
-  name: 'dispatch',
-  controller: DispatchController,
+  name: 'dispatch',                    // Lambda name (used in routing)
+  controller: DispatchController,       // The controller class
   bindings: [
+    // Register service with its symbol
     { symbol: TYPES.DispatchService, implementation: DispatchService },
+    // Register repository with its symbol
     { symbol: TYPES.DispatchRepository, implementation: DispatchRepository },
   ],
-  prismaSymbol: TYPES.PrismaClient,
+  prismaSymbol: TYPES.PrismaClient,    // Symbol for database client
 });
 
-// Export the Lambda handler
+// Export the Lambda handler function
+// This is what AWS Lambda will invoke
 export const handler = createLambdaHandler('dispatch');
 ```
 
-### Step 9: Build and Deploy
+### Step 10: Build and Test
 
 ```bash
-# Build the shared layer (if you made changes)
+# Build shared layer (only if you modified it)
 npm run build:layer
 
-# Build all lambdas (auto-discovers from src/lambdas/)
+# Build all Lambda functions
 npm run build
 
-# Generate the API manifest
+# Generate API manifest (registers routes with API Gateway)
 npm run build:manifest
 
-# Or build everything at once
+# Or do all at once
 npm run build:all
-
-# Deploy with CDK
-cd ../cdk
-npm run deploy:dev
 ```
+
+### Step 11: Deploy
+
+```bash
+# Navigate to CDK folder
+cd ../cdk
+
+# Deploy to development environment
+npm run deploy:dev
+
+# Or deploy to other environments
+npm run deploy:qa
+npm run deploy:prod
+```
+
+---
 
 ## File Structure Summary
 
-After creating a new Lambda, your file structure should look like:
+After creating a new Lambda, your project should look like this:
 
 ```
 api/
 ├── src/
 │   ├── controllers/
-│   │   ├── index.ts              # Export all controllers here
+│   │   ├── index.ts                    # ← Export all controllers
 │   │   ├── POController.ts
-│   │   └── DispatchController.ts # New
+│   │   └── DispatchController.ts       # ← NEW
+│   │
 │   ├── services/
 │   │   ├── POService.ts
-│   │   └── DispatchService.ts    # New
+│   │   └── DispatchService.ts          # ← NEW
+│   │
 │   ├── repositories/
 │   │   ├── PORepository.ts
-│   │   └── DispatchRepository.ts # New
+│   │   └── DispatchRepository.ts       # ← NEW
+│   │
 │   ├── schemas/
-│   │   ├── index.ts              # Export new schemas
+│   │   ├── index.ts                    # ← Export new schemas
 │   │   ├── request/
 │   │   │   ├── PORequest.ts
-│   │   │   └── DispatchRequest.ts  # New
+│   │   │   └── DispatchRequest.ts      # ← NEW
 │   │   └── response/
 │   │       ├── POResponse.ts
-│   │       └── DispatchResponse.ts # New
+│   │       └── DispatchResponse.ts     # ← NEW
+│   │
 │   ├── types/
-│   │   └── types.ts              # Add new TYPES symbols
+│   │   └── types.ts                    # ← Add new TYPES symbols
+│   │
 │   └── lambdas/
 │       ├── po.lambda.ts
-│       └── dispatch.lambda.ts    # New
+│       └── dispatch.lambda.ts          # ← NEW
+│
 ├── layers/
 │   └── shared/
 │       └── nodejs/
 │           └── prisma/
-│               └── schema.prisma # Add new models here
-└── app-manifest.json             # Auto-generated
+│               └── schema.prisma       # ← Add new model
+│
+└── app-manifest.json                   # ← Auto-generated
 ```
+
+---
 
 ## Quick Checklist
 
-- [ ] Create schema files (request/response)
-- [ ] Update `src/schemas/index.ts` exports
-- [ ] Add Prisma model to `layers/shared/nodejs/prisma/schema.prisma` (if new table)
-- [ ] Run `npm run db:migrate` and `npm run db:generate`
-- [ ] Create repository
-- [ ] Create service
-- [ ] Create controller with `@Controller` decorator
-- [ ] Add symbols to `src/types/types.ts`
-- [ ] Export controller from `src/controllers/index.ts`
-- [ ] Create lambda config in `src/lambdas/`
-- [ ] Run `npm run build:all`
-- [ ] Deploy with CDK
+Use this checklist when creating a new Lambda:
+
+### Files to Create
+
+- [ ] `src/schemas/request/<Name>Request.ts` - Request interfaces
+- [ ] `src/schemas/response/<Name>Response.ts` - Response interfaces
+- [ ] `src/repositories/<Name>Repository.ts` - Database operations
+- [ ] `src/services/<Name>Service.ts` - Business logic
+- [ ] `src/controllers/<Name>Controller.ts` - API endpoints
+- [ ] `src/lambdas/<name>.lambda.ts` - Lambda configuration
+
+### Files to Update
+
+- [ ] `src/schemas/index.ts` - Export new schemas
+- [ ] `src/types/types.ts` - Add new TYPES symbols
+- [ ] `src/controllers/index.ts` - Export new controller
+- [ ] `layers/shared/nodejs/prisma/schema.prisma` - Add new model (if needed)
+
+### Commands to Run
+
+- [ ] `npm run db:migrate` - Create database migration (if new model)
+- [ ] `npm run db:generate` - Regenerate Prisma client
+- [ ] `npm run build:all` - Build everything
+- [ ] `cd ../cdk && npm run deploy:dev` - Deploy to AWS
+
+---
+
+## Testing Your Lambda
+
+### Using cURL
+
+```bash
+# Create a dispatch
+curl -X POST http://localhost:3000/api/dispatch \
+  -H "Content-Type: application/json" \
+  -d '{"poId": "your-po-id", "dispatchDate": "2024-12-05", "carrier": "FedEx"}'
+
+# List dispatches
+curl http://localhost:3000/api/dispatch
+
+# Get by ID
+curl http://localhost:3000/api/dispatch/dispatch-id-here
+
+# Update
+curl -X PUT http://localhost:3000/api/dispatch/dispatch-id-here \
+  -H "Content-Type: application/json" \
+  -d '{"status": "shipped"}'
+
+# Delete
+curl -X DELETE http://localhost:3000/api/dispatch/dispatch-id-here
+```
+
+### Using VS Code REST Client
+
+Create a file `api/test.http`:
+
+```http
+### Create Dispatch
+POST http://localhost:3000/api/dispatch
+Content-Type: application/json
+
+{
+  "poId": "your-po-id",
+  "dispatchDate": "2024-12-05",
+  "carrier": "FedEx"
+}
+
+### List Dispatches
+GET http://localhost:3000/api/dispatch?page=1&limit=10
+
+### Get Dispatch by ID
+GET http://localhost:3000/api/dispatch/{{dispatchId}}
+
+### Update Dispatch
+PUT http://localhost:3000/api/dispatch/{{dispatchId}}
+Content-Type: application/json
+
+{
+  "status": "shipped",
+  "trackingNumber": "1234567890"
+}
+
+### Delete Dispatch
+DELETE http://localhost:3000/api/dispatch/{{dispatchId}}
+```
+
+---
+
+## Local Development
+
+### Start Local API with SAM CLI
+
+```bash
+# From api folder
+cd ../cdk
+
+# Build and start local API
+npm run local:start
+
+# API will be available at http://localhost:3000
+```
+
+### View Database with Prisma Studio
+
+```bash
+# From api folder
+npm run db:studio
+
+# Opens browser at http://localhost:5555
+```
+
+### Watch Mode for Development
+
+```bash
+# Automatically rebuilds on file changes
+npm run watch
+```
+
+---
 
 ## Available Decorators
 
-| Decorator | Description |
-|-----------|-------------|
-| `@Controller({ path, lambdaName })` | Marks class as controller |
-| `@Get(path)` | HTTP GET method |
-| `@Post(path)` | HTTP POST method |
-| `@Put(path)` | HTTP PUT method |
-| `@Delete(path)` | HTTP DELETE method |
-| `@Patch(path)` | HTTP PATCH method |
-| `@Param('name')` | Extract path parameter |
-| `@Query('name')` | Extract query parameter |
-| `@Body()` | Parse JSON body |
-| `@Event()` | Get raw APIGatewayProxyEvent |
-| `@Headers()` | Get all headers |
-| `@Headers('name')` | Get specific header |
+### Controller Decorator
+
+| Decorator | Description | Example |
+|-----------|-------------|---------|
+| `@Controller({ path, lambdaName })` | Marks class as controller | `@Controller({ path: '/api/dispatch', lambdaName: 'dispatch' })` |
+
+### HTTP Method Decorators
+
+| Decorator | Description | Example |
+|-----------|-------------|---------|
+| `@Get(path)` | HTTP GET | `@Get('/')` or `@Get('/{id}')` |
+| `@Post(path)` | HTTP POST | `@Post('/')` |
+| `@Put(path)` | HTTP PUT | `@Put('/{id}')` |
+| `@Delete(path)` | HTTP DELETE | `@Delete('/{id}')` |
+| `@Patch(path)` | HTTP PATCH | `@Patch('/{id}')` |
+
+### Parameter Decorators
+
+| Decorator | Description | Example |
+|-----------|-------------|---------|
+| `@Param('name')` | URL path parameter | `@Param('id') id: string` |
+| `@Query('name')` | Query string parameter | `@Query('page') page: string` |
+| `@Body()` | JSON request body | `@Body() data: CreateRequest` |
+| `@Headers()` | All headers | `@Headers() headers: Record<string, string>` |
+| `@Headers('name')` | Specific header | `@Headers('Authorization') auth: string` |
+| `@Event()` | Raw Lambda event | `@Event() event: APIGatewayProxyEvent` |
+
+---
+
+## Common Patterns
+
+### Pagination Response
+
+```typescript
+return createSuccessResponse(items, 200, {
+  page: 1,
+  limit: 10,
+  total: 100,
+  totalPages: 10,
+});
+```
+
+### Error Handling
+
+```typescript
+// Not found (404)
+throw new NotFoundError('Resource not found');
+
+// Validation error (400)
+throw new ValidationError('Invalid input');
+
+// Custom error
+throw new AppError('Something went wrong', 500);
+```
+
+### Optional Query Parameters
+
+```typescript
+@Get('/')
+async list(
+  @Query('page') page?: string,    // Optional with ?
+  @Query('filter') filter?: string
+) {
+  const pageNum = page ? parseInt(page, 10) : 1;  // Default to 1
+  // ...
+}
+```
+
+### Date Handling
+
+```typescript
+// Prisma returns Date objects
+// Convert to ISO string for response
+const dateString = prismaDate.toISOString();
+
+// For date-only fields
+const dateOnly = prismaDate.toISOString().split('T')[0];  // "2024-12-05"
+
+// Parsing string to Date for Prisma
+const date = new Date(dateString);  // "2024-12-05" → Date object
+```
+
+---
 
 ## Troubleshooting
 
-### Lambda not appearing in manifest
+### "Lambda not appearing in manifest"
 
-1. Ensure the controller has `@Controller` decorator with `lambdaName`
+1. Check that `@Controller` decorator has `lambdaName` property
 2. Ensure controller is exported from `src/controllers/index.ts`
 3. Run `npm run build:manifest`
 
-### Build fails with "Cannot find module"
+### "Cannot find module '@prisma/client'"
 
-1. Ensure all imports are correct
-2. Run `npm run build:layer` first
-3. Run `npm run db:generate` to generate Prisma client
-4. Check `tsconfig.json` paths
+```bash
+npm run db:generate
+```
 
-### DI container errors
+### "Cannot find module '@oriana/shared'"
 
-1. Ensure all services/repositories have `@injectable()` decorator
-2. Ensure symbols are added to `types.ts`
-3. Ensure bindings are listed in the lambda config
+```bash
+npm run build:layer
+```
 
-### Prisma errors
+### "Symbol not found in container"
 
-1. Ensure DATABASE_URL is set in environment
-2. Run `npm run db:generate` after schema changes
-3. Run `npm run db:migrate` to apply schema changes to database
+1. Check that symbol is added to `src/types/types.ts`
+2. Check that binding is added to lambda config
+3. Ensure class has `@injectable()` decorator
+
+### "Column does not exist"
+
+```bash
+npm run db:migrate  # Apply migrations
+npm run db:generate # Regenerate client
+```
+
+### "Connection refused to database"
+
+1. Check database is running
+2. Verify `.env` file has correct credentials
+3. Check `IS_LOCAL=true` is set
+
+---
+
+## FAQ
+
+### Q: Can I add multiple controllers to one Lambda?
+
+No, each Lambda should have exactly one controller. This keeps functions focused and allows independent scaling.
+
+### Q: Do I need a database table for every Lambda?
+
+No, if your Lambda only reads from existing tables (e.g., a reporting Lambda), you don't need a new table.
+
+### Q: How do I add authentication?
+
+Add the `@Headers('Authorization')` decorator to extract the token, then validate it in your controller or a middleware.
+
+### Q: Where do I put shared utilities?
+
+Put them in `layers/shared/nodejs/src/utils/` and export from `index.ts`.
+
+### Q: How do I call another Lambda?
+
+Use AWS SDK's Lambda client, or call it via HTTP through API Gateway.
+
+### Q: Can I use transactions across multiple tables?
+
+Yes, use Prisma's `$transaction`:
+
+```typescript
+await this.prisma.$transaction([
+  this.prisma.dispatch.create({ data: dispatch }),
+  this.prisma.inventory.update({ where: { id }, data: stock }),
+]);
+```
+
+---
+
+## Next Steps
+
+After creating your Lambda:
+
+1. **Write Tests** - Add unit tests in `__tests__` folder
+2. **Add Logging** - Use `logger` from shared layer for debugging
+3. **Monitor** - Check CloudWatch logs after deployment
+4. **Document** - Update API documentation if public-facing
+
+---
+
+*Last updated: 5 December 2025*

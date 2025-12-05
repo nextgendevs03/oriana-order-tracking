@@ -17,7 +17,7 @@ const buildOptions = {
   outdir: 'dist',
   format: 'cjs',
   sourcemap: false, // Disable source maps for smaller bundle
-  minify: false,
+  minify: true, // Minify for smaller bundle and faster parsing
   tsconfigRaw: JSON.stringify({
     compilerOptions: {
       experimentalDecorators: true,

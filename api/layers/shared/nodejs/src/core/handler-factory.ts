@@ -147,6 +147,19 @@ export function createLambdaHandler(lambdaName: string): LambdaHandler {
   return async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
     context.callbackWaitsForEmptyEventLoop = false;
 
+    // Handle warmup events (from CloudWatch Events, serverless-plugin-warmup, or custom warmup)
+    // This keeps Lambda warm without executing business logic or DB connections
+    const eventSource = (event as unknown as { source?: string }).source;
+    if (
+      eventSource === 'serverless-plugin-warmup' ||
+      eventSource === 'aws.events' ||
+      event.headers?.['X-Warmup'] === 'true' ||
+      event.headers?.['x-warmup'] === 'true'
+    ) {
+      logger.debug('Warmup event received, skipping initialization');
+      return { statusCode: 200, headers: {}, body: 'OK' };
+    }
+
     // Handle CORS preflight
     if (event.httpMethod === 'OPTIONS') {
       return handleOptions();

@@ -93,6 +93,8 @@ const buildOptions = {
     '@aws-sdk/*',
     // Layer dependencies - will be loaded from /opt/nodejs
     '/opt/nodejs/*',
+    // Prisma is bundled in the Lambda layer
+    '@prisma/client',
   ],
   plugins: [sharedLayerPlugin],
   // Optimize for Lambda

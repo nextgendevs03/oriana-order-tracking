@@ -27,18 +27,6 @@ export const getAppConfig = (): AppConfig => {
 };
 
 export const getLocalDatabaseConfig = (): DatabaseConfig => {
-  // Debug: Log environment variables being used
-  console.log('[DEBUG] DB Environment Variables:', {
-    DB_HOST: process.env.DB_HOST || '(not set, using localhost)',
-    DB_PORT: process.env.DB_PORT || '(not set, using 5432)',
-    DB_NAME: process.env.DB_NAME || '(not set, using oriana)',
-    DB_USERNAME: process.env.DB_USERNAME || '(not set, using postgres)',
-    DB_PASSWORD: process.env.DB_PASSWORD ? '***SET***' : '(not set, using default)',
-    DB_SSL: process.env.DB_SSL || '(not set)',
-    IS_LOCAL: process.env.IS_LOCAL,
-    AWS_SAM_LOCAL: process.env.AWS_SAM_LOCAL,
-  });
-
   return {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),

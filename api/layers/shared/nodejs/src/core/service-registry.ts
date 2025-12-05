@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Container, interfaces } from 'inversify';
 import { PrismaClient } from '@prisma/client';
-import { getPrismaClient, isConnectionHealthy } from '../database';
+import { getPrismaClient } from '../database';
 import { logger } from '../utils/logger';
 
 /**
@@ -65,20 +65,13 @@ class LambdaRegistry {
 
   /**
    * Create or get cached DI container for a lambda
+   * Note: Prisma handles reconnection automatically, no need for health checks
    */
   async getContainer(lambdaName: string): Promise<Container> {
-    // Return cached container if healthy
+    // Return cached container (Prisma handles reconnection automatically)
     const cached = this.containers.get(lambdaName);
-    const cachedPrisma = this.prismaInstances.get(lambdaName);
-
-    if (cached && cachedPrisma) {
-      const healthy = await isConnectionHealthy();
-      if (healthy) {
-        return cached;
-      }
-      logger.warn(`Container for '${lambdaName}' unhealthy, recreating...`);
-      this.containers.delete(lambdaName);
-      this.prismaInstances.delete(lambdaName);
+    if (cached) {
+      return cached;
     }
 
     const config = this.configs.get(lambdaName);

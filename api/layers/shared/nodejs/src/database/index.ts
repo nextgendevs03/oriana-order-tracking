@@ -113,5 +113,6 @@ export const isConnectionHealthy = async (): Promise<boolean> => {
 };
 
 // Re-export PrismaClient and types
-export { PrismaClient };
-export type { Prisma } from '@prisma/client';
+export { PrismaClient, Prisma } from '@prisma/client';
+// Re-export all generated model types
+export type { PurchaseOrder, POItem } from '@prisma/client';

@@ -2,8 +2,14 @@
 export * from './config';
 
 // Database exports
-export { getPrismaClient, closeConnection, isConnectionHealthy, PrismaClient } from './database';
-export type { Prisma } from './database';
+export {
+  getPrismaClient,
+  closeConnection,
+  isConnectionHealthy,
+  PrismaClient,
+  Prisma,
+} from './database';
+export type { PurchaseOrder, POItem } from './database';
 
 // Utility exports
 export * from './utils/logger';
