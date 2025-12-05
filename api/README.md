@@ -1,11 +1,11 @@
 # Oriana Order Tracking - API
 
-Backend API for Oriana Order Tracking built with AWS Lambda, TypeScript, Inversify, and Sequelize.
+Backend API for Oriana Order Tracking built with AWS Lambda, TypeScript, Inversify, and Prisma.
 
 ## Performance Optimizations
 
 - **esbuild**: ~100x faster builds than tsc (~50ms vs 5s)
-- **Connection Pooling**: Optimized for Lambda (max 2 connections, 5s idle timeout)
+- **Connection Pooling**: Optimized for Lambda (reuses connections across warm invocations)
 - **Container Reuse**: Singleton pattern for DB connections across warm invocations
 - **Secrets Caching**: 5-minute cache reduces Secrets Manager calls
 - **ARM64**: Lambda uses ARM architecture for better price-performance
@@ -18,15 +18,24 @@ The API follows the **Controller-Service-Repository (CSR)** pattern with **Inver
 ```
 src/
 ├── controllers/       # Route controllers with @Controller, @Get, @Post decorators
-├── services/          # Business logic, transaction management
-├── repositories/      # Database operations
-├── models/            # Sequelize models
+│   └── index.ts       # Central export file for all controllers
+├── services/          # Business logic
+├── repositories/      # Database operations (using Prisma)
 ├── schemas/           # Request/Response TypeScript interfaces
-├── decorators/        # Custom routing decorators
-├── core/              # Router and parameter resolver
 ├── types/             # Inversify symbols
-├── container/         # DI container configurations
-└── handlers/          # Lambda entry points
+├── lambdas/           # Lambda configuration files (auto-discovered)
+│   └── *.lambda.ts    # One file per Lambda function
+└── ...
+
+layers/shared/nodejs/  # Shared Lambda layer
+├── prisma/
+│   └── schema.prisma  # Database schema (single source of truth)
+├── src/
+│   ├── core/          # Router, handler factory, service registry
+│   ├── decorators/    # @Controller, @Get, @Post, etc.
+│   ├── database/      # Prisma connection management
+│   └── middleware/    # Error handling, CORS
+└── ...
 ```
 
 ## Decorator-Based Routing
@@ -34,7 +43,7 @@ src/
 Routes are defined using decorators on controller methods:
 
 ```typescript
-@Controller('/api/po')
+@Controller({ path: '/api/po', lambdaName: 'po' })
 @injectable()
 export class POController {
   
@@ -65,7 +74,7 @@ export class POController {
 
 | Decorator | Description |
 |-----------|-------------|
-| `@Controller(path)` | Marks class as controller, sets base path |
+| `@Controller({ path, lambdaName })` | Marks class as controller, sets base path and lambda name |
 | `@Get(path)` | HTTP GET method |
 | `@Post(path)` | HTTP POST method |
 | `@Put(path)` | HTTP PUT method |
@@ -87,7 +96,7 @@ Routes are extracted at build time into `app-manifest.json`:
   "version": "1.0",
   "lambdas": {
     "po": {
-      "handler": "dist/handlers/po.handler.handler",
+      "handler": "dist/handlers/po.handler",
       "routes": [
         { "method": "POST", "path": "/api/po", "controller": "POController", "action": "create" },
         { "method": "GET", "path": "/api/po", "controller": "POController", "action": "getAll" }
@@ -117,7 +126,7 @@ CDK reads this manifest to automatically create API Gateway routes.
 # Install dependencies
 npm install
 
-# Build shared layer
+# Build shared layer (includes Prisma client generation)
 npm run build:layer
 
 # Build API
@@ -134,7 +143,7 @@ npm run build:all
 
 | Script | Description |
 |--------|-------------|
-| `npm run build` | Fast build with esbuild (~50ms) |
+| `npm run build` | Fast build with esbuild (auto-discovers lambdas) |
 | `npm run build:tsc` | TypeScript compilation (slower) |
 | `npm run build:manifest` | Generate app-manifest.json from decorators |
 | `npm run watch` | Watch mode with esbuild (hot reload) |
@@ -142,11 +151,31 @@ npm run build:all
 | `npm run build:all` | Build layer + API + manifest |
 | `npm run clean` | Remove dist folder and manifest |
 | `npm run rebuild` | Clean + build all |
-| `npm run migrate` | Run database migrations |
-| `npm run migrate:undo` | Undo last migration |
+| `npm run db:generate` | Generate Prisma client after schema changes |
+| `npm run db:migrate` | Create and apply database migrations |
+| `npm run db:migrate:prod` | Apply migrations in production |
+| `npm run db:push` | Push schema changes directly (dev only) |
+| `npm run db:studio` | Open Prisma Studio GUI |
 | `npm run lint` | Run ESLint |
 | `npm run test` | Run tests |
 | `npm run test:watch` | Run tests in watch mode |
+
+## Database Management
+
+The API uses **Prisma** as its ORM. The schema is defined in `layers/shared/nodejs/prisma/schema.prisma`.
+
+See **[docs/DATABASE.md](docs/DATABASE.md)** for detailed database management instructions.
+
+### Quick Commands
+
+```bash
+# After modifying schema.prisma
+npm run db:migrate      # Create and apply migration
+npm run db:generate     # Regenerate Prisma client
+
+# Browse database visually
+npm run db:studio
+```
 
 ## Adding New Routes
 
@@ -169,31 +198,43 @@ npm run build:manifest
 cd ../cdk && npm run synth:dev
 ```
 
-## Adding New Controllers
+## Creating New Lambda Functions
 
-1. Create controller in `src/controllers/`:
+For detailed instructions on creating a new Lambda function, see **[docs/CREATING_NEW_LAMBDA.md](docs/CREATING_NEW_LAMBDA.md)**.
+
+### Quick Summary
+
+Creating a new Lambda is streamlined - you only need to create the business logic files:
+
+1. **Create** schema, repository, service, and controller files
+2. **Update** `src/types/types.ts` with new symbols
+3. **Export** controller from `src/controllers/index.ts`
+4. **Create** lambda config in `src/lambdas/<name>.lambda.ts`
+5. **Run** `npm run build:all`
+
+The build system auto-discovers lambda configurations from `src/lambdas/*.lambda.ts` and generates the handlers automatically.
+
+### Lambda Configuration Example
 
 ```typescript
-@Controller({ path: '/api/dispatch', lambdaName: 'dispatch' })
-@injectable()
-export class DispatchController {
-  @Get('/')
-  async getAll(): Promise<DispatchListResponse> { }
-}
-```
+// src/lambdas/dispatch.lambda.ts
+import { defineLambda, createLambdaHandler } from '@oriana/shared';
+import { TYPES } from '../types/types';
+import { DispatchController } from '../controllers/DispatchController';
+import { DispatchService } from '../services/DispatchService';
+import { DispatchRepository } from '../repositories/DispatchRepository';
 
-2. Add import to `scripts/generate-manifest.ts`:
-```typescript
-import '../src/controllers/DispatchController';
-```
+defineLambda({
+  name: 'dispatch',
+  controller: DispatchController,
+  bindings: [
+    { symbol: TYPES.DispatchService, implementation: DispatchService },
+    { symbol: TYPES.DispatchRepository, implementation: DispatchRepository },
+  ],
+  prismaSymbol: TYPES.PrismaClient,
+});
 
-3. Create handler in `src/handlers/dispatch.handler.ts`
-
-4. Create container in `src/container/dispatch.container.ts`
-
-5. Rebuild:
-```bash
-npm run build:all
+export const handler = createLambdaHandler('dispatch');
 ```
 
 ## Extensibility
@@ -213,6 +254,14 @@ async cleanup() { }
 @WebSocket('$connect')
 async onConnect(@ConnectionId() connectionId: string) { }
 ```
+
+## Documentation
+
+- **[Creating New Lambda](docs/CREATING_NEW_LAMBDA.md)** - Step-by-step guide for adding new Lambda functions
+- **[Database Management](docs/DATABASE.md)** - Prisma schema, migrations, and queries
+- **[Local Development](docs/LOCAL_DEVELOPMENT.md)** - Setting up local development with SAM CLI
+- **[Layer Bundling](docs/LAYER_BUNDLING.md)** - How the shared layer is built and bundled
+- **[Project Summary](docs/PROJECT_SUMMARY.md)** - Overview of the project architecture
 
 ## Local Development
 

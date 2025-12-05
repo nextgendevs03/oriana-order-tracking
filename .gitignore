@@ -1,21 +1,19 @@
 # Dependencies
 node_modules/
-layers/shared/nodejs/node_modules/
 
 # Build output
 dist/
-layers/shared/nodejs/dist/
-app-manifest.json
 
 # Environment files
 .env
 .env.local
-.env.*
-!.env.example
+.env*.local
 
 # IDE
 .idea/
 .vscode/
+*.swp
+*.swo
 
 # OS
 .DS_Store
@@ -24,18 +22,15 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
-
-# Test coverage
-coverage/
+yarn-debug.log*
+yarn-error.log*
 
 # TypeScript cache
 *.tsbuildinfo
 
-# CDK
-cdk.out/
-cdk/env.local.json
+# Test coverage
+coverage/
 
-# Misc
-*.zip
-.cache/
+# Prisma
+prisma/migrations/*.sql.backup
 

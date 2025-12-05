@@ -1,5 +1,5 @@
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
-import { getAppConfig, DatabaseConfig, getLocalDatabaseConfig } from '../config';
+import { getAppConfig, DatabaseConfig, getLocalDatabaseConfig, buildDatabaseUrl } from '../config';
 import { logger } from './logger';
 
 interface DatabaseSecrets {
@@ -13,6 +13,7 @@ interface DatabaseSecrets {
 // Cache at module level for Lambda container reuse
 let secretsClient: SecretsManagerClient | null = null;
 let cachedDbConfig: DatabaseConfig | null = null;
+let cachedDatabaseUrl: string | null = null;
 let configCacheExpiry: number = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -47,6 +48,7 @@ export const getDatabaseConfig = async (): Promise<DatabaseConfig> => {
   if (appConfig.isLocal) {
     logger.info('Using local database configuration');
     cachedDbConfig = getLocalDatabaseConfig();
+    cachedDatabaseUrl = buildDatabaseUrl(cachedDbConfig);
     configCacheExpiry = now + CACHE_TTL_MS;
     return cachedDbConfig;
   }
@@ -77,16 +79,10 @@ export const getDatabaseConfig = async (): Promise<DatabaseConfig> => {
       database: secrets.dbname,
       username: secrets.username,
       password: secrets.password,
-      dialect: 'postgres',
-      logging: process.env.DB_LOGGING === 'true',
-      pool: {
-        max: 2,
-        min: 0,
-        acquire: 10000,
-        idle: 5000,
-      },
+      ssl: process.env.DB_SSL === 'true',
     };
 
+    cachedDatabaseUrl = buildDatabaseUrl(cachedDbConfig);
     configCacheExpiry = now + CACHE_TTL_MS;
     logger.info(`Retrieved database configuration in ${duration}ms`);
     return cachedDbConfig;
@@ -97,10 +93,26 @@ export const getDatabaseConfig = async (): Promise<DatabaseConfig> => {
 };
 
 /**
+ * Get DATABASE_URL for Prisma with caching.
+ * Fetches credentials from Secrets Manager if needed.
+ */
+export const getDatabaseUrl = async (): Promise<string> => {
+  // Ensure config is loaded (this will populate cachedDatabaseUrl)
+  await getDatabaseConfig();
+
+  if (!cachedDatabaseUrl) {
+    throw new Error('Database URL not available after config load');
+  }
+
+  return cachedDatabaseUrl;
+};
+
+/**
  * Clear secrets cache - useful for testing or forced refresh
  */
 export const clearSecretsCache = (): void => {
   cachedDbConfig = null;
+  cachedDatabaseUrl = null;
   configCacheExpiry = 0;
 };
 

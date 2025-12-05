@@ -1,0 +1,64 @@
+// Prisma Schema for Oriana Order Tracking API
+// This is the single source of truth for database models
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/client"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PurchaseOrder {
+  id                    String    @id @default(uuid())
+  date                  DateTime  @db.Date
+  clientName            String    @map("client_name") @db.VarChar(255)
+  osgPiNo               Int       @map("osg_pi_no")
+  osgPiDate             DateTime  @map("osg_pi_date") @db.Date
+  clientPoNo            Int       @map("client_po_no")
+  clientPoDate          DateTime  @map("client_po_date") @db.Date
+  poStatus              String    @map("po_status") @db.VarChar(50)
+  noOfDispatch          String    @map("no_of_dispatch") @db.VarChar(20)
+  clientAddress         String    @map("client_address")
+  clientContact         String    @map("client_contact") @db.VarChar(100)
+  dispatchPlanDate      DateTime  @map("dispatch_plan_date") @db.Date
+  siteLocation          String    @map("site_location") @db.VarChar(255)
+  oscSupport            String    @map("osc_support") @db.VarChar(20)
+  confirmDateOfDispatch DateTime  @map("confirm_date_of_dispatch") @db.Date
+  paymentStatus         String    @map("payment_status") @db.VarChar(50)
+  remarks               String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  poItems               POItem[]
+
+  @@index([clientName])
+  @@index([poStatus])
+  @@index([createdAt])
+  @@map("purchase_orders")
+}
+
+model POItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String        @map("purchase_order_id")
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  category        String        @db.VarChar(100)
+  oemName         String        @map("oem_name") @db.VarChar(100)
+  product         String        @db.VarChar(255)
+  quantity        Int
+  spareQuantity   Int           @default(0) @map("spare_quantity")
+  totalQuantity   Int           @map("total_quantity")
+  pricePerUnit    Decimal       @map("price_per_unit") @db.Decimal(12, 2)
+  totalPrice      Decimal       @map("total_price") @db.Decimal(14, 2)
+  warranty        String        @db.VarChar(100)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@index([purchaseOrderId])
+  @@index([category])
+  @@index([product])
+  @@map("po_items")
+}
+

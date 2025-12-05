@@ -4,14 +4,7 @@ export interface DatabaseConfig {
   database: string;
   username: string;
   password: string;
-  dialect: 'postgres';
-  logging: boolean;
-  pool: {
-    max: number;
-    min: number;
-    acquire: number;
-    idle: number;
-  };
+  ssl: boolean;
 }
 
 export interface AppConfig {
@@ -34,31 +27,21 @@ export const getAppConfig = (): AppConfig => {
 };
 
 export const getLocalDatabaseConfig = (): DatabaseConfig => {
-  // Debug: Log environment variables being used
-  console.log('[DEBUG] DB Environment Variables:', {
-    DB_HOST: process.env.DB_HOST || '(not set, using localhost)',
-    DB_PORT: process.env.DB_PORT || '(not set, using 5432)',
-    DB_NAME: process.env.DB_NAME || '(not set, using oriana)',
-    DB_USERNAME: process.env.DB_USERNAME || '(not set, using postgres)',
-    DB_PASSWORD: process.env.DB_PASSWORD ? '***SET***' : '(not set, using default)',
-    DB_SSL: process.env.DB_SSL || '(not set)',
-    IS_LOCAL: process.env.IS_LOCAL,
-    AWS_SAM_LOCAL: process.env.AWS_SAM_LOCAL,
-  });
-
   return {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
     database: process.env.DB_NAME || 'oriana',
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    dialect: 'postgres',
-    logging: process.env.DB_LOGGING === 'true',
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
+    ssl: process.env.DB_SSL === 'true',
   };
+};
+
+/**
+ * Build DATABASE_URL from config for Prisma
+ */
+export const buildDatabaseUrl = (config: DatabaseConfig): string => {
+  const encodedPassword = encodeURIComponent(config.password);
+  const sslParam = config.ssl ? '?sslmode=require' : '';
+  return `postgresql://${config.username}:${encodedPassword}@${config.host}:${config.port}/${config.database}${sslParam}`;
 };

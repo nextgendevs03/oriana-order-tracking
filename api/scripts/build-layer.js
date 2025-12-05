@@ -44,6 +44,50 @@ async function buildLayer() {
     // No need for separate node_modules - everything is in the single bundle
     console.log('📦 All dependencies bundled (including pg)');
 
+    // Step 4b: Copy @prisma/client to node_modules for direct imports
+    // This allows Lambdas to import models/types from '@prisma/client'
+    const srcNodeModules = path.join(layerSrcPath, 'node_modules');
+    const destNodeModules = path.join(nodejsPath, 'node_modules');
+    fs.mkdirSync(destNodeModules, { recursive: true });
+
+    // Copy @prisma/client
+    const srcPrismaClient = path.join(srcNodeModules, '@prisma', 'client');
+    const destPrismaClient = path.join(destNodeModules, '@prisma', 'client');
+    if (fs.existsSync(srcPrismaClient)) {
+      fs.cpSync(srcPrismaClient, destPrismaClient, { recursive: true });
+      console.log('📦 Copied @prisma/client to layer');
+    }
+
+    // Copy .prisma (generated client with query engine)
+    const srcDotPrisma = path.join(srcNodeModules, '.prisma');
+    const destDotPrisma = path.join(destNodeModules, '.prisma');
+    if (fs.existsSync(srcDotPrisma)) {
+      fs.cpSync(srcDotPrisma, destDotPrisma, { recursive: true });
+      console.log('📦 Copied .prisma (generated client) to layer');
+
+      // Remove non-Linux engines and copy Linux engine to nodejs root
+      const prismaEngineDir = path.join(destDotPrisma, 'client');
+      if (fs.existsSync(prismaEngineDir)) {
+        const files = fs.readdirSync(prismaEngineDir);
+        for (const file of files) {
+          if (file.includes('windows') || file.includes('darwin')) {
+            fs.rmSync(path.join(prismaEngineDir, file));
+            console.log(`🗑️  Removed ${file} from layer`);
+          }
+          // Copy Linux engine to nodejs root and remove from node_modules (avoid duplication)
+          if (file.includes('linux') && file.endsWith('.node')) {
+            fs.copyFileSync(
+              path.join(prismaEngineDir, file),
+              path.join(nodejsPath, file)
+            );
+            // Remove from node_modules to save ~14 MB (bundled Prisma uses nodejs root)
+            fs.rmSync(path.join(prismaEngineDir, file));
+            console.log(`📦 Moved ${file} to nodejs root (removed duplicate)`);
+          }
+        }
+      }
+    }
+
     // Step 5: Create package.json for the bundled layer
     const packageJson = {
       name: '@oriana/shared-layer',
