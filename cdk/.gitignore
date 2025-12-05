@@ -23,5 +23,5 @@ npm-debug.log*
 *.tsbuildinfo
 
 # Don't commit actual env.json with secrets
-# env.json
+env.*.json
 

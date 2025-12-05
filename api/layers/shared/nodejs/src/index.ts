@@ -2,28 +2,12 @@
 export * from './config';
 
 // Database exports
-export {
-  getSequelize,
-  closeConnection,
-  isConnectionHealthy,
-  Sequelize,
-  DataTypes,
-  Model,
-  Op,
-  QueryTypes,
-} from './database';
-export type {
-  ModelStatic,
-  Optional,
-  CreationOptional,
-  InferAttributes,
-  InferCreationAttributes,
-  Transaction,
-} from './database';
+export { getPrismaClient, closeConnection, isConnectionHealthy, PrismaClient } from './database';
+export type { Prisma } from './database';
 
 // Utility exports
 export * from './utils/logger';
-export { getDatabaseConfig, clearSecretsCache } from './utils/secrets';
+export { getDatabaseConfig, getDatabaseUrl, clearSecretsCache } from './utils/secrets';
 export type { DatabaseConfig } from './utils/secrets';
 
 // Middleware exports

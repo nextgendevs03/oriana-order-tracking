@@ -9,5 +9,5 @@ export const TYPES = {
   PORepository: Symbol.for('PORepository'),
 
   // Database
-  Sequelize: Symbol.for('Sequelize'),
+  PrismaClient: Symbol.for('PrismaClient'),
 };

@@ -1,8 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { Sequelize } from 'sequelize';
 import { TYPES } from '../types/types';
-import { IPORepository } from '../repositories/PORepository';
-import { PurchaseOrder } from '../models';
+import { IPORepository, PurchaseOrderWithItems } from '../repositories/PORepository';
 import {
   CreatePORequest,
   UpdatePORequest,
@@ -22,12 +20,9 @@ export interface IPOService {
 
 @injectable()
 export class POService implements IPOService {
-  constructor(
-    @inject(TYPES.PORepository) private poRepository: IPORepository,
-    @inject(TYPES.Sequelize) private sequelize: Sequelize
-  ) {}
+  constructor(@inject(TYPES.PORepository) private poRepository: IPORepository) {}
 
-  private mapToResponse(po: PurchaseOrder): POResponse {
+  private mapToResponse(po: PurchaseOrderWithItems): POResponse {
     const poItems: POItemResponse[] = (po.poItems || []).map((item) => ({
       id: item.id,
       category: item.category,
@@ -43,23 +38,28 @@ export class POService implements IPOService {
       updatedAt: item.updatedAt.toISOString(),
     }));
 
+    // Format date fields - Prisma returns Date objects
+    const formatDate = (date: Date): string => {
+      return date.toISOString().split('T')[0];
+    };
+
     return {
       id: po.id,
-      date: po.date,
+      date: formatDate(po.date),
       clientName: po.clientName,
       osgPiNo: po.osgPiNo,
-      osgPiDate: po.osgPiDate,
+      osgPiDate: formatDate(po.osgPiDate),
       clientPoNo: po.clientPoNo,
-      clientPoDate: po.clientPoDate,
+      clientPoDate: formatDate(po.clientPoDate),
       poStatus: po.poStatus,
       noOfDispatch: po.noOfDispatch,
       clientAddress: po.clientAddress,
       clientContact: po.clientContact,
       poItems,
-      dispatchPlanDate: po.dispatchPlanDate,
+      dispatchPlanDate: formatDate(po.dispatchPlanDate),
       siteLocation: po.siteLocation,
       oscSupport: po.oscSupport,
-      confirmDateOfDispatch: po.confirmDateOfDispatch,
+      confirmDateOfDispatch: formatDate(po.confirmDateOfDispatch),
       paymentStatus: po.paymentStatus,
       remarks: po.remarks || null,
       createdAt: po.createdAt.toISOString(),
@@ -68,16 +68,8 @@ export class POService implements IPOService {
   }
 
   async createPO(data: CreatePORequest): Promise<POResponse> {
-    const transaction = await this.sequelize.transaction();
-
-    try {
-      const po = await this.poRepository.create(data, transaction);
-      await transaction.commit();
-      return this.mapToResponse(po);
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    const po = await this.poRepository.create(data);
+    return this.mapToResponse(po);
   }
 
   async getPOById(id: string): Promise<POResponse | null> {
@@ -101,32 +93,11 @@ export class POService implements IPOService {
   }
 
   async updatePO(id: string, data: UpdatePORequest): Promise<POResponse | null> {
-    const transaction = await this.sequelize.transaction();
-
-    try {
-      const po = await this.poRepository.update(id, data, transaction);
-      if (!po) {
-        await transaction.rollback();
-        return null;
-      }
-      await transaction.commit();
-      return this.mapToResponse(po);
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    const po = await this.poRepository.update(id, data);
+    return po ? this.mapToResponse(po) : null;
   }
 
   async deletePO(id: string): Promise<boolean> {
-    const transaction = await this.sequelize.transaction();
-
-    try {
-      const deleted = await this.poRepository.delete(id, transaction);
-      await transaction.commit();
-      return deleted;
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    return this.poRepository.delete(id);
   }
 }
