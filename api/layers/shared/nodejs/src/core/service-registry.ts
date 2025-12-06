@@ -22,8 +22,12 @@ export interface ServiceBinding {
 export interface LambdaConfig {
   /** Lambda name (used for routing and manifest) */
   name: string;
-  /** Controller class (must have @Controller decorator) */
-  controller: interfaces.Newable<unknown>;
+  /**
+   * Controller classes (must have @Controller decorator with matching lambdaName)
+   * Supports multiple controllers per lambda for grouping related functionality
+   * e.g., Admin lambda can have UserController, RoleController, PermissionController
+   */
+  controllers: interfaces.Newable<unknown>[];
   /** Service and repository bindings */
   bindings: ServiceBinding[];
   /** Symbol for PrismaClient in DI container (defaults to 'PrismaClient') */
@@ -46,7 +50,9 @@ class LambdaRegistry {
       logger.warn(`Lambda '${config.name}' already registered, overwriting...`);
     }
     this.configs.set(config.name, config);
-    logger.debug(`Lambda '${config.name}' registered with ${config.bindings.length} bindings`);
+    logger.debug(
+      `Lambda '${config.name}' registered with ${config.controllers.length} controller(s) and ${config.bindings.length} bindings`
+    );
   }
 
   /**
@@ -110,8 +116,10 @@ class LambdaRegistry {
       }
     }
 
-    // Bind controller
-    container.bind(config.controller).toSelf().inSingletonScope();
+    // Bind all controllers
+    for (const controller of config.controllers) {
+      container.bind(controller).toSelf().inSingletonScope();
+    }
 
     // Cache container and prisma reference
     this.containers.set(config.name, container);
@@ -150,7 +158,7 @@ export const lambdaRegistry = new LambdaRegistry();
  *
  * @example
  * ```typescript
- * // src/lambdas/po.lambda.ts
+ * // Single controller lambda (e.g., src/lambdas/po.lambda.ts)
  * import { defineLambda, createLambdaHandler } from '@oriana/shared';
  * import { TYPES } from '../types/types';
  * import { POController } from '../controllers/POController';
@@ -159,7 +167,7 @@ export const lambdaRegistry = new LambdaRegistry();
  *
  * defineLambda({
  *   name: 'po',
- *   controller: POController,
+ *   controllers: [POController],
  *   bindings: [
  *     { symbol: TYPES.POService, implementation: POService },
  *     { symbol: TYPES.PORepository, implementation: PORepository },
@@ -168,6 +176,32 @@ export const lambdaRegistry = new LambdaRegistry();
  * });
  *
  * export const handler = createLambdaHandler('po');
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Multi-controller lambda (e.g., src/lambdas/admin.lambda.ts)
+ * import { defineLambda, createLambdaHandler } from '@oriana/shared';
+ * import { TYPES } from '../types/types';
+ * import { UserController } from '../controllers/admin/UserController';
+ * import { RoleController } from '../controllers/admin/RoleController';
+ * import { PermissionController } from '../controllers/admin/PermissionController';
+ * import { UserService } from '../services/admin/UserService';
+ * import { RoleService } from '../services/admin/RoleService';
+ * import { PermissionService } from '../services/admin/PermissionService';
+ *
+ * defineLambda({
+ *   name: 'admin',
+ *   controllers: [UserController, RoleController, PermissionController],
+ *   bindings: [
+ *     { symbol: TYPES.UserService, implementation: UserService },
+ *     { symbol: TYPES.RoleService, implementation: RoleService },
+ *     { symbol: TYPES.PermissionService, implementation: PermissionService },
+ *   ],
+ *   prismaSymbol: TYPES.PrismaClient,
+ * });
+ *
+ * export const handler = createLambdaHandler('admin');
  * ```
  */
 export function defineLambda(config: LambdaConfig): LambdaConfig {

@@ -24,7 +24,7 @@ import { PORepository } from '../repositories/PORepository';
 // Define and register the lambda configuration
 defineLambda({
   name: 'po',
-  controller: POController,
+  controllers: [POController],
   bindings: [
     { symbol: TYPES.POService, implementation: POService },
     { symbol: TYPES.PORepository, implementation: PORepository },
