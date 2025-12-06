@@ -18,14 +18,24 @@ const LOG_LEVEL_PRIORITY: Record<string, number> = {
   ERROR: 3,
 };
 
+// Level colors/symbols for local dev
+const LEVEL_SYMBOLS: Record<string, string> = {
+  DEBUG: '🔍',
+  INFO: '✅',
+  WARN: '⚠️',
+  ERROR: '❌',
+};
+
 class Logger {
   private context: LogContext = {};
   private minLevel: number;
+  private isLocal: boolean;
 
   constructor() {
     // Default to WARN in production (less verbose), INFO if explicitly set
     const configuredLevel = process.env.LOG_LEVEL?.toUpperCase() || 'WARN';
     this.minLevel = LOG_LEVEL_PRIORITY[configuredLevel] ?? LOG_LEVEL_PRIORITY.WARN;
+    this.isLocal = process.env.IS_LOCAL === 'true' || process.env.AWS_SAM_LOCAL === 'true';
   }
 
   setContext(context: LogContext): void {
@@ -41,6 +51,29 @@ class Logger {
   }
 
   private formatMessage(level: LogLevel, message: string, data?: unknown): string {
+    // Use simple format for local development
+    if (this.isLocal) {
+      const symbol = LEVEL_SYMBOLS[level] || '•';
+      const time = new Date().toLocaleTimeString();
+      let output = `${symbol} [${time}] ${message}`;
+
+      if (data !== undefined) {
+        if (typeof data === 'object' && data !== null) {
+          // Format objects more readably
+          const formatted = JSON.stringify(data, null, 2);
+          if (formatted.length < 100) {
+            output += ` ${formatted}`;
+          } else {
+            output += `\n${formatted}`;
+          }
+        } else {
+          output += ` ${data}`;
+        }
+      }
+      return output;
+    }
+
+    // JSON format for CloudWatch in production
     const logEntry: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       level,
@@ -73,10 +106,22 @@ class Logger {
 
   error(message: string, error?: Error | unknown): void {
     if (this.shouldLog(LogLevel.ERROR)) {
-      const errorData =
-        error instanceof Error
-          ? { name: error.name, message: error.message, stack: error.stack }
-          : error;
+      let errorData: unknown;
+
+      if (error instanceof Error) {
+        // Simplified error format for local dev
+        if (this.isLocal) {
+          errorData = {
+            type: error.name,
+            message: error.message,
+          };
+        } else {
+          errorData = { name: error.name, message: error.message, stack: error.stack };
+        }
+      } else {
+        errorData = error;
+      }
+
       console.error(this.formatMessage(LogLevel.ERROR, message, errorData));
     }
   }
