@@ -28,7 +28,7 @@ const AddPermissionModal: React.FC<Props> = ({
     { label: "Create Users", value: "Create Users" },
     { label: "Edit Users", value: "Edit Users" },
     { label: "Delete Users", value: "Delete Users" },
-    { label: "user.view", value: "user.view" },
+    { label: "View users", value: "View users" },
   ];
 
   const permissionCodeOptions = [
