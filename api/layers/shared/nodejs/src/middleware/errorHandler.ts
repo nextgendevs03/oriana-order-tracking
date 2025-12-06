@@ -91,6 +91,100 @@ export const createSuccessResponse = <T>(
   };
 };
 
+/**
+ * Format Prisma errors into user-friendly messages
+ */
+const formatPrismaError = (
+  error: Error
+): { statusCode: number; code: string; message: string } | null => {
+  const errorName = error.name || '';
+  const errorMessage = error.message || '';
+
+  // Prisma validation errors (missing required fields, invalid data)
+  if (errorName === 'PrismaClientValidationError') {
+    // Extract the missing field from the error message
+    const missingFieldMatch = errorMessage.match(/Argument `(\w+)` is missing/);
+    if (missingFieldMatch) {
+      return {
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+        message: `Missing required field: ${missingFieldMatch[1]}`,
+      };
+    }
+    return {
+      statusCode: 400,
+      code: 'VALIDATION_ERROR',
+      message: 'Invalid data provided',
+    };
+  }
+
+  // Prisma known request errors (unique constraint, foreign key, etc.)
+  if (errorName === 'PrismaClientKnownRequestError') {
+    const prismaError = error as Error & { code?: string; meta?: { target?: string[] } };
+
+    switch (prismaError.code) {
+      case 'P2002': // Unique constraint violation
+        const fields = prismaError.meta?.target?.join(', ') || 'field';
+        return {
+          statusCode: 409,
+          code: 'DUPLICATE_ERROR',
+          message: `A record with this ${fields} already exists`,
+        };
+      case 'P2003': // Foreign key constraint failed
+        return {
+          statusCode: 400,
+          code: 'REFERENCE_ERROR',
+          message: 'Referenced record does not exist',
+        };
+      case 'P2025': // Record not found
+        return {
+          statusCode: 404,
+          code: 'NOT_FOUND',
+          message: 'Record not found',
+        };
+      default:
+        // Log unknown Prisma error codes with full details
+        logger.error('Unhandled Prisma error', {
+          code: prismaError.code,
+          name: prismaError.name,
+          message: prismaError.message,
+          meta: prismaError.meta,
+        });
+        return {
+          statusCode: 400,
+          code: 'DATABASE_ERROR',
+          message: 'Database operation failed',
+        };
+    }
+  }
+
+  // Prisma connection errors
+  if (errorName === 'PrismaClientInitializationError') {
+    logger.error('Database connection failed', { error: errorMessage });
+    return {
+      statusCode: 503,
+      code: 'DATABASE_UNAVAILABLE',
+      message: 'Unable to connect to database',
+    };
+  }
+
+  // Check if it's any other Prisma error (starts with PrismaClient)
+  if (errorName.startsWith('PrismaClient')) {
+    logger.error('Unhandled Prisma error', {
+      name: errorName,
+      message: errorMessage,
+      stack: error.stack,
+    });
+    return {
+      statusCode: 500,
+      code: 'DATABASE_ERROR',
+      message: 'A database error occurred',
+    };
+  }
+
+  return null;
+};
+
 export const createErrorResponse = (error: Error | AppError): APIGatewayProxyResult => {
   let statusCode = 500;
   let code = 'INTERNAL_ERROR';
@@ -101,8 +195,17 @@ export const createErrorResponse = (error: Error | AppError): APIGatewayProxyRes
     code = error.code;
     message = error.message;
   } else {
-    // Only log unexpected errors
-    logger.error('Unhandled error', error);
+    // Check for Prisma errors first
+    const prismaError = formatPrismaError(error);
+    if (prismaError) {
+      statusCode = prismaError.statusCode;
+      code = prismaError.code;
+      message = prismaError.message;
+      logger.warn('Prisma error', { code, message, originalError: error.name });
+    } else {
+      // Only log unexpected errors with full details
+      logger.error('Unhandled error', error);
+    }
   }
 
   const response: ApiResponse = {

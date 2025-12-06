@@ -145,16 +145,38 @@ npm run dev:quick
 npm run dev:debug
 ```
 
-The API will be available at: `http://localhost:3000`
+The API will be available at: `http://localhost:4000`
+
+### Using a Custom Port
+
+The default port is `4000` to avoid conflicts with UI development servers (which typically use 3000).
+
+**Option 1: Use the configurable script**
+```bash
+# Windows PowerShell
+$env:API_PORT=5000; npm run dev:port
+
+# Windows CMD
+set API_PORT=5000 && npm run dev:port
+
+# Mac/Linux
+API_PORT=5000 npm run dev:port
+```
+
+**Option 2: Run SAM manually**
+```bash
+npm run synth:dev && sam local start-api -p 5000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers LAZY --skip-pull-image
+```
 
 ## NPM Scripts
 
 ### Development
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Build API + Synth + Start local API |
+| `npm run dev` | Build API + Synth + Start local API on port 4000 |
+| `npm run dev:port` | Same as dev, but uses `API_PORT` env var (default: 4000) |
 | `npm run dev:quick` | Synth + Start (skip API build) |
-| `npm run dev:lazy` | Lazy container mode |
+| `npm run dev:eager` | Eager container mode |
 | `npm run dev:debug` | Debug mode with verbose logging |
 | `npm run invoke:po` | Invoke PO Lambda locally |
 | `npm run invoke:po:event` | Invoke with test event |
@@ -275,12 +297,12 @@ cd ../cdk && npm run synth:dev
 
 ### Port already in use
 ```bash
-# Windows PowerShell
-netstat -ano | findstr :3000
+# Windows PowerShell - check what's using the port
+netstat -ano | findstr :4000
 taskkill /PID <PID> /F
 
-# Or just use a different port
-sam local start-api -p 3001 -t cdk.out/ApiStack-dev.template.json --env-vars env.json
+# Or just use a different port (e.g., 5000)
+npm run synth:dev && sam local start-api -p 5000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers LAZY --skip-pull-image
 ```
 
 ### AWS credentials not configured
