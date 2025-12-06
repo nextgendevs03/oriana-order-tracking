@@ -112,7 +112,6 @@ export const isConnectionHealthy = async (): Promise<boolean> => {
   }
 };
 
-// Re-export PrismaClient and types
-export { PrismaClient, Prisma } from '@prisma/client';
-// Re-export all generated model types
-export type { PurchaseOrder, POItem } from '@prisma/client';
+// Re-export everything from Prisma - all model types are automatically available
+// No need to manually add new types when adding tables to schema
+export * from '@prisma/client';
