@@ -7,6 +7,7 @@ import React from "react";
  import Dashboard from "./pages/Dashboard";
 import CreatePurchaseOrderForm from "./Components/PurchaseOrderDetails/CreatePurchaseOrderForm";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
+import PermissionsManagement from "./Components/Admin/PermissionManagment/PermissionManagment";
 // import Settings from "./pages/Settings";
 
 const App: React.FC = () => {
@@ -32,6 +33,9 @@ const App: React.FC = () => {
           </Route>
           
           */}
+           <Route path="/permissions" element={<LayoutPage />}>
+            <Route index element={<PermissionsManagement />} />
+          </Route>
           
           {/* Fallback redirect */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
