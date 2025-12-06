@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button } from "antd";
+import { Modal, Form, Select, Input, Button } from "antd";
 
 interface Props {
   open: boolean;
@@ -24,6 +24,20 @@ const AddPermissionModal: React.FC<Props> = ({
     }
   }, [permissionToEdit, form]);
 
+  const permissionNameOptions = [
+    { label: "Create Users", value: "Create Users" },
+    { label: "Edit Users", value: "Edit Users" },
+    { label: "Delete Users", value: "Delete Users" },
+    { label: "user.view", value: "user.view" },
+  ];
+
+  const permissionCodeOptions = [
+    { label: "user.create", value: "user.create" },
+    { label: "user.edit", value: "user.edit" },
+    { label: "user.delete", value: "user.delete" },
+    { label: "user.view", value: "user.view" },
+  ];
+
   return (
     <Modal
       open={open}
@@ -38,22 +52,22 @@ const AddPermissionModal: React.FC<Props> = ({
         onFinish={onSubmit}
         style={{ marginTop: 10 }}
       >
-        {/* Permission Name */}
+        {/* Permission Name Dropdown */}
         <Form.Item
           label="Permission Name"
           name="name"
           rules={[{ required: true, message: "Permission name is required" }]}
         >
-          <Input placeholder="e.g., Create Users" />
+          <Select placeholder="Select Permission Name" options={permissionNameOptions} />
         </Form.Item>
 
-        {/* Permission Code */}
+        {/* Permission Code Dropdown */}
         <Form.Item
           label="Permission Code"
           name="code"
           rules={[{ required: true, message: "Permission code is required" }]}
         >
-          <Input placeholder="e.g., user.create" />
+          <Select placeholder="Select Permission Code" options={permissionCodeOptions} />
         </Form.Item>
 
         {/* Module Dropdown */}
@@ -76,9 +90,7 @@ const AddPermissionModal: React.FC<Props> = ({
         <Form.Item
           label="Description"
           name="description"
-          rules={[
-            { required: true, message: "Description is required" },
-          ]}
+          rules={[{ required: true, message: "Description is required" }]}
         >
           <Input.TextArea
             rows={3}
