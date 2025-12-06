@@ -59,6 +59,7 @@ class RouteRegistry {
 
   /**
    * Generate app manifest from all registered controllers
+   * Groups multiple controllers under the same lambda when they share the same lambdaName
    */
   generateManifest(): AppManifest {
     const manifest: AppManifest = {
@@ -66,6 +67,10 @@ class RouteRegistry {
       generatedAt: new Date().toISOString(),
       lambdas: {},
     };
+
+    // Group controllers by lambdaName
+    const lambdaGroups: Map<string, { controllers: string[]; routes: RouteManifestEntry[] }> =
+      new Map();
 
     for (const [name, controller] of this.controllers) {
       const controllerMeta = this.getControllerMetadata(controller);
@@ -81,10 +86,22 @@ class RouteRegistry {
         action: String(route.propertyKey),
       }));
 
+      // Get or create lambda group
+      if (!lambdaGroups.has(lambdaName)) {
+        lambdaGroups.set(lambdaName, { controllers: [], routes: [] });
+      }
+
+      const group = lambdaGroups.get(lambdaName)!;
+      group.controllers.push(controllerMeta.controllerName);
+      group.routes.push(...routeEntries);
+    }
+
+    // Build manifest from groups
+    for (const [lambdaName, group] of lambdaGroups) {
       manifest.lambdas[lambdaName] = {
         handler: `dist/handlers/${lambdaName}.handler`,
-        controller: controllerMeta.controllerName,
-        routes: routeEntries,
+        controller: group.controllers.join(', '), // List all controllers
+        routes: group.routes,
       };
     }
 
