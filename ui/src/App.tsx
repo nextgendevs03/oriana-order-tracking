@@ -8,7 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import CreatePurchaseOrderForm from "./Components/PurchaseOrderDetails/CreatePurchaseOrderForm";
 import OrderTrackingDetail from "./pages/OrderTrackingDetail";
 // import Settings from "./pages/Settings";
-import UserManagement from "./Components/User Managment/UserManagment";
+import UserManagement from "./Components/UserManagment/UserManagment";
 
 const App: React.FC = () => {
   return (
