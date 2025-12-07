@@ -11,6 +11,7 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import poReducer from "./poSlice";
+import userReducer from "./userSlice";
 
 // Persist configuration
 const persistConfig = {
@@ -23,6 +24,7 @@ const persistConfig = {
 // Combine reducers
 const rootReducer = combineReducers({
   po: poReducer,
+  user: userReducer,
 });
 
 // Create persisted reducer
