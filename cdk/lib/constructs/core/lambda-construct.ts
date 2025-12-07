@@ -5,12 +5,12 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import { Duration, CfnOutput } from "aws-cdk-lib";
 import * as path from "path";
 import * as fs from "fs";
-import { EnvironmentConfig } from "../config/environment";
-import { AppManifest } from "../utils/manifest-reader";
+import { EnvironmentConfig } from "../../config/environment";
+import { AppManifest } from "../../utils/manifest-reader";
 
 // Load local env vars from env.local.json for SAM Local development
 const loadLocalEnvVars = (): Record<string, string> => {
-  const envFilePath = path.join(__dirname, "../../env.local.json");
+  const envFilePath = path.join(__dirname, "../../../env.local.json");
   if (fs.existsSync(envFilePath)) {
     try {
       const envConfig = JSON.parse(fs.readFileSync(envFilePath, "utf-8"));
@@ -81,7 +81,7 @@ export class LambdaConstruct extends Construct {
       runtime: lambda.Runtime.NODEJS_22_X,
       architecture: lambda.Architecture.ARM_64,
       handler: handler,
-      code: lambda.Code.fromAsset(path.join(__dirname, "../../../api"), {
+      code: lambda.Code.fromAsset(path.join(__dirname, "../../../../api"), {
         exclude: [
           "node_modules",
           "node_modules/**",

@@ -2,8 +2,8 @@ import { Construct } from "constructs";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { CfnOutput, Duration } from "aws-cdk-lib";
-import { EnvironmentConfig } from "../config/environment";
-import { AppManifest, RouteManifestEntry } from "../utils/manifest-reader";
+import { EnvironmentConfig } from "../../config/environment";
+import { AppManifest, RouteManifestEntry } from "../../utils/manifest-reader";
 
 export interface ApiGatewayConstructProps {
   config: EnvironmentConfig;
