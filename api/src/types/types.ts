@@ -10,4 +10,16 @@ export const TYPES = {
 
   // Database
   PrismaClient: Symbol.for('PrismaClient'),
+  //
+  // RolePermissionController: Symbol.for('RolePermissionController'),
+  //
+  //RolePermissionService: Symbol.for('RolePermissionService'),
+  //
+  //RolePermissionRepository: Symbol.for('RolePermissionRepository'),
+  //
+  PermissionController: Symbol.for('PermissionController'),
+  //
+  PermissionService: Symbol.for('PermissionService'),
+  //
+  PermissionRepository: Symbol.for('PermissionRepository'),
 };

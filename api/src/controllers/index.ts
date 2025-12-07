@@ -18,3 +18,8 @@ export * from './POController';
 // export * from './DispatchController';
 // export * from './DeliveryController';
 // export * from './InventoryController';
+
+//export * from './RolePermissioncontroller';
+
+// export * from './PermissionController';
+export * from './PermissionController';
