@@ -11,18 +11,27 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import poReducer from "./poSlice";
+import authReducer from "./authSlice";
+
+// Import the base API for RTK Query
+import { baseApi } from "./api";
 
 // Persist configuration
 const persistConfig = {
   key: "root",
   version: 1,
   storage,
-  whitelist: ["po"], // Only persist the 'po' reducer
+  whitelist: ["po", "auth"], // Persist both 'po' and 'auth' reducers
+  // Note: Don't persist API cache - it should be fetched fresh
+  blacklist: [baseApi.reducerPath],
 };
 
 // Combine reducers
 const rootReducer = combineReducers({
   po: poReducer,
+  auth: authReducer,
+  // Add RTK Query API reducer
+  [baseApi.reducerPath]: baseApi.reducer,
 });
 
 // Create persisted reducer
@@ -36,7 +45,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
+    }).concat(baseApi.middleware), // Add RTK Query middleware
 });
 
 // Create persistor

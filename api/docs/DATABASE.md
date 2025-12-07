@@ -11,6 +11,8 @@ The Oriana Order Tracking API uses **Prisma** as its ORM (Object-Relational Mapp
 - **Migration management** - Version-controlled database schema changes
 - **Single source of truth** - Schema defined in one place (`schema.prisma`)
 
+---
+
 ## Project Structure
 
 ```
@@ -21,39 +23,37 @@ api/
 │           ├── prisma/
 │           │   ├── schema.prisma      # Database schema definition
 │           │   └── migrations/        # Auto-generated migration files
+│           ├── .env                   # Local database credentials
+│           ├── .env.example           # Template for .env
 │           └── node_modules/
 │               └── .prisma/
 │                   └── client/        # Generated Prisma Client
+├── scripts/
+│   └── db-migrate-prod.js             # Production migration script
 └── package.json                       # Contains db: scripts
 ```
 
-## Schema Location
+---
 
-The Prisma schema is located in the **shared layer** to centralize database access:
+## Prerequisites
 
-```
-api/layers/shared/nodejs/prisma/schema.prisma
-```
+1. Copy `.env.example` to `.env` in `api/layers/shared/nodejs/`
+2. Fill in your database credentials (see Environment Variables below)
 
-## Available Commands
-
-Run these from the `api/` directory:
-
-| Command | Description |
-|---------|-------------|
-| `npm run db:generate` | Generate/regenerate Prisma Client after schema changes |
-| `npm run db:migrate` | Create and apply a new migration (development) |
-| `npm run db:migrate:prod` | Apply pending migrations (production) |
-| `npm run db:push` | Push schema changes directly (skip migrations, dev only) |
-| `npm run db:studio` | Open Prisma Studio GUI for database browsing |
+---
 
 ## Environment Variables
 
-Prisma requires a `DATABASE_URL` environment variable. The shared layer builds this from:
+Prisma requires database connection details. Configuration differs between local development and AWS.
 
-**For Local Development:**
+### Local Development
+
+Create `.env` file in `api/layers/shared/nodejs/`:
+
 ```bash
-# Set in .env or environment
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/oriana?schema=public"
+
+# Or use individual variables:
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=oriana
@@ -63,12 +63,39 @@ DB_SSL=false
 IS_LOCAL=true
 ```
 
-**For AWS (Lambda):**
-- Credentials are fetched from AWS Secrets Manager
-- Set `DB_SECRET_ID` to the secret ARN/name
+### AWS (Lambda)
+
+For production deployments:
+- Credentials are fetched from **AWS Secrets Manager**
+- Set `DB_SECRET_ID` environment variable to the secret ARN/name
 - Set `DB_SSL=true` for secure connections
 
+---
+
+## Commands Reference
+
+Run all commands from the `api/` directory.
+
+| Command | Description |
+|---------|-------------|
+| `npm run db:generate` | Generate/regenerate Prisma Client after schema changes |
+| `npm run db:migrate` | Create and apply a new migration (development) |
+| `npm run db:migrate:prod` | Apply pending migrations to production (fetches creds from Secrets Manager) |
+| `npm run db:push` | Push schema changes directly without creating migration files (dev only) |
+| `npm run db:studio` | Open Prisma Studio GUI for database browsing |
+| `npm run db:format` | Format and validate schema.prisma file |
+
+---
+
 ## Schema Definition
+
+### Schema Location
+
+The Prisma schema is located in the **shared layer** to centralize database access:
+
+```
+api/layers/shared/nodejs/prisma/schema.prisma
+```
 
 ### Example Model
 
@@ -107,6 +134,30 @@ model PurchaseOrder {
 | `@@index([field])` | Create database index |
 | `@relation(...)` | Define relationships |
 
+### Field Types
+
+```prisma
+String    @db.VarChar(255)     // Variable length string
+String    @db.Text             // Long text
+Int                            // Integer
+Decimal   @db.Decimal(10, 2)   // Decimal with precision
+Boolean   @default(true)       // Boolean with default
+DateTime  @db.Date             // Date only
+DateTime  @default(now())      // Timestamp with default
+String?                        // Optional field (nullable)
+```
+
+### Naming Conventions
+
+```prisma
+model UserProfile {
+  id        String @id @default(uuid())
+  firstName String @map("first_name")  // Column name in DB (snake_case)
+  
+  @@map("user_profiles")  // Table name in DB (snake_case)
+}
+```
+
 ### Relationships
 
 ```prisma
@@ -121,56 +172,161 @@ model POItem {
   purchaseOrderId String        @map("purchase_order_id")
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 }
+
+// Another example with Order and OrderItem
+model Order {
+  id         String      @id @default(uuid())
+  customerId String      @map("customer_id")
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id      String @id @default(uuid())
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
 ```
+
+### Indexes
+
+```prisma
+model Product {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  
+  @@index([name])
+  @@index([category])
+  @@index([name, category])  // Composite index
+}
+```
+
+---
 
 ## Workflow
 
 ### Adding a New Table
 
-1. **Edit the schema:**
-   ```prisma
-   // layers/shared/nodejs/prisma/schema.prisma
-   model NewTable {
-     id        String   @id @default(uuid())
-     name      String   @db.VarChar(100)
-     createdAt DateTime @default(now()) @map("created_at")
-     
-     @@map("new_tables")
-   }
-   ```
+#### Step 1: Update the Schema
 
-2. **Create and apply migration:**
-   ```bash
-   npm run db:migrate
-   # Enter a migration name when prompted, e.g., "add-new-table"
-   ```
+Edit `api/layers/shared/nodejs/prisma/schema.prisma`:
 
-3. **Regenerate client (automatic with migrate, but run manually if needed):**
-   ```bash
-   npm run db:generate
-   ```
+```prisma
+model Product {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(255)
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-4. **Use in code:**
-   ```typescript
-   import { PrismaClient } from '@prisma/client';
-   
-   const prisma = new PrismaClient();
-   const records = await prisma.newTable.findMany();
-   ```
+  @@map("products")  // Table name in database
+}
+```
 
-### Modifying an Existing Table
+#### Step 2: Create Migration (Local Dev)
 
-1. **Edit the schema** (add/modify fields)
+```bash
+npm run db:migrate
+```
 
-2. **Create migration:**
-   ```bash
-   npm run db:migrate
-   ```
+- Prisma will prompt you for a migration name (e.g., `add_products_table`)
+- Creates a migration file in `prisma/migrations/`
+- Applies the migration to your local database
+- Regenerates Prisma Client automatically
+- **All model types are auto-exported** - no manual export needed!
 
-3. **Regenerate client:**
-   ```bash
-   npm run db:generate
-   ```
+#### Step 3: Rebuild the Layer
+
+```bash
+npm run build:all
+```
+
+#### Step 4: Deploy to Production
+
+After deploying your code changes:
+
+```bash
+npm run db:migrate:prod
+```
+
+### Multiple Tables in One Migration
+
+**Yes, you can create/update multiple tables in a single migration!**
+
+Simply make all your changes to `schema.prisma` before running `npm run db:migrate`:
+
+```prisma
+// Add multiple new models at once
+model Product {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(255)
+  categoryId String  @map("category_id")
+  category  Category @relation(fields: [categoryId], references: [id])
+  
+  @@map("products")
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @db.VarChar(100)
+  products Product[]
+  
+  @@map("categories")
+}
+
+model Inventory {
+  id        String @id @default(uuid())
+  productId String @map("product_id")
+  quantity  Int
+  
+  @@map("inventory")
+}
+```
+
+Then run once:
+
+```bash
+npm run db:migrate
+# Name it: add_products_categories_inventory
+```
+
+This creates a **single migration** with all table creations/changes.
+
+### Updating an Existing Table
+
+#### Step 1: Modify the Schema
+
+Edit the model in `schema.prisma`:
+
+```prisma
+model Product {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  price       Decimal  @db.Decimal(10, 2)
+  description String?  // <- New optional field
+  isActive    Boolean  @default(true) @map("is_active")  // <- New field with default
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+```
+
+#### Step 2: Create Migration
+
+```bash
+npm run db:migrate
+# Name it descriptively (e.g., add_description_to_products)
+```
+
+#### Step 3: Rebuild and Deploy
+
+```bash
+npm run build:all
+# Deploy your code
+npm run db:migrate:prod
+```
 
 ### Quick Prototyping (No Migration)
 
@@ -182,7 +338,26 @@ npm run db:push
 
 > **Warning:** This skips migrations and may cause data loss. Use only in development.
 
+---
+
 ## Using Prisma in Code
+
+### Lambda Integration
+
+The shared layer provides a Lambda-optimized Prisma client:
+
+```typescript
+import { getPrismaClient } from '@oriana/shared';
+
+// In your repository
+const prisma = await getPrismaClient();
+const orders = await prisma.purchaseOrder.findMany();
+```
+
+Features:
+- **Connection pooling** - Reuses connections across warm Lambda invocations
+- **Lazy initialization** - Only connects when first query is made
+- **Auto-reconnection** - Prisma handles reconnection automatically
 
 ### Basic Queries
 
@@ -207,6 +382,11 @@ const orders = await prisma.purchaseOrder.findMany({
   orderBy: { createdAt: 'desc' },
   take: 10,
   skip: 0,
+});
+
+// Find one
+const order = await prisma.purchaseOrder.findUnique({
+  where: { id: 'uuid-here' },
 });
 
 // Update
@@ -250,7 +430,7 @@ const orders = await prisma.purchaseOrder.findMany({
   },
 });
 
-// Multiple conditions
+// Multiple conditions (AND)
 const orders = await prisma.purchaseOrder.findMany({
   where: {
     AND: [
@@ -259,24 +439,19 @@ const orders = await prisma.purchaseOrder.findMany({
     ],
   },
 });
+
+// OR conditions
+const orders = await prisma.purchaseOrder.findMany({
+  where: {
+    OR: [
+      { poStatus: 'pending' },
+      { poStatus: 'processing' },
+    ],
+  },
+});
 ```
 
-## Lambda Integration
-
-The shared layer provides a Lambda-optimized Prisma client:
-
-```typescript
-import { getPrismaClient } from '@oriana/shared';
-
-// In your repository
-const prisma = await getPrismaClient();
-const orders = await prisma.purchaseOrder.findMany();
-```
-
-Features:
-- **Connection pooling** - Reuses connections across warm Lambda invocations
-- **Lazy initialization** - Only connects when first query is made
-- **Health checks** - Validates connection is still alive
+---
 
 ## Prisma Studio
 
@@ -292,6 +467,29 @@ This opens a web interface at `http://localhost:5555` where you can:
 - View relationships
 - Run filters
 
+---
+
+## Workflow Summary
+
+### Local Development
+
+```
+1. Edit schema.prisma (add/modify any number of tables)
+2. npm run db:migrate (creates migration + applies it + regenerates client)
+3. npm run build:all (rebuilds layer)
+4. Test locally - all new types are automatically available!
+```
+
+### Production Deployment
+
+```
+1. Commit migration files to git
+2. Deploy code (CDK/CI-CD)
+3. npm run db:migrate:prod (applies pending migrations)
+```
+
+---
+
 ## Best Practices
 
 1. **Always use migrations in production** - Never use `db:push` in prod
@@ -301,6 +499,8 @@ This opens a web interface at `http://localhost:5555` where you can:
 5. **Use `@@map` for table names** - Follow snake_case for database, camelCase in code
 6. **Add indexes for frequently queried fields** - Especially foreign keys and filter fields
 7. **Use `onDelete: Cascade`** - For child records that should be deleted with parent
+
+---
 
 ## Troubleshooting
 
@@ -312,9 +512,25 @@ npm run db:generate
 
 ### "Migration failed"
 
-1. Check DATABASE_URL is correct
-2. Ensure database is running
-3. Check for conflicting changes
+1. Check your `.env` file has correct `DATABASE_URL`
+2. Ensure database is accessible (network/firewall)
+3. Check for conflicting schema changes
+
+### "Prisma Client not updated"
+
+Run:
+```bash
+npm run db:generate
+npm run build:all
+```
+
+### "Cannot find model X"
+
+After adding new models, ensure you:
+1. Run `npm run db:generate`
+2. Rebuild with `npm run build:all`
+
+All model types are auto-exported from `@prisma/client` - no manual exports needed.
 
 ### "Connection refused"
 
@@ -331,3 +547,18 @@ npx prisma migrate reset
 
 > **Warning:** This deletes all data!
 
+---
+
+## File Locations
+
+| File | Purpose |
+|------|---------|
+| `api/layers/shared/nodejs/prisma/schema.prisma` | Database schema definition |
+| `api/layers/shared/nodejs/prisma/migrations/` | Migration history |
+| `api/layers/shared/nodejs/.env` | Local database credentials |
+| `api/layers/shared/nodejs/.env.example` | Template for `.env` |
+| `api/scripts/db-migrate-prod.js` | Production migration script |
+
+---
+
+*Last updated: 7 December 2025*

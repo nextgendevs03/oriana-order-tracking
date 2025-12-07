@@ -1,5 +1,33 @@
 export type Environment = "dev" | "qa" | "prod";
 
+/**
+ * Feature flags to enable/disable AWS services per environment.
+ * Set to true to enable the service, false to disable.
+ */
+export interface FeatureFlags {
+  s3: boolean;
+  sqs: boolean;
+  dynamodb: boolean;
+  ses: boolean;
+  vpc: boolean;
+  cognito: boolean;
+  kms: boolean;
+}
+
+/**
+ * Default feature flags - all disabled by default.
+ * Override in environment-specific configs as needed.
+ */
+const defaultFeatures: FeatureFlags = {
+  s3: false,
+  sqs: false,
+  dynamodb: false,
+  ses: false,
+  vpc: false,
+  cognito: false,
+  kms: false,
+};
+
 export interface EnvironmentConfig {
   environment: Environment;
   stackName: string;
@@ -11,6 +39,8 @@ export interface EnvironmentConfig {
   apiStageName: string;
   enableXRay: boolean;
   tags: Record<string, string>;
+  /** Feature flags to enable/disable AWS services */
+  features: FeatureFlags;
 }
 
 const baseConfig = {
@@ -37,6 +67,10 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       ...baseConfig.tags,
       Environment: "dev",
     },
+    features: {
+      ...defaultFeatures,
+      s3: true, // Enable S3 for dev
+    },
   },
   qa: {
     ...baseConfig,
@@ -53,6 +87,10 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       ...baseConfig.tags,
       Environment: "qa",
     },
+    features: {
+      ...defaultFeatures,
+      s3: true, // Enable S3 for qa
+    },
   },
   prod: {
     ...baseConfig,
@@ -68,6 +106,10 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     tags: {
       ...baseConfig.tags,
       Environment: "prod",
+    },
+    features: {
+      ...defaultFeatures,
+      s3: true, // Enable S3 for prod
     },
   },
 };
