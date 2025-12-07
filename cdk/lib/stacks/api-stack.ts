@@ -3,8 +3,13 @@ import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as path from "path";
 import { EnvironmentConfig } from "../config/environment";
-import { LambdaConstruct } from "../constructs/lambda-construct";
-import { ApiGatewayConstruct } from "../constructs/api-gateway-construct";
+import { LambdaConstruct } from "../constructs/core/lambda-construct";
+import { ApiGatewayConstruct } from "../constructs/core/api-gateway-construct";
+import { S3Construct } from "../constructs/storage/s3-construct";
+import {
+  LambdaPermissions,
+  IPermissionProvider,
+} from "../constructs/permissions/lambda-permissions";
 import { readManifest } from "../utils/manifest-reader";
 
 export interface ApiStackProps extends StackProps {
@@ -56,6 +61,96 @@ export class ApiStack extends Stack {
       sharedLayer,
       manifest,
     });
+
+    // Collect permission providers from enabled constructs
+    const permissionProviders: IPermissionProvider[] = [];
+
+    // ==========================================
+    // STORAGE CONSTRUCTS
+    // ==========================================
+
+    // S3 Construct (enabled via features.s3)
+    if (config.features.s3) {
+      console.log("\n📦 Creating S3 buckets...");
+      const s3Construct = new S3Construct(this, "S3Construct", {
+        config,
+      });
+      permissionProviders.push(s3Construct);
+    }
+
+    // DynamoDB Construct (enabled via features.dynamodb)
+    // Uncomment when DynamoDB construct is implemented
+    // if (config.features.dynamodb) {
+    //   console.log('\n📊 Creating DynamoDB tables...');
+    //   const dynamodbConstruct = new DynamoDBConstruct(this, 'DynamoDBConstruct', { config });
+    //   permissionProviders.push(dynamodbConstruct);
+    // }
+
+    // ==========================================
+    // MESSAGING CONSTRUCTS
+    // ==========================================
+
+    // SQS Construct (enabled via features.sqs)
+    // Uncomment when SQS construct is implemented
+    // if (config.features.sqs) {
+    //   console.log('\n📨 Creating SQS queues...');
+    //   const sqsConstruct = new SQSConstruct(this, 'SQSConstruct', { config });
+    //   permissionProviders.push(sqsConstruct);
+    // }
+
+    // SES Construct (enabled via features.ses)
+    // Uncomment when SES construct is implemented
+    // if (config.features.ses) {
+    //   console.log('\n📧 Configuring SES...');
+    //   const sesConstruct = new SESConstruct(this, 'SESConstruct', { config });
+    //   permissionProviders.push(sesConstruct);
+    // }
+
+    // ==========================================
+    // SECURITY CONSTRUCTS
+    // ==========================================
+
+    // Cognito Construct (enabled via features.cognito)
+    // Uncomment when Cognito construct is implemented
+    // if (config.features.cognito) {
+    //   console.log('\n🔐 Creating Cognito user pool...');
+    //   const cognitoConstruct = new CognitoConstruct(this, 'CognitoConstruct', { config });
+    //   permissionProviders.push(cognitoConstruct);
+    // }
+
+    // KMS Construct (enabled via features.kms)
+    // Uncomment when KMS construct is implemented
+    // if (config.features.kms) {
+    //   console.log('\n🔑 Creating KMS keys...');
+    //   const kmsConstruct = new KMSConstruct(this, 'KMSConstruct', { config });
+    //   permissionProviders.push(kmsConstruct);
+    // }
+
+    // VPC Construct (enabled via features.vpc)
+    // Uncomment when VPC construct is implemented
+    // if (config.features.vpc) {
+    //   console.log('\n🌐 Creating VPC...');
+    //   const vpcConstruct = new VPCConstruct(this, 'VPCConstruct', { config });
+    //   // VPC doesn't typically provide permissions, but you can integrate it here
+    // }
+
+    // ==========================================
+    // APPLY PERMISSIONS TO LAMBDAS
+    // ==========================================
+
+    // Apply all collected permissions to Lambda functions
+    if (permissionProviders.length > 0) {
+      console.log("\n🔐 Applying permissions to Lambda functions...");
+      new LambdaPermissions(this, "LambdaPermissions", {
+        config,
+        lambdaFunctions: lambdaConstruct.functions,
+        permissionProviders,
+      });
+    }
+
+    // ==========================================
+    // API GATEWAY
+    // ==========================================
 
     // Create API Gateway with routes from manifest
     console.log("\n🌐 Creating API Gateway routes...");
