@@ -63,9 +63,9 @@ const SidebarMenu = () => {
       selectedKeys={getSelectedKey()}
       items={menuItems}
       onClick={handleMenuClick}
+      style={{ marginTop: 8 }}
     />
   );
 };
 
 export default SidebarMenu;
-
