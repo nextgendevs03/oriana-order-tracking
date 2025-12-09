@@ -76,3 +76,10 @@ export type {
 //   useAssignPermissionsMutation,
 // } from './adminApi';
 
+export {
+  permissionApi,
+  useGetPermissionsQuery,
+  useCreatePermissionMutation,
+  useUpdatePermissionMutation,
+  useDeletePermissionMutation,
+} from './permissionApi';

@@ -42,7 +42,7 @@ export const baseApi = createApi({
       // If user is authenticated, add JWT token
       // Note: Adjust the path if you store token differently
       // Currently using currentUser object - add 'token' field to User interface if needed
-      const currentUser = state.auth.currentUser;
+      //const currentUser = state.auth.currentUser;
 
       // Example: If you add a token field to your User interface
       // const token = currentUser?.token;

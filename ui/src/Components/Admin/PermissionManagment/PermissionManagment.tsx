@@ -8,124 +8,59 @@ import {
   Space,
   Typography,
   Popconfirm,
+  message,
 } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import AddPermissionModal from "./AddPermissionModal";
 
+// RTK Query
+import {
+  useGetPermissionsQuery,
+  useDeletePermissionMutation,
+} from "../../../store/api/permissionApi";
+
 const { Title } = Typography;
 
-interface PermissionType {
-  key: number;
-  name: string;
-  code: string;
-  module: string;
-  description: string;
-  roles: string[];
-}
-
 const PermissionsManagement: React.FC = () => {
-  const [permissions, setPermissions] = useState<PermissionType[]>([
-    {
-      key: 1,
-      name: "View Users",
-      code: "user.view",
-      module: "users",
-      description: "Can view user list and details",
-      roles: ["Super Admin", "Manager"],
-    },
-    {
-      key: 2,
-      name: "Create Users",
-      code: "user.create",
-      module: "users",
-      description: "Can create new users",
-      roles: ["Super Admin"],
-    },
-    {
-      key: 3,
-      name: "Edit Users",
-      code: "user.edit",
-      module: "users",
-      description: "Can edit existing users",
-      roles: ["Super Admin", "Manager"],
-    },
-    {
-      key: 4,
-      name: "Delete Users",
-      code: "user.delete",
-      module: "users",
-      description: "Can delete users",
-      roles: ["Super Admin"],
-    },
-  ]);
+  const { data, isLoading } = useGetPermissionsQuery();
+  const [deletePermissionApi] = useDeletePermissionMutation();
 
   const [searchText, setSearchText] = useState("");
-  const [filterModule, setFilterModule] = useState<string | undefined>(undefined);
+  const [filterModule, setFilterModule] = useState<string>();
   const [openModal, setOpenModal] = useState(false);
-  const [permissionToEdit, setPermissionToEdit] =
-    useState<PermissionType | undefined>(undefined);
+  const [permissionToEdit, setPermissionToEdit] = useState<any>();
 
-  const handleAddOrEdit = (values: any) => {
-    if (permissionToEdit) {
-      setPermissions((prev) =>
-        prev.map((p) => (p.key === permissionToEdit.key ? { ...p, ...values } : p))
-      );
-    } else {
-      const newPermission: PermissionType = {
-        key: permissions.length + 1,
-        roles: [], // FIX — prevent undefined.map crash
-        ...values,
-      };
-      setPermissions([...permissions, newPermission]);
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePermissionApi(id).unwrap();
+      message.success("Permission Deleted");
+    } catch {
+      message.error("Delete Failed");
     }
-
-    setOpenModal(false);
-    setPermissionToEdit(undefined);
   };
-
-  const handleDelete = (perm: PermissionType) => {
-    setPermissions((prev) => prev.filter((p) => p.key !== perm.key));
-  };
-
-  const filteredPermissions = permissions.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchText.toLowerCase()) &&
-      (!filterModule || p.module === filterModule)
-  );
 
   const columns = [
-    {
-      title: "Permission Name",
-      dataIndex: "name",
-      render: (name: string) => <strong>{name}</strong>,
-    },
+    { title: "Permission Name", dataIndex: "permissionName" },
     {
       title: "Code",
-      dataIndex: "code",
-      render: (code: string) => <Tag color="blue">{code}</Tag>,
+      dataIndex: "permissionCode",
+      render: (c: string) => <Tag color="blue">{c}</Tag>,
     },
+    { title: "Module", dataIndex: "module" },
+    { title: "Description", dataIndex: "description" },
     {
-      title: "Module",
-      dataIndex: "module",
-      render: (m: string) => <Tag color="cyan">{m}</Tag>,
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-    },
-    {
-      title: "Used by Roles",
-      dataIndex: "roles",
-      render: (roles: string[]) =>
-        (roles || []).map((r) => (
-          <Tag color="geekblue" key={r}>
+      title: "Roles",
+      dataIndex: "userRolePermissions",
+      render: (roles: any[]) =>
+        (roles || []).map((r: any) => (
+          <Tag key={r} color="geekblue">
             {r}
           </Tag>
         )),
     },
     {
       title: "Actions",
-      render: (_: any, record: PermissionType) => (
+      render: (_: any, record: any) => (
         <Space>
           <Button
             type="text"
@@ -135,7 +70,11 @@ const PermissionsManagement: React.FC = () => {
               setOpenModal(true);
             }}
           />
-          <Popconfirm title="Confirm delete?" onConfirm={() => handleDelete(record)}>
+
+          <Popconfirm
+            title="Confirm?"
+            onConfirm={() => handleDelete(record.permissionId)}
+          >
             <Button danger type="text" icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -145,15 +84,13 @@ const PermissionsManagement: React.FC = () => {
 
   return (
     <div>
-      <Title level={3} style={{ marginBottom: 20 }}>
-        Permission Management
-      </Title>
+      <Title level={3}>Permission Management</Title>
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-        <Space size="middle">
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <Space>
           <Input
-            placeholder="Search permissions..."
-            style={{ width: 260, height: 40 }}
+            placeholder="Search..."
+            style={{ width: 260 }}
             allowClear
             onChange={(e) => setSearchText(e.target.value)}
           />
@@ -174,7 +111,6 @@ const PermissionsManagement: React.FC = () => {
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          style={{ height: 40 }}
           onClick={() => {
             setPermissionToEdit(undefined);
             setOpenModal(true);
@@ -185,19 +121,16 @@ const PermissionsManagement: React.FC = () => {
       </div>
 
       <Table
-        columns={columns as any}
-        dataSource={filteredPermissions}
-        pagination={{ pageSize: 10 }}
-        rowKey="key"
+        loading={isLoading}
+        columns={columns}
+        dataSource={data?.items}
+        rowKey="permissionId"
+        style={{ marginTop: 20 }}
       />
 
       <AddPermissionModal
         open={openModal}
-        onClose={() => {
-          setOpenModal(false);
-          setPermissionToEdit(undefined);
-        }}
-        onSubmit={handleAddOrEdit}
+        onClose={() => setOpenModal(false)}
         permissionToEdit={permissionToEdit}
       />
     </div>

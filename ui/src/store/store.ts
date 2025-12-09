@@ -1,35 +1,23 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
-import {
-  persistStore,
-  persistReducer,
-  FLUSH,
-  REHYDRATE,
-  PAUSE,
-  PERSIST,
-  PURGE,
-  REGISTER,
-} from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import poReducer from "./poSlice";
+import { persistReducer, persistStore } from "redux-persist";
 import permissionReducer from "./permissionSlice";
-//import authReducer from "./authSlice";
-
-// Import the base API for RTK Query
-import { baseApi } from "./api";
+import { permissionApi } from "./api/permissionApi";
 
 const persistConfig = {
   key: "root",
-  version: 1,
   storage,
-  whitelist: ["po", "auth", "permission"], 
-  blacklist: [baseApi.reducerPath],
+  whitelist: ["permission"], 
 };
 
 const rootReducer = combineReducers({
-  po: poReducer,
+  // Uncomment and import the reducer, or implement as needed
    permission: permissionReducer,
-  [baseApi.reducerPath]: baseApi.reducer,
+
+  // RTK Query reducer
+  [permissionApi.reducerPath]: permissionApi.reducer,
 });
+
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
@@ -37,10 +25,8 @@ export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-      },
-    }).concat(baseApi.middleware), 
+      serializableCheck: false,
+    }).concat(permissionApi.middleware),
 });
 
 export const persistor = persistStore(store);
