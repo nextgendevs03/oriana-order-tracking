@@ -1,26 +1,23 @@
-import { Modal, Form, Select, Checkbox, Button, Divider } from "antd";
+import { Modal, Form, Input, Checkbox, Button, Divider } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
-
-const { Option } = Select;
-
-const roleOptions = ["Super Admin", "Admin", "Manager", "Viewer", "Sales Person"];
-const descriptionOptions = [
-  "Full access to system",
-  "Can manage users and roles",
-  "Can view reports",
-  "Can manage orders",
-  "Read only access",
-];
 const permissionsData = [
   {
     group: "Users",
     items: [
       { key: "user.view", label: "View Users", desc: "Can view user list" },
-      { key: "user.create", label: "Create Users", desc: "Can create new users" },
+      {
+        key: "user.create",
+        label: "Create Users",
+        desc: "Can create new users",
+      },
       { key: "user.edit", label: "Edit Users", desc: "Can edit users" },
       { key: "user.delete", label: "Delete Users", desc: "Can delete users" },
-      { key: "user.toggle", label: "Toggle User Status", desc: "Activate/Deactivate users" },
+      {
+        key: "user.toggle",
+        label: "Toggle User Status",
+        desc: "Activate/Deactivate users",
+      },
     ],
   },
 ];
@@ -32,7 +29,12 @@ interface AddRoleModalProps {
   roleToEdit?: any;
 }
 
-const AddRoleModal: React.FC<AddRoleModalProps> = ({ open, onClose, onSubmit, roleToEdit }) => {
+const AddRoleModal: React.FC<AddRoleModalProps> = ({
+  open,
+  onClose,
+  onSubmit,
+  roleToEdit,
+}) => {
   const [form] = Form.useForm();
   const [expandedGroup, setExpandedGroup] = useState<string>("Users");
 
@@ -42,7 +44,9 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({ open, onClose, onSubmit, ro
       form.setFieldsValue({
         roleName: roleToEdit.roleName,
         description: roleToEdit.description,
-        permissions: roleToEdit.permissions || [],
+        permissions: Array.isArray(roleToEdit.permissions)
+          ? roleToEdit.permissions
+          : [],
       });
       setExpandedGroup("Users");
     } else {
@@ -65,55 +69,69 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({ open, onClose, onSubmit, ro
       width={600}
       centered
       footer={[
-        <Button onClick={onClose} key="cancel">Cancel</Button>,
+        <Button onClick={onClose} key="cancel">
+          Cancel
+        </Button>,
         <Button type="primary" onClick={handleSubmit} key="create">
           {roleToEdit ? "Update" : "Create"}
         </Button>,
       ]}
     >
       <Form layout="vertical" form={form}>
-
         {/* Role Name */}
         <Form.Item
           label="Role Name"
           name="roleName"
-          rules={[{ required: true, message: "Role name is required" }]}
+          rules={[
+            { required: true, message: "Role name is required" },
+            { min: 2, message: "Role name must be at least 2 characters" },
+          ]}
         >
-          <Select showSearch placeholder="Select role name" allowClear>
-            {roleOptions.map((role) => (
-              <Option key={role} value={role}>{role}</Option>
-            ))}
-          </Select>
+          <Input placeholder="Enter role name" />
         </Form.Item>
 
         {/* Description */}
         <Form.Item
           label="Description"
           name="description"
-          rules={[{ required: true, message: "Description is required" }]}
+          rules={[
+            { required: true, message: "Description is required" },
+            { min: 3, message: "Description must be at least 3 characters" },
+          ]}
         >
-          <Select showSearch placeholder="Select description" allowClear>
-            {descriptionOptions.map((desc) => (
-              <Option key={desc} value={desc}>{desc}</Option>
-            ))}
-          </Select>
+          <Input.TextArea
+            placeholder="Enter role description"
+            rows={3}
+            showCount
+            maxLength={500}
+          />
         </Form.Item>
 
         <Divider />
 
         {/* Permissions */}
         <Form.Item name="permissions">
-          <div style={{ maxHeight: 350, overflowY: "auto" }}> {/* Increased height */}
+          <div style={{ maxHeight: 350, overflowY: "auto" }}>
+            {" "}
+            {/* Increased height */}
             {permissionsData.map((group) => {
               const groupValues = form.getFieldValue("permissions") || [];
-              const allChecked = group.items.every(item => groupValues.includes(item.key));
-              const indeterminate = !allChecked && group.items.some(item => groupValues.includes(item.key));
+              const allChecked = group.items.every((item) =>
+                groupValues.includes(item.key)
+              );
+              const indeterminate =
+                !allChecked &&
+                group.items.some((item) => groupValues.includes(item.key));
 
               return (
                 <div key={group.group} style={{ marginBottom: 12 }}>
                   {/* Group Header */}
                   <div
-                    onClick={() => setExpandedGroup(expandedGroup === group.group ? "" : group.group)}
+                    onClick={() =>
+                      setExpandedGroup(
+                        expandedGroup === group.group ? "" : group.group
+                      )
+                    }
                     style={{
                       fontWeight: 600,
                       padding: 8,
@@ -131,12 +149,23 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({ open, onClose, onSubmit, ro
                       onChange={(e) => {
                         const checked = e.target.checked;
                         const newValues = checked
-                          ? Array.from(new Set([...groupValues, ...group.items.map(i => i.key)]))
-                          : groupValues.filter((v: string) => !group.items.map(i => i.key).includes(v));
+                          ? Array.from(
+                              new Set([
+                                ...groupValues,
+                                ...group.items.map((i) => i.key),
+                              ])
+                            )
+                          : groupValues.filter(
+                              (v: string) =>
+                                !group.items.map((i) => i.key).includes(v)
+                            );
                         form.setFieldsValue({ permissions: newValues });
                       }}
                     >
-                      {group.group} <span style={{ color: "#1677ff" }}>{group.items.length}</span>
+                      {group.group}{" "}
+                      <span style={{ color: "#1677ff" }}>
+                        {group.items.length}
+                      </span>
                     </Checkbox>
                     <DownOutlined />
                   </div>
@@ -144,13 +173,21 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({ open, onClose, onSubmit, ro
                   {/* Inner Checkboxes */}
                   {expandedGroup === group.group && (
                     <div style={{ marginLeft: 24, marginTop: 8 }}>
-                      <Checkbox.Group style={{ display: "flex", flexDirection: "column" }}>
+                      <Checkbox.Group
+                        style={{ display: "flex", flexDirection: "column" }}
+                      >
                         {group.items.map((item) => (
                           <div key={item.key} style={{ marginBottom: 4 }}>
                             <Checkbox value={item.key}>
                               <b>{item.label}</b>
                             </Checkbox>
-                            <div style={{ fontSize: 12, color: "#999", marginLeft: 24 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#999",
+                                marginLeft: 24,
+                              }}
+                            >
                               {item.key} - {item.desc}
                             </div>
                           </div>
@@ -163,7 +200,6 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({ open, onClose, onSubmit, ro
             })}
           </div>
         </Form.Item>
-
       </Form>
     </Modal>
   );
