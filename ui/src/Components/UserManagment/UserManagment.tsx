@@ -41,12 +41,18 @@ const UserManagement = () => {
 
   const handleDelete = async (record: UserResponse & { id?: string }) => {
     try {
-      // Use username as the identifier (since backend uses username in URL)
-      const userIdForDelete = record.username;
+      // Use userId instead of username (backend expects userId)
+      const userIdForDelete = record.userId || record.id;
+
+      if (!userIdForDelete) {
+        message.error("User ID not found. Cannot delete user.");
+        return;
+      }
 
       await deleteUser(userIdForDelete).unwrap();
 
       message.success("User deleted successfully");
+      refetch(); // Refresh the user list after deletion
     } catch (error: any) {
       console.error("Delete failed:", error);
       const errorMessage =
@@ -203,7 +209,7 @@ const UserManagement = () => {
         columns={columns}
         dataSource={data?.items}
         loading={isGettingUsers}
-        rowKey="username"
+        rowKey={(record) => record.userId || record.username || 'key'}
         pagination={{ pageSize: 5 }}
         footer={() => `Total ${data?.items?.length || 0} users`}
       />

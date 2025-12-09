@@ -7,7 +7,6 @@ export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   update(id: string, data: UpdateUserRequest): Promise<User>;
   delete(id: string): Promise<void>;
-
   create(data: CreateUserRequest): Promise<User>;
 }
 
@@ -16,15 +15,66 @@ export class UserRepository implements IUserRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
   async create(data: CreateUserRequest): Promise<User> {
+    // Extract role from data (it's not a Prisma field)
+    const { role, ...userData } = data;
+
+    // Create user without role field
     const user = await this.prisma.user.create({
-      data,
+      data: userData,
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
     });
 
-    return user;
+    // If role is provided, find the role and create UserRole relationship
+    if (role) {
+      const roleRecord = await this.prisma.role.findFirst({
+        where: {
+          roleName: role,
+          isActive: true,
+        },
+      });
+
+      if (roleRecord) {
+        await this.prisma.userRole.create({
+          data: {
+            userId: user.userId,
+            roleId: roleRecord.roleId,
+            createdBy: data.createdBy,
+            updatedBy: data.updatedBy,
+            isActive: true,
+          },
+        });
+      }
+    }
+
+    // Fetch user again with roles included
+    return this.prisma.user.findUnique({
+      where: { userId: user.userId },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    }) as Promise<User>;
   }
 
   async findAll(): Promise<User[]> {
-    const users = await this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany({
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
     return users;
   }
 
@@ -32,6 +82,13 @@ export class UserRepository implements IUserRepository {
     const user = await this.prisma.user.findUnique({
       where: {
         userId: id,
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
       },
     });
     return user;
@@ -46,11 +103,76 @@ export class UserRepository implements IUserRepository {
     if (!user) {
       throw new Error('User not found');
     }
-    const updatedUser = await this.prisma.user.update({
+
+    // Extract role from data (it's not a Prisma field)
+    const { role } = data;
+
+    // If role is provided, update the UserRole relationship
+    if (role !== undefined) {
+      // Find the role
+      const roleRecord = await this.prisma.role.findFirst({
+        where: {
+          roleName: role,
+          isActive: true,
+        },
+      });
+
+      if (roleRecord) {
+        // Delete existing active user roles
+        await this.prisma.userRole.updateMany({
+          where: {
+            userId: id,
+            isActive: true,
+          },
+          data: {
+            isActive: false,
+            updatedBy: data.updatedBy || user.updatedBy,
+          },
+        });
+
+        // Check if this role is already assigned (even if inactive)
+        const existingUserRole = await this.prisma.userRole.findFirst({
+          where: {
+            userId: id,
+            roleId: roleRecord.roleId,
+          },
+        });
+
+        if (existingUserRole) {
+          // Reactivate and update
+          await this.prisma.userRole.update({
+            where: { userRoleId: existingUserRole.userRoleId },
+            data: {
+              isActive: true,
+              updatedBy: data.updatedBy || user.updatedBy,
+            },
+          });
+        } else {
+          // Create new UserRole
+          await this.prisma.userRole.create({
+            data: {
+              userId: id,
+              roleId: roleRecord.roleId,
+              createdBy: data.updatedBy || user.updatedBy,
+              updatedBy: data.updatedBy || user.updatedBy,
+              isActive: true,
+            },
+          });
+        }
+      }
+    }
+
+    // Fetch user again with roles included
+    return this.prisma.user.findUnique({
       where: { userId: id },
-      data,
-    });
-    return updatedUser;
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    }) as Promise<User>;
   }
 
   async delete(id: string): Promise<void> {

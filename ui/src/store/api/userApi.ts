@@ -23,11 +23,14 @@ export const userApi = baseApi.injectEndpoints({
       invalidatesTags: ["User"],
     }),
 
-    updateUser: builder.mutation<UserListResponse, UpdateUserRequest>({
-      query: (body: UpdateUserRequest) => ({
-        url: `/user/${body.username}`,
+    updateUser: builder.mutation<
+      UserListResponse,
+      { userId: string; data: UpdateUserRequest }
+    >({
+      query: ({ userId, data }) => ({
+        url: `/user/${userId}`,
         method: "PUT",
-        body,
+        body: data,
       }),
       invalidatesTags: ["User"],
     }),

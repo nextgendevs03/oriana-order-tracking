@@ -3,6 +3,7 @@ import { TYPES } from '../types/types';
 import { UserListResponse, UserResponse } from '../schemas/response/UserResponse';
 import { CreateUserRequest, UpdateUserRequest } from '../schemas/request/UserRequest';
 import { IUserRepository } from '../repositories/UserRepository';
+import { User } from '@prisma/client';
 
 export interface IUserService {
   getAllUsers(): Promise<UserListResponse>;
@@ -14,20 +15,20 @@ export interface IUserService {
 
 @injectable()
 export class UserService implements IUserService {
-  mapToResponse: any;
   constructor(@inject(TYPES.UserRepository) private userRepository: IUserRepository) {}
 
   async createUser(data: CreateUserRequest): Promise<UserResponse> {
-    const user: any = await this.userRepository.create(data);
+    const user: User = await this.userRepository.create(data);
 
     // Get the first active role name, or empty string if no roles
-    const roleName = user.userRoles?.[0]?.role?.roleName || '';
+    //  const roleName = user.userRoles?.[0]?.role?.roleName || '';
 
     const response: UserResponse = {
+      userId: user.userId,
       username: user.username,
       email: user.email,
       password: user.password,
-      role: roleName,
+      role: 'roleName',
       isActive: user.isActive,
     };
 
@@ -35,35 +36,37 @@ export class UserService implements IUserService {
   }
 
   async getUserById(id: string): Promise<UserResponse | null> {
-    const user: any = await this.userRepository.findById(id);
+    const user: User | null = await this.userRepository.findById(id);
 
     if (!user) {
       return null;
     }
 
     // Get the first active role name, or empty string if no roles
-    const roleName = user.userRoles?.[0]?.role?.roleName || '';
+    // const roleName = user.userRoles?.[0]?.role?.roleName || '';
 
     return {
+      userId: user.userId,
       username: user.username,
       email: user.email,
       password: user.password,
-      role: roleName,
+      role: 'roleName',
       isActive: user.isActive,
     };
   }
 
   async getAllUsers(): Promise<UserListResponse> {
     const users = await this.userRepository.findAll();
-    const modifiedUsers = users.map((user: any) => {
+    const modifiedUsers = users.map((user: User) => {
       // Get the first active role name, or empty string if no roles
-      const roleName = user.userRoles?.[0]?.role?.roleName || '';
+      //   const roleName = user.userRoles?.[0]?.role?.roleName || '';
 
       return {
+        userId: user.userId,
         username: user.username,
         email: user.email,
         password: user.password,
-        role: roleName,
+        role: 'roleName',
         isActive: user.isActive,
         name: user.username,
         createdAt: user.createdAt.toISOString(),
@@ -74,16 +77,17 @@ export class UserService implements IUserService {
     };
   }
   async updateUser(id: string, data: UpdateUserRequest): Promise<UserResponse> {
-    const user: any = await this.userRepository.update(id, data);
+    const user: User = await this.userRepository.update(id, data);
 
     // Get the first active role name, or empty string if no roles
-    const roleName = user.userRoles?.[0]?.role?.roleName || '';
+    // const roleName = user.userRoles?.[0]?.role?.roleName || '';
 
     return {
+      userId: user.userId,
       username: user.username,
       email: user.email,
       password: user.password,
-      role: roleName,
+      role: 'roleName',
       isActive: user.isActive,
     };
   }

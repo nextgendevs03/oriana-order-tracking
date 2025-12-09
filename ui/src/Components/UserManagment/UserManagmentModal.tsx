@@ -50,6 +50,13 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
       const values = await form.validateFields();
 
       if (editingUser) {
+        const userIdForUpdate = editingUser.userId || editingUser.id;
+
+        if (!userIdForUpdate) {
+          message.error("User ID not found. Cannot update user.");
+          return;
+        }
+
         const updatePayload: UpdateUserRequest = {
           username: editingUser.username,
           email: values.email,
@@ -58,15 +65,17 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           updatedBy: userId,
         };
 
-        await updateUser(updatePayload).unwrap();
+        await updateUser({
+          userId: userIdForUpdate,
+          data: updatePayload,
+        }).unwrap();
         message.success("User updated successfully");
       } else {
-       
         const userData: CreateUserRequest = {
           username: values.username,
           email: values.email,
           password: values.password,
-          role: values.role, 
+          role: values.role,
           isActive: values.isActive ? true : false,
           createdBy: userId,
           updatedBy: userId,
