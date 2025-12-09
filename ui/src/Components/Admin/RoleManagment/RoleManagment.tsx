@@ -24,7 +24,7 @@ import {
   useDeleteRoleMutation,
   RoleResponse,
   RoleType,
-} from "../../../store/roleApi";
+} from "../../../store/api/roleApi";
 
 const RoleManagement: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);

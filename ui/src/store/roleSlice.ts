@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RoleType } from "./roleApi";
+import { RoleType } from "./api/roleApi";
 
 interface RoleState {
   roleToEdit: RoleType | null;
