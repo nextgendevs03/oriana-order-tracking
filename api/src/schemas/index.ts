@@ -1,5 +1,5 @@
 // Request schemas
 export * from './request/PORequest';
 
-// Response schemas
-export * from './response/POResponse';
+export * from './request/UserRequest';
+export * from './response/UserResponse';

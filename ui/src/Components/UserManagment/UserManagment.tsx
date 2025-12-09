@@ -1,27 +1,82 @@
 import React, { useState } from "react";
-import { Table, Input, Button, Select, Tag, Switch, Space } from "antd";
+import {
+  Table,
+  Input,
+  Button,
+  Select,
+  Tag,
+  Switch,
+  Space,
+  Popconfirm,
+  message,
+} from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import UserMnagmentModal from "./UserMnagmentModal";
-import { useAppSelector } from "../../store/hook";
-import { selectUsers } from "../../store/userSlice";
+import UserManagmentModal from "./UserManagmentModal";
+import { useAppDispatch, useAppSelector } from "../../store/hook";
+import { selectUsers, updateUserStatus } from "../../store/userSlice";
+import {
+  useGetUsersQuery,
+  useDeleteUserMutation,
+} from "../../store/api/userApi";
+import { UserResponse } from "../../types/orianaTypes";
 
 const { Search } = Input;
 const { Option } = Select;
 
 const UserManagement = () => {
+  const dispatch = useAppDispatch();
+  const [editingUser, setEditingUser] = useState<
+    (UserResponse & { id?: string }) | null
+  >(null);
   const [openModal, setOpenModal] = useState(false);
+
+  const { data, isLoading: isGettingUsers, refetch } = useGetUsersQuery();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const users = useAppSelector(selectUsers);
+
+  const handleEdit = (record: UserResponse & { id?: string }) => {
+    setEditingUser(record);
+    setOpenModal(true);
+  };
+
+  const handleDelete = async (record: UserResponse & { id?: string }) => {
+    try {
+      // Use username as the identifier (since backend uses username in URL)
+      const userIdForDelete = record.username;
+
+      await deleteUser(userIdForDelete).unwrap();
+
+      message.success("User deleted successfully");
+    } catch (error: any) {
+      console.error("Delete failed:", error);
+      const errorMessage =
+        error?.data?.error?.message ||
+        error?.message ||
+        "Failed to delete user. Please try again.";
+      message.error(errorMessage);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setEditingUser(null);
+  };
+
+  const handleAddUser = () => {
+    setEditingUser(null);
+    setOpenModal(true);
+  };
 
   const columns = [
     {
-      title: "User",
-      dataIndex: "name",
-      key: "name",
-      render: (text: string, record: any) => (
+      title: "Username",
+      dataIndex: "username",
+      key: "username",
+      render: (text: string, record: UserResponse) => (
         <div>
-          <strong>{record.name}</strong> <br />
+          <strong>{record.username}</strong> <br />
           <span style={{ color: "gray", fontSize: "12px" }}>
-            {record.email}
+            {record.username}
           </span>
         </div>
       ),
@@ -30,7 +85,7 @@ const UserManagement = () => {
       title: "Role",
       dataIndex: "role",
       key: "role",
-      render: (role: string) => (
+      render: (role: string, record: UserResponse) => (
         <Tag
           color={
             role === "Super Admin"
@@ -40,7 +95,7 @@ const UserManagement = () => {
                 : "cyan"
           }
         >
-          {role}
+          {record.role}
         </Tag>
       ),
     },
@@ -53,13 +108,14 @@ const UserManagement = () => {
           checkedChildren="Active"
           unCheckedChildren="Inactive"
           checked={record.status === "Active"}
-          //   onChange={() => {
-          //     setUsers((prev) =>
-          //       prev.map((u) =>
-          //         u.key === record.key ? { ...u, status: !u.status } : u
-          //       )
-          //     );
-          //   }}
+          onChange={() =>
+            dispatch(
+              updateUserStatus({
+                id: record.id,
+                status: record.status === "Active" ? false : true,
+              })
+            )
+          }
         />
       ),
     },
@@ -67,19 +123,41 @@ const UserManagement = () => {
       title: "Last Login",
       dataIndex: "lastLogin",
       key: "lastLogin",
+      render: (lastLogin: string) => (lastLogin ? lastLogin : "-"),
     },
     {
       title: "Created",
       dataIndex: "created",
       key: "created",
+      render: (created: string) => (created ? created : "-"),
     },
     {
       title: "Actions",
       key: "actions",
-      render: () => (
+      render: (_: any, record: UserResponse & { id?: string }) => (
         <Space size="middle">
-          <EditOutlined style={{ cursor: "pointer" }} />
-          <DeleteOutlined style={{ cursor: "pointer", color: "red" }} />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+            style={{ padding: 0 }}
+          />
+          <Popconfirm
+            title="Delete User"
+            description="Are you sure you want to delete this user?"
+            onConfirm={() => handleDelete(record)}
+            okText="Yes"
+            cancelText="No"
+            okButtonProps={{ danger: true }}
+          >
+            <Button
+              type="link"
+              danger
+              icon={<DeleteOutlined />}
+              style={{ padding: 0 }}
+              loading={isDeleting}
+            />
+          </Popconfirm>
         </Space>
       ),
     },
@@ -96,11 +174,7 @@ const UserManagement = () => {
         }}
       >
         <h2>User Management</h2>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setOpenModal(true)}
-        >
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>
           Add User
         </Button>
       </div>
@@ -127,18 +201,18 @@ const UserManagement = () => {
       {/* Table */}
       <Table
         columns={columns}
-        dataSource={users}
+        dataSource={data?.items}
+        loading={isGettingUsers}
+        rowKey="username"
         pagination={{ pageSize: 5 }}
-        footer={() => `Total ${users.length} users`}
+        footer={() => `Total ${data?.items?.length || 0} users`}
       />
 
       {/* Popup modal */}
-      <UserMnagmentModal
+      <UserManagmentModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
-        onSubmit={(data) => {
-          console.log(data);
-        }}
+        onClose={handleCloseModal}
+        editingUser={editingUser}
       />
     </div>
   );

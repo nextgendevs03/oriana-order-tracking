@@ -23,9 +23,17 @@ const userSlice = createSlice({
     addUser: (state, action: PayloadAction<User>) => {
       state.users.push(action.payload);
     },
+    
+    updateUserStatus: (state, action: PayloadAction<{ id: string; status: boolean }>) => {
+      const { id, status } = action.payload;
+      const user = state.users.find((user) => user.id === id);
+      if (user) {
+        user.status = status ? "Active" : "Inactive";
+      }
+    },
   },
 });
 export const selectUsers = (state: RootState) => state.user.users;
 
-export const { addUser } = userSlice.actions;
+export const { addUser, updateUserStatus } = userSlice.actions;
 export default userSlice.reducer;
