@@ -1,40 +1,58 @@
 import React from "react";
 import { Menu } from "antd";
-import { DashboardOutlined, SettingOutlined } from "@ant-design/icons";
+import { HomeOutlined, UserOutlined, SettingOutlined } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
+import type { MenuProps } from "antd";
 
-interface SidebarMenuProps {
-  collapsed?: boolean;
-}
-
-const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed }) => {
+const SidebarMenu = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Determine selected key based on current path
-  const getSelectedKey = () => {
-    const path = location.pathname;
-    if (path === "/dashboard" || path === "/" || path.includes("/po-details") || path.includes("/create-po")) {
-      return "dashboard";
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    switch (e.key) {
+      case "1":
+        navigate("/dashboard");
+        break;
+      case "2-1":
+        navigate("/user-management");
+        break;
+      case "3":
+        // Add profile navigation if needed
+        break;
+      default:
+        break;
     }
-    if (path === "/settings") {
-      return "settings";
-    }
-    return "dashboard";
   };
 
-  const menuItems = [
-    {
-      key: "dashboard",
-      icon: <DashboardOutlined />,
-      label: "Dashboard",
-      onClick: () => navigate("/dashboard"),
+  // Get the current selected key based on the route
+  const getSelectedKey = () => {
+    if (location.pathname === "/dashboard") return ["1"];
+    if (location.pathname === "/user-management") return ["2-1"];
+    return ["1"];
+  };
+
+  const menuItems: MenuProps["items"] = [
+    { 
+      key: "1", 
+      icon: <HomeOutlined />, 
+      label: "Dashboard" 
     },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Settings",
-      onClick: () => navigate("/settings"),
+    { 
+      key: "2", 
+      icon: <SettingOutlined />, 
+      label: "Admin",
+      children: [
+        { 
+          key: "2-1", 
+          label: "User Management", 
+          icon: <UserOutlined /> 
+        }
+      ]
+    },
+    { 
+      key: "3", 
+      icon: <UserOutlined />, 
+      label: "Profile" 
     },
   ];
 
@@ -42,8 +60,9 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed }) => {
     <Menu
       theme="dark"
       mode="inline"
-      selectedKeys={[getSelectedKey()]}
+      selectedKeys={getSelectedKey()}
       items={menuItems}
+      onClick={handleMenuClick}
       style={{ marginTop: 8 }}
     />
   );
