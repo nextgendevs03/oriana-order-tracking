@@ -11,18 +11,22 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import poReducer from "./poSlice";
+import roleReducer from "./roleSlice";
+import { roleApi } from "./roleApi";
 
 // Persist configuration
 const persistConfig = {
   key: "root",
   version: 1,
   storage,
-  whitelist: ["po"], // Only persist the 'po' reducer
+  whitelist: ["po", "role"], // Persist both 'po' and 'role' reducers
 };
 
 // Combine reducers
 const rootReducer = combineReducers({
   po: poReducer,
+  role: roleReducer,
+  [roleApi.reducerPath]: roleApi.reducer,
 });
 
 // Create persisted reducer
@@ -36,7 +40,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
+    }).concat(roleApi.middleware),
 });
 
 // Create persistor
