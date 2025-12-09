@@ -11,6 +11,8 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import poReducer from "./poSlice";
+import userReducer from "./userSlice";
+//import authReducer from "./authSlice";
 
 // Import the base API for RTK Query
 import { baseApi } from "./api";
@@ -28,8 +30,11 @@ const persistConfig = {
 // Combine reducers
 const rootReducer = combineReducers({
   po: poReducer,
+  user: userReducer,
   role: roleReducer,
   [roleApi.reducerPath]: roleApi.reducer,
+  // Add RTK Query API reducer
+  [baseApi.reducerPath]: baseApi.reducer,
 });
 
 // Create persisted reducer

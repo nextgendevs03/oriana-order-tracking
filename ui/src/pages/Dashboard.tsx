@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Table, Button, Tag } from "antd";
 import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { useAppSelector } from "../store/hook";
+import { useAppSelector } from "../store/hooks";
 import { POData } from "../store/poSlice";
 import type { ColumnsType } from "antd/es/table";
 
@@ -13,13 +13,14 @@ interface PORecord {
   clientName: string;
   osgPiNo: string;
   osgPoNo: string;
+  assignDispatchTo: number;
   paymentStatus: string;
   poStatus: string;
 }
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const poList: POData[] = useAppSelector((state) => state.po.poList);
+  const poList = useAppSelector((state) => state.po.poList);
 
   // Transform Redux data to table format
   const dataSource: PORecord[] = poList.map((po: POData) => ({
@@ -29,6 +30,7 @@ const Dashboard: React.FC = () => {
     clientName: po.clientName,
     osgPiNo: String(po.osgPiNo),
     osgPoNo: String(po.clientPoNo),
+    assignDispatchTo: po.assignDispatchTo,
     paymentStatus: po.paymentStatus,
     poStatus: po.poStatus,
   }));
@@ -80,9 +82,28 @@ const Dashboard: React.FC = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
+  // Generate unique filter options from data
+  const clientNameFilters = useMemo(() => {
+    const uniqueNames = Array.from(new Set(dataSource.map((item) => item.clientName)));
+    return uniqueNames.map((name) => ({ text: name, value: name }));
+  }, [dataSource]);
+
+  const assignDispatchToFilters = [
+    { text: "Aman", value: 1 },
+    { text: "Rahul", value: 2 },
+  ];
+
+  const poStatusFilters = [
+    { text: "PO Received", value: "po_received" },
+    { text: "PO Confirmed on Phone", value: "po_confirmed_phone" },
+    { text: "On Call", value: "on_call" },
+    { text: "On Mail", value: "on_mail" },
+    { text: "Closed", value: "closed" },
+  ];
+
   const columns: ColumnsType<PORecord> = [
     {
-      title: "PO Order ID",
+      title: "OSG Order ID",
       dataIndex: "poOrderId",
       key: "poOrderId",
       fixed: "left",
@@ -99,6 +120,9 @@ const Dashboard: React.FC = () => {
       dataIndex: "clientName",
       key: "clientName",
       width: 180,
+      filters: clientNameFilters,
+      filterSearch: true,
+      onFilter: (value, record) => record.clientName.includes(value as string),
     },
     {
       title: "OSG PI No",
@@ -107,10 +131,23 @@ const Dashboard: React.FC = () => {
       width: 140,
     },
     {
-      title: "OSG PO No",
-      dataIndex: "osgPoNo",
-      key: "osgPoNo",
+      title: "Client PO No",
+      dataIndex: "clientPoNo",
+      key: "clientPoNo",
       width: 140,
+    },
+    {
+      title: "Assign Dispatch To",
+      dataIndex: "assignDispatchTo",
+      key: "assignDispatchTo",
+      width: 160,
+      filters: assignDispatchToFilters,
+      filterSearch: true,
+      onFilter: (value, record) => record.assignDispatchTo === value,
+      render: (value: number) => {
+        const assigneeMap: Record<number, string> = { 1: "Aman", 2: "Rahul" };
+        return <Tag color="cyan">{assigneeMap[value] || "-"}</Tag>;
+      },
     },
     {
       title: "Payment Status",
@@ -126,6 +163,9 @@ const Dashboard: React.FC = () => {
       dataIndex: "poStatus",
       key: "poStatus",
       width: 150,
+      filters: poStatusFilters,
+      filterSearch: true,
+      onFilter: (value, record) => record.poStatus === value,
       render: (status: string) => (
         <Tag color={getPoStatusColor(status)}>{formatLabel(status)}</Tag>
       ),

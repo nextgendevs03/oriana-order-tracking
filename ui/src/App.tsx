@@ -2,44 +2,47 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import LayoutPage from "./pages/LayoutPage";
 import React from "react";
+import UserManagement from "./Components/UserManagment/UserManagment";
+import CreatePO from "./pages/CreatePO";
+import PODetails from "./pages/PODetails";
 import Dashboard from "./pages/Dashboard";
-import CreatePurchaseOrderForm from "./Components/PurchaseOrderDetails/CreatePurchaseOrderForm";
-import OrderTrackingDetail from "./pages/OrderTrackingDetail";
+import Settings from "./pages/Settings";
 import RoleManagement from "./Components/Admin/RoleManagment/RoleManagment";
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
+    <div>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Route */}
+          <Route path="/" element={<Login />} />
 
-        {/* Public Route */}
-        <Route path="/" element={<Login />} />
-
-        {/* Dashboard */}
-        <Route path="/dashboard" element={<LayoutPage />}>
-          <Route index element={<Dashboard />} />
-        </Route>
-
-        {/* Create PO */}
-        <Route path="/create-po" element={<LayoutPage />}>
-          <Route index element={<CreatePurchaseOrderForm />} />
-        </Route>
-
-        {/* PO Detail */}
-        <Route path="/po-details/:poId" element={<LayoutPage />}>
-          <Route index element={<OrderTrackingDetail />} />
-        </Route>
-
-        {/* ✅ ROLE MANAGEMENT ROUTE (FIXED) */}
+          {/* Protected Routes with Layout */}
+          <Route path="/dashboard" element={<LayoutPage />}>
+            <Route index element={<Dashboard />} />
+          </Route>
+          <Route path="/settings" element={<LayoutPage />}>
+            <Route index element={<Settings />} />
+          </Route>
+          <Route path="/create-po" element={<LayoutPage />}>
+            <Route index element={<CreatePO />} />
+          </Route>
+          <Route path="/po-details/:poId" element={<LayoutPage />}>
+            <Route index element={<PODetails />} />
+          </Route>
+          <Route path="/user-management" element={<LayoutPage />}>
+            <Route index element={<UserManagement />} />
+          </Route>
+          {/* ✅ ROLE MANAGEMENT ROUTE (FIXED) */}
         <Route path="/role-management" element={<LayoutPage />}>
           <Route index element={<RoleManagement />} />
         </Route>
-
-        {/* Redirect unknown routes */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-
-      </Routes>
-    </BrowserRouter>
+          
+          {/* Fallback redirect */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </div>
   );
 };
 

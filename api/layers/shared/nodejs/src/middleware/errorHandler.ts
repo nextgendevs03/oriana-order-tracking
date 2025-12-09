@@ -75,9 +75,15 @@ export const createSuccessResponse = <T>(
   meta?: ApiResponse['meta'],
   cacheMaxAge: number = 0
 ): APIGatewayProxyResult => {
-  const response: ApiResponse<T> = {
+  // If data is an object (not array or null), spread it directly into response
+  // This avoids double nesting with RTK Query which already wraps responses in 'data'
+  // For arrays and primitives, wrap them in a data field
+  const isObject = data !== null && typeof data === 'object' && !Array.isArray(data);
+
+  const response = {
+    ...(isObject ? data : {}),
     success: true,
-    data,
+    ...(!isObject && data !== null && data !== undefined ? { data } : {}),
     ...(meta && { meta }),
   };
 

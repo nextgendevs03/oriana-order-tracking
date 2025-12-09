@@ -15,7 +15,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from '../index';
 
 // API base URL - configure based on environment
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
 /**
  * Base API slice with authentication
@@ -42,7 +42,7 @@ export const baseApi = createApi({
       // If user is authenticated, add JWT token
       // Note: Adjust the path if you store token differently
       // Currently using currentUser object - add 'token' field to User interface if needed
-      const currentUser = state.auth.currentUser;
+      //const currentUser = state.auth.currentUser;
 
       // Example: If you add a token field to your User interface
       // const token = currentUser?.token;

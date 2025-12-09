@@ -1,42 +1,62 @@
 import React from "react";
-import { Layout, Menu } from "antd";
-import {
-  DashboardOutlined,
-  UserOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
+import { Menu } from "antd";
+import { HomeOutlined, UserOutlined, SettingOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
-
-const { Sider } = Layout;
+import type { MenuProps } from "antd";
+import Sider from "antd/es/layout/Sider";
 
 const SidebarMenu = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const menuItems = [
-    {
-      key: "/dashboard",
-      icon: <DashboardOutlined />,
-      label: "Dashboard",
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    switch (e.key) {
+      case "1":
+        navigate("/dashboard");
+        break;
+      case "2-1":
+        navigate("/user-management");
+        break;
+      case "3":
+        navigate("/role-management");
+        break;
+      case "4":
+        navigate("/admin/permissions");
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Get the current selected key based on the route
+  const getSelectedKey = () => {
+    if (location.pathname === "/dashboard") return ["1"];
+    if (location.pathname === "/user-management") return ["2-1"];
+    return ["1"];
+  };
+
+  const menuItems: MenuProps["items"] = [
+    { 
+      key: "1", 
+      icon: <HomeOutlined />, 
+      label: "Dashboard" 
     },
-    {
-      key: "admin",
-      icon: <UserOutlined />,
+    { 
+      key: "2", 
+      icon: <SettingOutlined />, 
       label: "Admin",
       children: [
-        {
-          key: "/admin/users",
-          label: "User Management",
-        },
-        {
-          key: "/role-management",
-          label: "Role Management",
-        },
-        {
-          key: "/admin/permissions",
-          label: "Permissions",
-        },
-      ],
+        { 
+          key: "2-1", 
+          label: "User Management", 
+          icon: <UserOutlined /> 
+        }
+      ]
+    },
+    { 
+      key: "3", 
+      icon: <UserOutlined />, 
+      label: "Profile" 
     },
   ];
 
@@ -77,7 +97,7 @@ const SidebarMenu = () => {
         selectedKeys={[location.pathname]}
         defaultOpenKeys={["admin"]}
         items={menuItems}
-        onClick={(e) => navigate(e.key)}
+        onClick={handleMenuClick}
         style={{ background: "#001529", flex: 1 }}
       />
 
