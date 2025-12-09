@@ -13,18 +13,19 @@ import {
   Typography,
   Tag,
 } from "antd";
-import { useAppDispatch, useAppSelector } from "../../../store/hook";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addDispatchDetail,
   updateDispatchDetail,
   DispatchDetail,
+  DispatchedItem,
   POItem,
-} from "../../../store/poSlice";
+} from "../store/poSlice";
 import dayjs from "dayjs";
 
 const { Text } = Typography;
 
-interface DispatchModalProps {
+interface DispatchFormModalProps {
   visible: boolean;
   onClose: () => void;
   poId: string;
@@ -35,12 +36,12 @@ interface DispatchModalProps {
 interface ProductQuantityInfo {
   product: string;
   category: string;
-  totalQuantity: number;
+  quantity: number; // Actual quantity (excluding spare)
   dispatchedQuantity: number;
   availableQuantity: number;
 }
 
-const DispatchModal: React.FC<DispatchModalProps> = ({
+const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
   visible,
   onClose,
   poId,
@@ -59,19 +60,22 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
     (d) => d.poId === poId && d.id !== editData?.id
   );
 
-  // Calculate available quantities for all products
+  // Calculate available quantities for all products (based on quantity, not totalQuantity)
   const productQuantityInfo = useMemo((): Record<string, ProductQuantityInfo> => {
     const info: Record<string, ProductQuantityInfo> = {};
     poItems.forEach((item) => {
-      const dispatchedQty = currentPODispatches
-        .filter((d) => d.product === item.product)
-        .reduce((sum, d) => sum + d.deliveryQuantity, 0);
-      const availableQty = item.totalQuantity - dispatchedQty;
+      // Sum dispatched quantity from all dispatch entries' dispatchedItems
+      const dispatchedQty = currentPODispatches.reduce((sum, d) => {
+        const itemQty = d.dispatchedItems?.find((di) => di.product === item.product)?.quantity || 0;
+        return sum + itemQty;
+      }, 0);
+      // Use quantity (actual items) not totalQuantity (which includes spare)
+      const availableQty = item.quantity - dispatchedQty;
 
       info[item.product] = {
         product: item.product,
         category: item.category,
-        totalQuantity: item.totalQuantity,
+        quantity: item.quantity, // Actual quantity (excluding spare)
         dispatchedQuantity: dispatchedQty,
         availableQuantity: availableQty > 0 ? availableQty : 0,
       };
@@ -82,9 +86,14 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
   // Initialize form with edit data
   useEffect(() => {
     if (visible && editData) {
-      setSelectedProducts([editData.product]);
+      const products = editData.dispatchedItems?.map((item) => item.product) || [];
+      setSelectedProducts(products);
+      const productQuantities: Record<string, number> = {};
+      editData.dispatchedItems?.forEach((item) => {
+        productQuantities[item.product] = item.quantity;
+      });
       form.setFieldsValue({
-        products: [editData.product],
+        products: products,
         projectName: editData.projectName,
         projectLocation: editData.projectLocation,
         deliveryLocation: editData.deliveryLocation,
@@ -95,9 +104,7 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
           : undefined,
         deliveryContact: editData.deliveryContact,
         remarks: editData.remarks || undefined,
-        productQuantities: {
-          [editData.product]: editData.deliveryQuantity,
-        },
+        productQuantities: productQuantities,
       });
     } else if (visible && !editData) {
       form.resetFields();
@@ -110,11 +117,12 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
     return poItems.map((item) => {
       const info = productQuantityInfo[item.product];
       const remainingQty = info?.availableQuantity || 0;
+      const isEditProduct = editData?.dispatchedItems?.some((di) => di.product === item.product);
 
       return {
         value: item.product,
-        label: `${item.product.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} - ${item.category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} (Available: ${remainingQty}/${item.totalQuantity})`,
-        disabled: remainingQty <= 0 && item.product !== editData?.product,
+        label: `${item.product.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} - ${item.category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} (Available: ${remainingQty}/${item.quantity})`,
+        disabled: remainingQty <= 0 && !isEditProduct,
       };
     });
   };
@@ -141,20 +149,24 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
     try {
       const values = await form.validateFields();
 
+      // Build dispatchedItems array from selected products and their quantities
+      const dispatchedItems: DispatchedItem[] = selectedProducts
+        .map((product) => ({
+          product: product,
+          quantity: values.productQuantities?.[product] || 0,
+        }))
+        .filter((item) => item.quantity > 0);
+
       if (isEditMode && editData) {
         // Update existing dispatch
-        const product = selectedProducts[0];
-        const quantity = values.productQuantities?.[product];
-
         const updatedDispatch: DispatchDetail = {
           ...editData,
-          product: product,
+          dispatchedItems: dispatchedItems,
           projectName: values.projectName,
           projectLocation: values.projectLocation,
           deliveryLocation: values.deliveryLocation,
           deliveryAddress: values.deliveryAddress,
           googleMapLink: values.googleMapLink || "",
-          deliveryQuantity: quantity,
           confirmDispatchDate: values.confirmDispatchDate
             ? dayjs(values.confirmDispatchDate).format("YYYY-MM-DD")
             : "",
@@ -164,32 +176,26 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
 
         dispatch(updateDispatchDetail(updatedDispatch));
       } else {
-        // Create new dispatch records for each selected product
+        // Create a single dispatch entry with all selected products
         const timestamp = Date.now();
-        selectedProducts.forEach((product, index) => {
-          const quantity = values.productQuantities?.[product];
-          if (quantity && quantity > 0) {
-            const dispatchData: DispatchDetail = {
-              id: `DISPATCH-${(timestamp + index).toString().slice(-8)}`,
-              poId: poId,
-              product: product,
-              projectName: values.projectName,
-              projectLocation: values.projectLocation,
-              deliveryLocation: values.deliveryLocation,
-              deliveryAddress: values.deliveryAddress,
-              googleMapLink: values.googleMapLink || "",
-              deliveryQuantity: quantity,
-              confirmDispatchDate: values.confirmDispatchDate
-                ? dayjs(values.confirmDispatchDate).format("YYYY-MM-DD")
-                : "",
-              deliveryContact: values.deliveryContact,
-              remarks: values.remarks || "",
-              createdAt: new Date().toISOString(),
-            };
+        const dispatchData: DispatchDetail = {
+          id: `DISPATCH-${timestamp.toString().slice(-8)}`,
+          poId: poId,
+          dispatchedItems: dispatchedItems,
+          projectName: values.projectName,
+          projectLocation: values.projectLocation,
+          deliveryLocation: values.deliveryLocation,
+          deliveryAddress: values.deliveryAddress,
+          googleMapLink: values.googleMapLink || "",
+          confirmDispatchDate: values.confirmDispatchDate
+            ? dayjs(values.confirmDispatchDate).format("YYYY-MM-DD")
+            : "",
+          deliveryContact: values.deliveryContact,
+          remarks: values.remarks || "",
+          createdAt: new Date().toISOString(),
+        };
 
-            dispatch(addDispatchDetail(dispatchData));
-          }
-        });
+        dispatch(addDispatchDetail(dispatchData));
       }
 
       form.resetFields();
@@ -328,7 +334,7 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
                           style={{ marginLeft: "8px" }}
                         >
                           Available: {info?.availableQuantity || 0}/
-                          {info?.totalQuantity || 0}
+                          {info?.quantity || 0}
                         </Tag>
                       </div>
                       <Form.Item
@@ -427,4 +433,5 @@ const DispatchModal: React.FC<DispatchModalProps> = ({
   );
 };
 
-export default DispatchModal;
+export default DispatchFormModal;
+
