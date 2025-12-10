@@ -25,8 +25,6 @@ export class RoleController {
   @Post('/')
   async create(@Body() data: CreateRoleRequest) {
     if (!data.roleName) throw new ValidationError('roleName is required');
-    if (!data.createdBy) throw new ValidationError('createdBy is required');
-
     const result = await this.service.createRole(data);
     return createSuccessResponse(result, 201);
   }
@@ -43,20 +41,18 @@ export class RoleController {
       isActive: isActive ? isActive === 'true' : undefined,
     });
 
-    return createSuccessResponse(result.items, 200, result.pagination);
+    return createSuccessResponse(result, 200);
   }
 
   @Get('/{id}')
   async getById(@Param('id') id: string) {
     const role = await this.service.getRoleById(id);
     if (!role) throw new NotFoundError(`Role ${id} not found`);
-    return createSuccessResponse(role);
+    return createSuccessResponse(role, 200);
   }
 
   @Put('/{id}')
   async update(@Param('id') id: string, @Body() data: UpdateRoleRequest) {
-    if (!data.updatedBy) throw new ValidationError('updatedBy required');
-
     const role = await this.service.updateRole(id, data);
     if (!role) throw new NotFoundError(`Role ${id} not found`);
     return createSuccessResponse(role);

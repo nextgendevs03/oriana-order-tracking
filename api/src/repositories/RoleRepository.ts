@@ -20,8 +20,8 @@ export class RoleRepository implements IRoleRepository {
       data: {
         roleName: data.roleName,
         description: data.description || '',
-        createdBy: data.createdBy,
-        updatedBy: data.createdBy,
+        createdBy: 'system',
+        updatedBy: 'system',
         isActive: data.isActive ?? true,
       },
     });
@@ -31,7 +31,7 @@ export class RoleRepository implements IRoleRepository {
     return this.prisma.role.findUnique({ where: { roleId: id } });
   }
 
-  async findAll(params: ListRoleRequest) {
+  async findAll(params: ListRoleRequest): Promise<{ rows: Role[]; count: number }> {
     const { page = 1, limit = 10, isActive } = params;
     const skip = (page - 1) * limit;
 
@@ -55,6 +55,7 @@ export class RoleRepository implements IRoleRepository {
     const existing = await this.prisma.role.findUnique({
       where: { roleId: id },
     });
+
     if (!existing) return null;
 
     return this.prisma.role.update({
@@ -63,7 +64,7 @@ export class RoleRepository implements IRoleRepository {
         ...(data.roleName && { roleName: data.roleName }),
         ...(data.description && { description: data.description }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
-        updatedBy: data.updatedBy,
+        updatedBy: 'system',
       },
     });
   }

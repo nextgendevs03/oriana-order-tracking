@@ -1,119 +1,41 @@
 import { baseApi } from ".";
-// Backend Response Types (matching backend schema)
-export interface RoleResponse {
-  roleId: string;
-  roleName: string;
-  description: string | null;
-  isActive: boolean;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface RoleListResponse {
-  items: RoleResponse[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-// Request Types (matching backend schema)
-export interface CreateRoleRequest {
-  roleName: string;
-  description?: string;
-  createdBy: string;
-  isActive?: boolean;
-}
-
-export interface UpdateRoleRequest {
-  roleName?: string;
-  description?: string;
-  updatedBy: string;
-  isActive?: boolean;
-}
-
-export interface ListRoleParams {
-  page?: number;
-  limit?: number;
-  isActive?: boolean;
-}
-
-// Frontend Display Type (for UI)
-export interface RoleType {
-  key: string;
-  roleId: string;
-  roleName: string;
-  description: string;
-  permissions: number;
-  users: number;
-  locked?: boolean;
-  isActive?: boolean;
-}
-
-// Helper to get current user
-const getCurrentUser = () => {
-  return localStorage.getItem("loggedUser") || "system";
-};
+import { RoleListResponse, RoleResponse, CreateRoleRequest, UpdateRoleRequest, ListRoleRequest } from "@OrianaTypes";
 
 export const roleApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getAllRoles: builder.query<RoleListResponse, ListRoleParams>({
-      query: (params) => ({
-        url: "role/",
-        method: "GET",
-        params: params,
-      }),
+    getAllRoles: builder.query<RoleListResponse, ListRoleRequest>({
+      query: (params) => ({ url: "role/", method: "GET", params }),
       providesTags: ["Role"],
     }),
-    // POST create role
-    createRole: builder.mutation<
-      RoleResponse,
-      Omit<CreateRoleRequest, "createdBy">
-    >({
+
+    createRole: builder.mutation<RoleResponse, CreateRoleRequest>({
       query: (body) => ({
-        url: "/",
+        url: "role/",
         method: "POST",
-        body: {
-          ...body,
-          createdBy: getCurrentUser(),
-        },
+        body: { ...body },
       }),
       invalidatesTags: ["Role"],
     }),
-    // PUT update role
+
     updateRole: builder.mutation<
       RoleResponse,
-      { id: string; data: Omit<UpdateRoleRequest, "updatedBy"> }
+      { id: string; data: UpdateRoleRequest }
     >({
       query: ({ id, data }) => ({
-        url: `/${id}`,
+        url: `role/${id}`,
         method: "PUT",
-        body: {
-          ...data,
-          updatedBy: getCurrentUser(),
-        },
+        body: data,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: "Role", id },
-        "Role",
-      ],
+      invalidatesTags: ["Role"],
     }),
-    // DELETE role
+
     deleteRole: builder.mutation<{ id: string; deleted: boolean }, string>({
-      query: (id) => ({
-        url: `/${id}`,
-        method: "DELETE",
-      }),
+      query: (id) => ({ url: `role/${id}`, method: "DELETE" }),
       invalidatesTags: ["Role"],
     }),
   }),
 });
 
-// Export hooks for usage in functional components
 export const {
   useGetAllRolesQuery,
   useCreateRoleMutation,

@@ -23,12 +23,12 @@ export class RoleService implements IRoleService {
 
   async createRole(data: CreateRoleRequest): Promise<RoleResponse> {
     const role = await this.repo.create(data);
-    return this.map(role);
+    return role;
   }
 
-  async getRoleById(id: string) {
+  async getRoleById(id: string): Promise<RoleResponse | null> {
     const role = await this.repo.findById(id);
-    return role ? this.map(role) : null;
+    return role;
   }
 
   async getAllRoles(params: ListRoleRequest): Promise<RoleListResponse> {
@@ -36,7 +36,7 @@ export class RoleService implements IRoleService {
     const { rows, count } = await this.repo.findAll(params);
 
     return {
-      items: rows.map((r) => this.map(r)),
+      items: rows,
       pagination: {
         page,
         limit,
@@ -46,25 +46,12 @@ export class RoleService implements IRoleService {
     };
   }
 
-  async updateRole(id: string, data: UpdateRoleRequest) {
+  async updateRole(id: string, data: UpdateRoleRequest): Promise<RoleResponse | null> {
     const role = await this.repo.update(id, data);
-    return role ? this.map(role) : null;
+    return role;
   }
 
-  async deleteRole(id: string) {
+  async deleteRole(id: string): Promise<boolean> {
     return this.repo.delete(id);
-  }
-
-  private map(role: any): RoleResponse {
-    return {
-      roleId: role.roleId,
-      roleName: role.roleName,
-      description: role.description,
-      isActive: role.isActive,
-      createdBy: role.createdBy,
-      updatedBy: role.updatedBy,
-      createdAt: role.createdAt.toISOString(),
-      updatedAt: role.updatedAt.toISOString(),
-    };
   }
 }

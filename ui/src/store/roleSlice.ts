@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RoleType } from "./api/roleApi";
+import { RoleResponse } from "@OrianaTypes";
 
 interface RoleState {
-  roleToEdit: RoleType | null;
+  roleToEdit: RoleResponse | null;
   isModalOpen: boolean;
   searchText: string;
   currentPage: number;
@@ -23,18 +23,23 @@ const roleSlice = createSlice({
   reducers: {
     openModal: (state) => {
       state.isModalOpen = true;
+      state.roleToEdit = null;
     },
+
+    openModalForEdit: (state, action: PayloadAction<RoleResponse>) => {
+      state.isModalOpen = true;
+      state.roleToEdit = action.payload;
+    },
+
     closeModal: (state) => {
       state.isModalOpen = false;
       state.roleToEdit = null;
     },
-    setRoleToEdit: (state, action: PayloadAction<RoleType | null>) => {
-      state.roleToEdit = action.payload;
-      state.isModalOpen = true;
-    },
+
     setSearchText: (state, action: PayloadAction<string>) => {
       state.searchText = action.payload;
     },
+
     setPagination: (
       state,
       action: PayloadAction<{ page: number; pageSize: number }>
@@ -48,8 +53,9 @@ const roleSlice = createSlice({
 export const {
   openModal,
   closeModal,
-  setRoleToEdit,
+  openModalForEdit,
   setSearchText,
   setPagination,
 } = roleSlice.actions;
+
 export default roleSlice.reducer;
