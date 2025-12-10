@@ -2,7 +2,7 @@ import {
   CreateUserRequest,
   UpdateUserRequest,
   UserListResponse,
-} from "../../types/orianaTypes";
+} from "@OrianaTypes";
 import { baseApi } from "./baseApi";
 
 export const userApi = baseApi.injectEndpoints({

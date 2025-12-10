@@ -7,6 +7,7 @@ import CreatePO from "./pages/CreatePO";
 import PODetails from "./pages/PODetails";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
+import RoleManagement from "./Components/Admin/RoleManagment/RoleManagment";
 
 const App: React.FC = () => {
   return (
@@ -32,6 +33,10 @@ const App: React.FC = () => {
           <Route path="/user-management" element={<LayoutPage />}>
             <Route index element={<UserManagement />} />
           </Route>
+          {/* ✅ ROLE MANAGEMENT ROUTE (FIXED) */}
+        <Route path="/role-management" element={<LayoutPage />}>
+          <Route index element={<RoleManagement />} />
+        </Route>
           
           {/* Fallback redirect */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
