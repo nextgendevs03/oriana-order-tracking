@@ -24,8 +24,8 @@ export class PermissionController {
   constructor(@inject(TYPES.PermissionService) private permissionService: IPermissionService) {}
 
   @Post('/')
-  async create(@Body() data: CreatePermissionRequest): Promise<APIGatewayProxyResult> {
-    if (!data.permissionName || !data.createdBy)
+  async create(@Body() data: CreatePermissionRequest) {
+    if (!data.permissionName)
       throw new ValidationError('permissionName and createdBy are required');
     const permission = await this.permissionService.createPermission(data);
     return createSuccessResponse(permission, 201);
@@ -46,24 +46,21 @@ export class PermissionController {
   }
 
   @Get('/{id}')
-  async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
+  async getById(@Param('id') id: string) {
     const permission = await this.permissionService.getPermissionById(id);
     if (!permission) throw new NotFoundError(`Permission with ID ${id} not found`);
     return createSuccessResponse(permission);
   }
 
   @Put('/{id}')
-  async update(
-    @Param('id') id: string,
-    @Body() data: UpdatePermissionRequest
-  ): Promise<APIGatewayProxyResult> {
+  async update(@Param('id') id: string, @Body() data: UpdatePermissionRequest) {
     const permission = await this.permissionService.updatePermission(id, data);
     if (!permission) throw new NotFoundError(`Permission with ID ${id} not found`);
     return createSuccessResponse(permission);
   }
 
   @Delete('/{id}')
-  async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
+  async delete(@Param('id') id: string) {
     const deleted = await this.permissionService.deletePermission(id);
     if (!deleted) throw new NotFoundError(`Permission with ID ${id} not found`);
     return createSuccessResponse({ permissionId: id, deleted: true });
