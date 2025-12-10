@@ -33,6 +33,18 @@ export type {
   UpdatePORequest,
 } from './poApi';
 
+// Auth API hooks and types
+export {
+  authApi,
+  useLoginMutation,
+} from './authApi';
+
+// Export types for use in components
+export type {
+  LoginRequest,
+  LoginResponse,
+} from './authApi';
+
 // ============================================
 // Add exports for new APIs below:
 // ============================================

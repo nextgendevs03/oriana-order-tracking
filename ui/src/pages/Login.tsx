@@ -1,19 +1,45 @@
 import React from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
-import { useNavigate, Link } from "react-router-dom";
-const { Title, Text } = Typography;
+import { useNavigate } from "react-router-dom";
+import { useLoginMutation } from "../store/api";
+
+const { Title } = Typography;
 interface LoginData {
   username: string;
   password: string;
 }
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const [login, { isLoading }] = useLoginMutation();
 
-  const onFinish = (values: LoginData) => {
-    localStorage.setItem("loggedUser", values.username);
+  const onFinish = async (values: LoginData) => {
+    try {
+      const data = await login({
+        username: values.username,
+        password: values.password,
+      }).unwrap();
 
-    message.success("Login Successful!");
-    navigate("/dashboard"); 
+      if (data.success === true) {
+        localStorage.setItem("loggedUser", values.username);
+        localStorage.setItem("isLoggedIn", "true");
+        message.success("Login Successful!");
+        navigate("/dashboard");
+      } else {
+        // Show error message from backend
+        const errorMessage =
+          data.message || "Login failed. Please check your credentials.";
+        message.error(errorMessage);
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      // Handle RTK Query error format
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "An error occurred. Please try again.";
+      message.error(errorMessage);
+    }
   };
 
   return (
@@ -46,7 +72,7 @@ const Login: React.FC = () => {
             <Input.Password />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" block>
+          <Button type="primary" htmlType="submit" block loading={isLoading}>
             Login
           </Button>
         </Form>
@@ -56,6 +82,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
-
-
