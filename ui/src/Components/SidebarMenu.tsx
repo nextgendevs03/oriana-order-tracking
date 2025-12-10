@@ -1,39 +1,65 @@
 import React from "react";
-import { Layout, Menu } from "antd";
-import { Link } from "react-router-dom";
-import {
-  DashboardOutlined,
-  UserOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
-
-const { Sider } = Layout;
+import { Menu } from "antd";
+import { HomeOutlined, UserOutlined, SettingOutlined, LogoutOutlined } from "@ant-design/icons";
+import { useNavigate, useLocation } from "react-router-dom";
+import type { MenuProps } from "antd";
+import Sider from "antd/es/layout/Sider";
 
 const SidebarMenu = () => {
-  const menuItems = [
-    {
-      key: "1",
-      icon: <DashboardOutlined />,
-      label: <Link to="/dashboard">Dashboard</Link>,
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    switch (e.key) {
+      case "1":
+        navigate("/dashboard");
+        break;
+      case "2-1":
+        navigate("/user-management");
+        break;
+      case "2-2":
+        navigate("/role-management");
+        break;
+      case "2-3":
+        navigate("/admin/permissions");
+        break;
+      default:
+        break;
+    }
+  };
+
+  const menuItems: MenuProps["items"] = [
+    { 
+      key: "1", 
+      icon: <HomeOutlined />, 
+      label: "Dashboard" 
     },
-    {
-      key: "sub1",
-      icon: <UserOutlined />,
+    { 
+      key: "2", 
+      icon: <SettingOutlined />, 
       label: "Admin",
       children: [
-        {
-          key: "2",
-          label: <Link to="/users">User Management</Link>,
+        { 
+          key: "2-1", 
+          label: "User Management", 
+          icon: <UserOutlined /> 
         },
-        {
-          key: "3",
-          label: <Link to="/roles">Role Management</Link>,
+        { 
+          key: "2-2", 
+          label: "Role Management", 
+          icon: <UserOutlined /> 
         },
-        {
-          key: "4",
-          label: <Link to="/permissions">Permissions</Link>,
+        { 
+          key: "2-3", 
+          label: "Permissions", 
+          icon: <UserOutlined /> 
         },
-      ],
+      ]
+    },
+    { 
+      key: "3", 
+      icon: <UserOutlined />, 
+      label: "Profile" 
     },
   ];
 
@@ -68,27 +94,27 @@ const SidebarMenu = () => {
       </div>
 
       {/* Menu */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        <Menu
-          theme="dark"
-          mode="inline"
-          defaultSelectedKeys={["1"]}
-          items={menuItems}
-          style={{ background: "#001529" }}
-        />
-      </div>
+      <Menu
+        theme="dark"
+        mode="inline"
+        selectedKeys={[location.pathname]}
+        defaultOpenKeys={["admin"]}
+        items={menuItems}
+        onClick={handleMenuClick}
+        style={{ background: "#001529", flex: 1 }}
+      />
 
-      {/* Logout */}
+      {/* ✅ Logout always visible */}
       <div
+        onClick={() => navigate("/")}
         style={{
-          height: 50,
-          borderTop: "1px solid #0a1d2f",
+          padding: 20,
+          color: "white",
+          cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          paddingLeft: 20,
-          cursor: "pointer",
-          color: "white",
           gap: 10,
+          borderTop: "1px solid #0a1d2f",
         }}
       >
         <LogoutOutlined />

@@ -13,7 +13,9 @@
 
 // Purchase Order Controller
 export * from './POController';
+export * from './UserController';
 
+// User Managment Controller
 // Add new controller exports below:
 // export * from './DispatchController';
 // export * from './DeliveryController';
@@ -23,3 +25,5 @@ export * from './POController';
 
 // export * from './PermissionController';
 export * from './PermissionController';
+// Role Controller
+export * from './RoleController';

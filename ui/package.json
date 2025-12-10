@@ -11,12 +11,12 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.126",
+    "eslint": "^8.57.1",
     "@types/react-dom": "^19.2.2",
     "antd": "^5.29.1",
-    "eslint": "^8.57.1",
     "moment": "^2.30.1",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.30.2",
     "react-scripts": "5.0.1",
@@ -49,9 +49,9 @@
     ]
   },
   "devDependencies": {
-    "@types/react": "^19.2.4",
+    "@types/react": "^19.2.7",
     "@types/react-redux": "^7.1.34",
-    "@types/react-router-dom": "^5.3.3",
+    "@types/react-dom": "^19.2.3",
     "prettier": "^3.7.2"
   }
 }

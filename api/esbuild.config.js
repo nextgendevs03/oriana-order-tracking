@@ -22,6 +22,22 @@ const sharedLayerPlugin = {
   },
 };
 
+// Plugin to write restart signal file on rebuild (for SAM hot reload)
+const restartSignalPlugin = {
+  name: 'restart-signal',
+  setup(build) {
+    const restartSignalPath = path.join(__dirname, 'dist', '.restart');
+    build.onEnd(() => {
+      try {
+        fs.mkdirSync(path.dirname(restartSignalPath), { recursive: true });
+        fs.writeFileSync(restartSignalPath, Date.now().toString(), 'utf8');
+      } catch (err) {
+        // Ignore errors - restart signal is optional
+      }
+    });
+  },
+};
+
 /**
  * Auto-discover all lambda configuration files from src/lambdas/*.lambda.ts
  * Each file should export a handler created with createLambdaHandler()
@@ -96,7 +112,7 @@ const buildOptions = {
     // Prisma is bundled in the Lambda layer
     '@prisma/client',
   ],
-  plugins: [sharedLayerPlugin],
+  plugins: [sharedLayerPlugin, restartSignalPlugin],
   // Optimize for Lambda
   treeShaking: true,
   metafile: true,

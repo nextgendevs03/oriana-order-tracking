@@ -8,9 +8,7 @@ const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
 const LayoutPage: React.FC = () => {
-    
   const [collapsed, setCollapsed] = useState(false);
-
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();

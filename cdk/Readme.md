@@ -102,18 +102,9 @@ npm run bootstrap
 
 ## Local Development
 
-### Step 1: Build the API (Terminal 1)
+### Step 1: Configure Environment Variables
 
-```bash
-cd api
-npm install
-npm run build:all    # Build layer + API + manifest
-npm run watch        # Watch mode with hot reload
-```
-
-### Step 2: Configure Environment Variables
-
-Edit `cdk/env.json` with your Supabase credentials:
+Edit `cdk/env.local.json` with your Supabase credentials:
 
 ```json
 {
@@ -130,22 +121,50 @@ Edit `cdk/env.json` with your Supabase credentials:
 }
 ```
 
-### Step 3: Start Local API Server (Terminal 2)
+### Step 2: Start Development Server
 
+**Option A: Single Command (Recommended)**
 ```bash
 cd cdk
+npm run dev:all
+```
+This runs both API watch mode and SAM Local in one terminal with automatic hot reload.
 
-# Full build + synth + start
-npm run dev
+**Option B: Two Terminals (More Control)**
+```bash
+# Terminal 1 - API Watch Mode
+cd api
+npm run watch
 
-# Quick start (skip API build)
-npm run dev:quick
+# Terminal 2 - SAM with Hot Reload
+cd cdk
+npm run dev:watch
+```
 
-# Debug mode
-npm run dev:debug
+**Option C: Manual Mode**
+```bash
+cd cdk
+npm run dev          # Full build + synth + start (manual restart required)
+npm run dev:quick    # Quick start (skip API build)
+npm run dev:debug    # Debug mode
 ```
 
 The API will be available at: `http://localhost:4000`
+
+### How Hot Reload Works
+
+The optimized hot reload flow uses a simple signal-based approach:
+
+1. **esbuild watch mode** rebuilds TypeScript → writes `api/dist/.restart` signal file
+2. **Native file watcher** detects signal file change → restarts SAM automatically
+3. **No external dependencies** - uses Node.js built-in `fs.watchFile`
+
+When you edit code:
+- esbuild rebuilds → signal file updated
+- SAM restarts automatically
+- Changes are live instantly!
+
+This approach is simpler, faster, and has zero external dependencies beyond what's already in the project.
 
 ### Using a Custom Port
 
@@ -173,6 +192,8 @@ npm run synth:dev && sam local start-api -p 5000 -t cdk.out/ApiStack-dev.templat
 ### Development
 | Script | Description |
 |--------|-------------|
+| `npm run dev:all` | **Single command** - Runs API watch + SAM with hot reload (recommended) |
+| `npm run dev:watch` | **Hot reload mode** - Synth + Start SAM with auto-restart on code changes |
 | `npm run dev` | Build API + Synth + Start local API on port 4000 |
 | `npm run dev:port` | Same as dev, but uses `API_PORT` env var (default: 4000) |
 | `npm run dev:quick` | Synth + Start (skip API build) |
