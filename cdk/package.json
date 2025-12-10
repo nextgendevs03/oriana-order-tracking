@@ -15,6 +15,8 @@
     "sam:start:port": "node scripts/sam-start.js",
     "dev": "npm run synth:dev && npm run sam:start",
     "dev:port": "npm run synth:dev && npm run sam:start:port",
+    "dev:watch": "npm run synth:dev && node scripts/sam-start-watch.js",
+    "dev:all": "npm run synth:dev && concurrently -n \"API,SAM\" -c \"cyan,magenta\" \"cd ../api && npm run watch\" \"node scripts/sam-start-watch.js\"",
     "dev:eager": "npm run synth:dev && sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers EAGER --skip-pull-image",
     "dev:fresh": "npm run clean && npm run dev",
     "dev:debug": "npm run synth:dev && sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers LAZY --skip-pull-image --debug",
@@ -41,6 +43,7 @@
     "@types/node": "^20.10.0",
     "typescript": "^5.3.2",
     "aws-cdk": "^2.115.0",
+    "concurrently": "^8.2.2",
     "prettier": "^3.1.0",
     "rimraf": "^5.0.5"
   }

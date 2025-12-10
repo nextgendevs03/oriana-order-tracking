@@ -44,7 +44,7 @@ const LayoutPage: React.FC = () => {
             {collapsed ? "OSG" : "OSG India"}
           </Title>
         </div>
-        <SidebarMenu collapsed={collapsed} />
+        <SidebarMenu />
       </Sider>
 
       <Layout>
@@ -111,7 +111,6 @@ const LayoutPage: React.FC = () => {
             overflow: "auto",
           }}
         >
-          
           <Outlet />
         </Content>
       </Layout>

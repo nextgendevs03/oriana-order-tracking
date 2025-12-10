@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Switch, message } from "antd";
-import { useAppDispatch } from "../../store/hook";
+import { useAppDispatch } from "../../store/hooks";
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
@@ -9,7 +9,7 @@ import {
   CreateUserRequest,
   UpdateUserRequest,
   UserResponse,
-} from "../../types/orianaTypes";
+} from "@OrianaTypes";
 
 const { Option } = Select;
 
