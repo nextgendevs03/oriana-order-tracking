@@ -13,6 +13,7 @@ import storage from "redux-persist/lib/storage";
 import { baseApi } from "./api/baseApi";
 import permissionReducer from "./permissionSlice";
 import userReducer from "./userSlice";
+import poReducer from "./poSlice";
 import roleReducer from "./roleSlice";
 
 const persistConfig = {
@@ -27,6 +28,7 @@ const rootReducer = combineReducers({
    permission: permissionReducer,
    user: userReducer,
    role: roleReducer,
+   po: poReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 
