@@ -1,69 +1,101 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button } from "antd";
+import { Modal, Form, Input, Select, Button, message } from "antd";
+
+import {
+  useCreatePermissionMutation,
+  useUpdatePermissionMutation,
+} from "../../../store/api/permissionApi";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: any) => void;
   permissionToEdit?: any;
 }
+
+const permissionNames = [
+  { label: "Create Users", value: "create_users" },
+  { label: "View Users", value: "view_users" },
+  { label: "Edit Users", value: "edit_users" },
+  { label: "Delete Users", value: "delete_users" },
+];
+
+const permissionCodes = [
+  { label: "USR_CREATE", value: "USR_CREATE" },
+  { label: "USR_VIEW", value: "USR_VIEW" },
+  { label: "USR_EDIT", value: "USR_EDIT" },
+  { label: "USR_DELETE", value: "USR_DELETE" },
+];
 
 const AddPermissionModal: React.FC<Props> = ({
   open,
   onClose,
-  onSubmit,
   permissionToEdit,
 }) => {
   const [form] = Form.useForm();
 
+  const [createPermissionApi] = useCreatePermissionMutation();
+  const [updatePermissionApi] = useUpdatePermissionMutation();
+
   useEffect(() => {
     if (permissionToEdit) {
-      form.setFieldsValue(permissionToEdit);
+      form.setFieldsValue({
+        permissionName: permissionToEdit.permissionName,
+        permissionCode: permissionToEdit.permissionCode,
+        module: permissionToEdit.module,
+        description: permissionToEdit.description,
+      });
     } else {
       form.resetFields();
     }
-  }, [permissionToEdit, form]);
+  }, [permissionToEdit]);
+
+  const handleFinish = async (values: any) => {
+    try {
+      if (permissionToEdit) {
+        // UPDATE
+        await updatePermissionApi({
+          id: permissionToEdit.permissionId, // FIXED
+          ...values,
+        }).unwrap();
+
+        message.success("Permission Updated Successfully!");
+      } else {
+        // CREATE
+        await createPermissionApi(values).unwrap();
+        message.success("Permission Created Successfully!");
+      }
+
+      onClose();
+    } catch (e) {
+      message.error("Error Saving Permission!");
+    }
+  };
 
   return (
-    <Modal
-      open={open}
-      title={permissionToEdit ? "Edit Permission" : "Add New Permission"}
-      onCancel={onClose}
-      footer={null}
-      width={550}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onSubmit}
-        style={{ marginTop: 10 }}
-      >
-        {/* Permission Name */}
+    <Modal open={open} footer={null} onCancel={onClose} width={550}>
+      <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Permission Name"
-          name="name"
-          rules={[{ required: true, message: "Permission name is required" }]}
-        >
-          <Input placeholder="e.g., Create Users" />
-        </Form.Item>
-
-        {/* Permission Code */}
-        <Form.Item
-          label="Permission Code"
-          name="code"
-          rules={[{ required: true, message: "Permission code is required" }]}
-        >
-          <Input placeholder="e.g., user.create" />
-        </Form.Item>
-
-        {/* Module Dropdown */}
-        <Form.Item
-          label="Module"
-          name="module"
-          rules={[{ required: true, message: "Module is required" }]}
+          name="permissionName"
+          rules={[{ required: true }]}
         >
           <Select
-            placeholder="Select a module"
+            placeholder="Select Permission Name"
+            options={permissionNames}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Code"
+          name="permissionCode"
+          rules={[{ required: true }]}
+        >
+          <Select placeholder="Select Code" options={permissionCodes} />
+        </Form.Item>
+
+        <Form.Item label="Module" name="module" rules={[{ required: true }]}>
+          <Select
+            placeholder="Select Module"
             options={[
               { label: "users", value: "users" },
               { label: "roles", value: "roles" },
@@ -72,21 +104,10 @@ const AddPermissionModal: React.FC<Props> = ({
           />
         </Form.Item>
 
-        {/* Description */}
-        <Form.Item
-          label="Description"
-          name="description"
-          rules={[
-            { required: true, message: "Description is required" },
-          ]}
-        >
-          <Input.TextArea
-            rows={3}
-            placeholder="Describe what this permission allows"
-          />
+        <Form.Item label="Description" name="description">
+          <Input.TextArea rows={3} />
         </Form.Item>
 
-        {/* Footer Buttons */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="primary" htmlType="submit">

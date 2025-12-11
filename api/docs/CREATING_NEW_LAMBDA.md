@@ -93,7 +93,8 @@ A pattern where dependencies (like services, repositories) are "injected" into c
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           Lambda Function                                │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                         Controller                               │   │
+│  │                    Controller(s)                                 │   │
+│  │   • One or more controllers per Lambda                           │   │
 │  │   • Receives HTTP request                                        │   │
 │  │   • Extracts @Body, @Param, @Query                              │   │
 │  │   • Returns HTTP response                                        │   │
@@ -101,7 +102,7 @@ A pattern where dependencies (like services, repositories) are "injected" into c
 │                                    │                                     │
 │                                    ▼                                     │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                          Service                                 │   │
+│  │                         Service(s)                               │   │
 │  │   • Business logic                                               │   │
 │  │   • Data validation                                              │   │
 │  │   • Response transformation                                      │   │
@@ -109,7 +110,7 @@ A pattern where dependencies (like services, repositories) are "injected" into c
 │                                    │                                     │
 │                                    ▼                                     │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                         Repository                               │   │
+│  │                        Repository(ies)                           │   │
 │  │   • Database queries (Prisma)                                    │   │
 │  │   • CRUD operations                                              │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
@@ -120,6 +121,29 @@ A pattern where dependencies (like services, repositories) are "injected" into c
 │                         PostgreSQL Database                              │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Single vs Multi-Controller Lambdas
+
+You can organize your code in two ways:
+
+**Single Controller Lambda** (recommended for simple domains):
+```
+Lambda: dispatch
+└── DispatchController → DispatchService → DispatchRepository
+```
+
+**Multi-Controller Lambda** (recommended for related functionality):
+```
+Lambda: admin
+├── UserController       → UserService       → UserRepository
+├── RoleController       → RoleService       → RoleRepository
+└── PermissionController → PermissionService → PermissionRepository
+```
+
+Multi-controller lambdas help reduce the number of Lambda functions while keeping code organized. Use this pattern when:
+- Multiple functionalities are closely related (e.g., admin operations)
+- You want to share cold start costs across related endpoints
+- The combined code size stays within Lambda limits (250MB)
 
 ### Request Flow Example
 
@@ -831,7 +855,7 @@ import { DispatchRepository } from '../repositories/DispatchRepository';
 // Define and register the lambda configuration
 defineLambda({
   name: 'dispatch',                    // Lambda name (used in routing)
-  controller: DispatchController,       // The controller class
+  controllers: [DispatchController],   // Controller classes for this lambda (array)
   bindings: [
     // Register service with its symbol
     { symbol: TYPES.DispatchService, implementation: DispatchService },
@@ -845,6 +869,8 @@ defineLambda({
 // This is what AWS Lambda will invoke
 export const handler = createLambdaHandler('dispatch');
 ```
+
+> **Note:** The `controllers` property is an array, allowing you to register multiple controllers per Lambda. For single-controller lambdas, use `controllers: [YourController]`.
 
 ### Step 10: Build and Test
 
@@ -878,9 +904,215 @@ npm run deploy:prod
 
 ---
 
+## Creating a Multi-Controller Lambda
+
+When you have related functionality that should be grouped together (e.g., admin operations), you can create a single Lambda with multiple controllers. This reduces the number of Lambda functions while keeping code well-organized.
+
+### When to Use Multi-Controller Lambdas
+
+Use multi-controller lambdas when:
+- Multiple functionalities are closely related (e.g., User, Role, Permission management)
+- You want to reduce AWS Lambda count and costs
+- The combined code size stays within Lambda limits (250MB)
+- You want to share cold start costs across related endpoints
+
+### Example: Admin Lambda Structure
+
+```
+api/src/
+├── controllers/
+│   └── admin/                      # Group admin controllers in subfolder
+│       ├── index.ts                # Export all admin controllers
+│       ├── UserController.ts
+│       ├── RoleController.ts
+│       └── PermissionController.ts
+├── services/
+│   └── admin/
+│       ├── UserService.ts
+│       ├── RoleService.ts
+│       └── PermissionService.ts
+├── repositories/
+│   └── admin/
+│       ├── UserRepository.ts
+│       ├── RoleRepository.ts
+│       └── PermissionRepository.ts
+└── lambdas/
+    └── admin.lambda.ts
+```
+
+### Step-by-Step: Creating an Admin Lambda
+
+#### 1. Create Controllers with Same `lambdaName`
+
+Each controller must use the same `lambdaName` in the `@Controller` decorator:
+
+```typescript
+// src/controllers/admin/UserController.ts
+@Controller({ path: '/api/admin/users', lambdaName: 'admin' })
+@injectable()
+export class UserController {
+  constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+
+  @Get('/')
+  async getAll(): Promise<APIGatewayProxyResult> { ... }
+
+  @Post('/')
+  async create(@Body() data: CreateUserRequest): Promise<APIGatewayProxyResult> { ... }
+}
+```
+
+```typescript
+// src/controllers/admin/RoleController.ts
+@Controller({ path: '/api/admin/roles', lambdaName: 'admin' })
+@injectable()
+export class RoleController {
+  constructor(@inject(TYPES.RoleService) private roleService: IRoleService) {}
+
+  @Get('/')
+  async getAll(): Promise<APIGatewayProxyResult> { ... }
+
+  @Post('/')
+  async create(@Body() data: CreateRoleRequest): Promise<APIGatewayProxyResult> { ... }
+}
+```
+
+```typescript
+// src/controllers/admin/PermissionController.ts
+@Controller({ path: '/api/admin/permissions', lambdaName: 'admin' })
+@injectable()
+export class PermissionController {
+  constructor(@inject(TYPES.PermissionService) private permissionService: IPermissionService) {}
+
+  @Get('/')
+  async getAll(): Promise<APIGatewayProxyResult> { ... }
+
+  @Post('/')
+  async create(@Body() data: CreatePermissionRequest): Promise<APIGatewayProxyResult> { ... }
+}
+```
+
+#### 2. Export Controllers from Index File
+
+```typescript
+// src/controllers/admin/index.ts
+export * from './UserController';
+export * from './RoleController';
+export * from './PermissionController';
+```
+
+```typescript
+// src/controllers/index.ts
+export * from './POController';
+export * from './admin';  // ← Export all admin controllers
+```
+
+#### 3. Register All Types
+
+```typescript
+// src/types/types.ts
+export const TYPES = {
+  // ... existing types ...
+
+  // Admin - Users
+  UserController: Symbol.for('UserController'),
+  UserService: Symbol.for('UserService'),
+  UserRepository: Symbol.for('UserRepository'),
+
+  // Admin - Roles
+  RoleController: Symbol.for('RoleController'),
+  RoleService: Symbol.for('RoleService'),
+  RoleRepository: Symbol.for('RoleRepository'),
+
+  // Admin - Permissions
+  PermissionController: Symbol.for('PermissionController'),
+  PermissionService: Symbol.for('PermissionService'),
+  PermissionRepository: Symbol.for('PermissionRepository'),
+};
+```
+
+#### 4. Create Lambda Configuration
+
+```typescript
+// src/lambdas/admin.lambda.ts
+import 'reflect-metadata';
+import { defineLambda, createLambdaHandler } from '@oriana/shared';
+import { TYPES } from '../types/types';
+
+// Import all controllers
+import { UserController } from '../controllers/admin/UserController';
+import { RoleController } from '../controllers/admin/RoleController';
+import { PermissionController } from '../controllers/admin/PermissionController';
+
+// Import all services
+import { UserService } from '../services/admin/UserService';
+import { RoleService } from '../services/admin/RoleService';
+import { PermissionService } from '../services/admin/PermissionService';
+
+// Import all repositories
+import { UserRepository } from '../repositories/admin/UserRepository';
+import { RoleRepository } from '../repositories/admin/RoleRepository';
+import { PermissionRepository } from '../repositories/admin/PermissionRepository';
+
+defineLambda({
+  name: 'admin',
+  controllers: [
+    UserController,
+    RoleController,
+    PermissionController,
+  ],
+  bindings: [
+    // User bindings
+    { symbol: TYPES.UserService, implementation: UserService },
+    { symbol: TYPES.UserRepository, implementation: UserRepository },
+    // Role bindings
+    { symbol: TYPES.RoleService, implementation: RoleService },
+    { symbol: TYPES.RoleRepository, implementation: RoleRepository },
+    // Permission bindings
+    { symbol: TYPES.PermissionService, implementation: PermissionService },
+    { symbol: TYPES.PermissionRepository, implementation: PermissionRepository },
+  ],
+  prismaSymbol: TYPES.PrismaClient,
+});
+
+export const handler = createLambdaHandler('admin');
+```
+
+#### 5. Generated Manifest
+
+When you run `npm run build:manifest`, the manifest will show all routes grouped under the `admin` lambda:
+
+```json
+{
+  "lambdas": {
+    "admin": {
+      "handler": "dist/handlers/admin.handler",
+      "controller": "UserController, RoleController, PermissionController",
+      "routes": [
+        { "method": "GET", "path": "/api/admin/users", "controller": "UserController", "action": "getAll" },
+        { "method": "POST", "path": "/api/admin/users", "controller": "UserController", "action": "create" },
+        { "method": "GET", "path": "/api/admin/roles", "controller": "RoleController", "action": "getAll" },
+        { "method": "POST", "path": "/api/admin/roles", "controller": "RoleController", "action": "create" },
+        { "method": "GET", "path": "/api/admin/permissions", "controller": "PermissionController", "action": "getAll" },
+        { "method": "POST", "path": "/api/admin/permissions", "controller": "PermissionController", "action": "create" }
+      ]
+    }
+  }
+}
+```
+
+### Key Points for Multi-Controller Lambdas
+
+1. **Same `lambdaName`**: All controllers in the same Lambda must use the same `lambdaName` in their `@Controller` decorator
+2. **Different `path`**: Each controller should have a unique base path to avoid route conflicts
+3. **All bindings**: Register ALL services and repositories from all controllers in the `bindings` array
+4. **Import all controllers**: Import and list all controller classes in the `controllers` array
+5. **Organize in subfolders**: Group related controllers, services, and repositories in subfolders for better organization
+
+---
+
 ## File Structure Summary
 
-After creating a new Lambda, your project should look like this:
+### Single-Controller Lambda Structure
 
 ```
 api/
@@ -923,14 +1155,66 @@ api/
 └── app-manifest.json                   # ← Auto-generated
 ```
 
+### Multi-Controller Lambda Structure (e.g., Admin)
+
+```
+api/
+├── src/
+│   ├── controllers/
+│   │   ├── index.ts                    # ← Export all controllers including admin/
+│   │   ├── POController.ts
+│   │   └── admin/                      # ← Group related controllers
+│   │       ├── index.ts                # ← Export admin controllers
+│   │       ├── UserController.ts
+│   │       ├── RoleController.ts
+│   │       └── PermissionController.ts
+│   │
+│   ├── services/
+│   │   ├── POService.ts
+│   │   └── admin/                      # ← Group related services
+│   │       ├── UserService.ts
+│   │       ├── RoleService.ts
+│   │       └── PermissionService.ts
+│   │
+│   ├── repositories/
+│   │   ├── PORepository.ts
+│   │   └── admin/                      # ← Group related repositories
+│   │       ├── UserRepository.ts
+│   │       ├── RoleRepository.ts
+│   │       └── PermissionRepository.ts
+│   │
+│   ├── schemas/
+│   │   ├── index.ts
+│   │   ├── request/
+│   │   │   └── admin/                  # ← Group related schemas
+│   │   │       ├── UserRequest.ts
+│   │   │       ├── RoleRequest.ts
+│   │   │       └── PermissionRequest.ts
+│   │   └── response/
+│   │       └── admin/
+│   │           ├── UserResponse.ts
+│   │           ├── RoleResponse.ts
+│   │           └── PermissionResponse.ts
+│   │
+│   ├── types/
+│   │   └── types.ts                    # ← Add symbols for all controllers/services/repos
+│   │
+│   └── lambdas/
+│       ├── po.lambda.ts
+│       └── admin.lambda.ts             # ← Single lambda file with multiple controllers
+│
+└── app-manifest.json                   # ← Routes for all admin controllers
+```
+
 ---
 
 ## Quick Checklist
 
 Use this checklist when creating a new Lambda:
 
-### Files to Create
+### Single-Controller Lambda
 
+#### Files to Create
 - [ ] `src/schemas/request/<Name>Request.ts` - Request interfaces
 - [ ] `src/schemas/response/<Name>Response.ts` - Response interfaces
 - [ ] `src/repositories/<Name>Repository.ts` - Database operations
@@ -938,12 +1222,34 @@ Use this checklist when creating a new Lambda:
 - [ ] `src/controllers/<Name>Controller.ts` - API endpoints
 - [ ] `src/lambdas/<name>.lambda.ts` - Lambda configuration
 
-### Files to Update
-
+#### Files to Update
 - [ ] `src/schemas/index.ts` - Export new schemas
 - [ ] `src/types/types.ts` - Add new TYPES symbols
 - [ ] `src/controllers/index.ts` - Export new controller
 - [ ] `layers/shared/nodejs/prisma/schema.prisma` - Add new model (if needed)
+
+### Multi-Controller Lambda (e.g., Admin)
+
+#### Files to Create
+- [ ] `src/controllers/<domain>/` - Create subfolder for related controllers
+- [ ] `src/controllers/<domain>/<Name>Controller.ts` - Each controller
+- [ ] `src/controllers/<domain>/index.ts` - Export all controllers
+- [ ] `src/services/<domain>/<Name>Service.ts` - Each service
+- [ ] `src/repositories/<domain>/<Name>Repository.ts` - Each repository
+- [ ] `src/schemas/request/<domain>/<Name>Request.ts` - Request schemas
+- [ ] `src/schemas/response/<domain>/<Name>Response.ts` - Response schemas
+- [ ] `src/lambdas/<domain>.lambda.ts` - Single lambda file
+
+#### Files to Update
+- [ ] `src/schemas/index.ts` - Export all new schemas
+- [ ] `src/types/types.ts` - Add TYPES for all controllers, services, repositories
+- [ ] `src/controllers/index.ts` - Export the domain subfolder (`export * from './<domain>'`)
+
+#### Key Points for Multi-Controller
+- [ ] All controllers use the same `lambdaName` in `@Controller` decorator
+- [ ] Each controller has a unique `path` to avoid route conflicts
+- [ ] All bindings (services, repositories) are registered in the lambda file
+- [ ] All controllers are listed in the `controllers` array
 
 ### Commands to Run
 
@@ -1178,7 +1484,38 @@ npm run db:generate # Regenerate client
 
 ### Q: Can I add multiple controllers to one Lambda?
 
-No, each Lambda should have exactly one controller. This keeps functions focused and allows independent scaling.
+Yes! You can group multiple related controllers into a single Lambda. This is useful for:
+- **Reducing Lambda count**: Related functionality (e.g., admin operations) shares one Lambda
+- **Sharing cold start costs**: Multiple endpoints benefit from the same warm Lambda
+- **Code organization**: Keep related controllers, services, and repositories together
+
+Example: An "admin" Lambda with User, Role, and Permission controllers:
+
+```typescript
+// src/lambdas/admin.lambda.ts
+defineLambda({
+  name: 'admin',
+  controllers: [UserController, RoleController, PermissionController],
+  bindings: [
+    { symbol: TYPES.UserService, implementation: UserService },
+    { symbol: TYPES.RoleService, implementation: RoleService },
+    { symbol: TYPES.PermissionService, implementation: PermissionService },
+    { symbol: TYPES.UserRepository, implementation: UserRepository },
+    { symbol: TYPES.RoleRepository, implementation: RoleRepository },
+    { symbol: TYPES.PermissionRepository, implementation: PermissionRepository },
+  ],
+  prismaSymbol: TYPES.PrismaClient,
+});
+```
+
+Each controller uses the same `lambdaName` in its `@Controller` decorator:
+```typescript
+@Controller({ path: '/api/admin/users', lambdaName: 'admin' })
+@Controller({ path: '/api/admin/roles', lambdaName: 'admin' })
+@Controller({ path: '/api/admin/permissions', lambdaName: 'admin' })
+```
+
+See the [Multi-Controller Lambda Guide](#creating-a-multi-controller-lambda) section for detailed instructions.
 
 ### Q: Do I need a database table for every Lambda?
 
@@ -1220,4 +1557,4 @@ After creating your Lambda:
 
 ---
 
-*Last updated: 5 December 2025*
+*Last updated: 6 December 2025*
