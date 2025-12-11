@@ -3,7 +3,7 @@ import {
   PermissionListResponse,
   PermissionResponse,
   UpdatePermissionRequest,
-} from "../../orianaTypes/orianaTypes";
+} from "@OrianaTypes";
 import { baseApi } from "./baseApi";
 
 // Backend wraps responses in { success: true, data: T, meta?: ... }

@@ -10,27 +10,23 @@ import {
   REGISTER,
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import poReducer from "./poSlice";
+import { baseApi } from "./api/baseApi";
 import permissionReducer from "./permissionSlice";
-//import authReducer from "./authSlice";
 import userReducer from "./userSlice";
-
-// Import the base API for RTK Query
-import { baseApi } from "./api";
 import roleReducer from "./roleSlice";
 
 const persistConfig = {
   key: "root",
   version: 1,
   storage,
-  whitelist: ["po", "auth", "permission"], 
+  whitelist: ["po", "auth", "permission", "user", "role"], 
   blacklist: [baseApi.reducerPath],
-  whitelist: ["po", "user", "role"], // Persist both 'po' and 'role' reducers
 };
 
 const rootReducer = combineReducers({
-  po: poReducer,
    permission: permissionReducer,
+   user: userReducer,
+   role: roleReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

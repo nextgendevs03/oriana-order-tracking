@@ -35,7 +35,6 @@ const App: React.FC = () => {
           <Route path="/user-management" element={<LayoutPage />}>
             <Route index element={<UserManagement />} />
           </Route>
-          {/* ✅ ROLE MANAGEMENT ROUTE (FIXED) */}
         <Route path="/role-management" element={<LayoutPage />}>
           <Route index element={<RoleManagement />} />
         </Route>
