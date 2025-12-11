@@ -1,12 +1,5 @@
 import { UserResponse } from './UserResponse';
-
-export interface PermissionResponse {
-  permissionId: string;
-  permissionName: string;
-  description: string | null;
-  isActive: boolean;
-}
-
+import { PermissionResponse } from './PermissionResponse';
 export interface RoleResponse {
   roleId: string;
   roleName: string;
