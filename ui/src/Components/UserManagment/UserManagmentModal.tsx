@@ -9,7 +9,7 @@ import {
   CreateUserRequest,
   UpdateUserRequest,
   UserResponse,
-} from "../../types/orianaTypes";
+} from "@OrianaTypes";
 
 const { Option } = Select;
 
