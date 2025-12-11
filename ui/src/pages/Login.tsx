@@ -1,7 +1,7 @@
 import React from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
 import { useNavigate } from "react-router-dom";
-import { useLoginMutation } from "../store/api";
+import { useLoginMutation } from "../store/api/authApi";
 
 const { Title } = Typography;
 interface LoginData {
