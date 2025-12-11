@@ -7,6 +7,12 @@ import CreatePO from "./pages/CreatePO";
 import PODetails from "./pages/PODetails";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
+import {
+  ProductManagementPage,
+  CategoryManagement,
+  OEMManagement,
+  ProductList,
+} from "./Components/ProductManagement";
 
 const App: React.FC = () => {
   return (
@@ -31,6 +37,20 @@ const App: React.FC = () => {
           </Route>
           <Route path="/user-management" element={<LayoutPage />}>
             <Route index element={<UserManagement />} />
+          </Route>
+
+          {/* Product Management Routes */}
+          <Route path="/product-management" element={<LayoutPage />}>
+            <Route index element={<ProductManagementPage />} />
+          </Route>
+          <Route path="/product-management/categories" element={<LayoutPage />}>
+            <Route index element={<CategoryManagement />} />
+          </Route>
+          <Route path="/product-management/oems" element={<LayoutPage />}>
+            <Route index element={<OEMManagement />} />
+          </Route>
+          <Route path="/product-management/products" element={<LayoutPage />}>
+            <Route index element={<ProductList />} />
           </Route>
           
           {/* Fallback redirect */}

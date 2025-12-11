@@ -1,6 +1,6 @@
 import React from "react";
 import { Menu } from "antd";
-import { HomeOutlined, UserOutlined, SettingOutlined } from "@ant-design/icons";
+import { HomeOutlined, UserOutlined, SettingOutlined, AppstoreOutlined } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MenuProps } from "antd";
 
@@ -16,6 +16,9 @@ const SidebarMenu = () => {
       case "2-1":
         navigate("/user-management");
         break;
+      case "2-2":
+        navigate("/product-management");
+        break;
       case "3":
         // Add profile navigation if needed
         break;
@@ -28,6 +31,7 @@ const SidebarMenu = () => {
   const getSelectedKey = () => {
     if (location.pathname === "/dashboard") return ["1"];
     if (location.pathname === "/user-management") return ["2-1"];
+    if (location.pathname.startsWith("/product-management")) return ["2-2"];
     return ["1"];
   };
 
@@ -46,6 +50,11 @@ const SidebarMenu = () => {
           key: "2-1", 
           label: "User Management", 
           icon: <UserOutlined /> 
+        },
+        { 
+          key: "2-2", 
+          label: "Product Management", 
+          icon: <AppstoreOutlined /> 
         }
       ]
     },

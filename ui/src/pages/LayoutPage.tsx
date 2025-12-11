@@ -9,6 +9,7 @@ const { Title, Text } = Typography;
 
 const LayoutPage: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
+  
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -44,7 +45,7 @@ const LayoutPage: React.FC = () => {
             {collapsed ? "OSG" : "OSG India"}
           </Title>
         </div>
-        <SidebarMenu collapsed={collapsed} />
+        <SidebarMenu />
       </Sider>
 
       <Layout>
