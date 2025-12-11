@@ -10,33 +10,28 @@ import {
   REGISTER,
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import poReducer from "./poSlice";
+import { baseApi } from "./api/baseApi";
+import permissionReducer from "./permissionSlice";
 import userReducer from "./userSlice";
-
-// Import the base API for RTK Query
-import { baseApi } from "./api";
 import roleReducer from "./roleSlice";
 
-// Persist configuration
 const persistConfig = {
   key: "root",
   version: 1,
   storage,
-  whitelist: ["po", "user", "role"], // Persist both 'po' and 'role' reducers
+  whitelist: ["po", "auth", "permission", "user", "role"], 
+  blacklist: [baseApi.reducerPath],
 };
 
-// Combine reducers
 const rootReducer = combineReducers({
-    [baseApi.reducerPath]: baseApi.reducer,
-    po: poReducer,
-    user: userReducer,
-    role: roleReducer,
-  });
+   permission: permissionReducer,
+   user: userReducer,
+   role: roleReducer,
+  [baseApi.reducerPath]: baseApi.reducer,
+});
 
-// Create persisted reducer
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-// Configure store with persisted reducer
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
@@ -44,10 +39,9 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(baseApi.middleware),
+    }).concat(baseApi.middleware), 
 });
 
-// Create persistor
 export const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;
