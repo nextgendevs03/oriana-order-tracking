@@ -1,30 +1,25 @@
 import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Button } from "antd";
+import {
+  useCreateProductMutation,
+  useUpdateProductMutation,
+} from "../../../store/api/productApi";
 
 interface Props {
   open: boolean;
   onCancel: () => void;
-  onSuccess: (newProduct: {
-    name: string;
-    category: string;
-    oem: string;
-    status: "Active" | "Inactive";
-  }) => void;
-  initialValues?: {
-    name: string;
-    category: string;
-    oem: string;
-    status: "Active" | "Inactive";
-  };
+  initialValues?: any;
 }
 
 const AddProductModal: React.FC<Props> = ({
   open,
   onCancel,
-  onSuccess,
   initialValues,
 }) => {
   const [form] = Form.useForm();
+
+  const [createProduct] = useCreateProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
 
   const categories = [
     { label: "Category A", value: "Category A" },
@@ -37,34 +32,45 @@ const AddProductModal: React.FC<Props> = ({
   ];
 
   useEffect(() => {
-    if (initialValues) {
-      form.setFieldsValue(initialValues);
-    } else {
-      form.resetFields();
-    }
+    initialValues ? form.setFieldsValue(initialValues) : form.resetFields();
   }, [initialValues, form]);
 
-  const onFinish = (values: any) => {
-    onSuccess(values);
+  const handleSubmit = async () => {
+    const values = await form.validateFields();
+
+    if (initialValues) {
+      await updateProduct({
+        id: initialValues.productId,
+        data: values,
+      });
+    } else {
+      await createProduct(values);
+    }
+
     form.resetFields();
+    onCancel();
   };
 
   return (
     <Modal
       title={initialValues ? "Edit Product" : "Add Product"}
       open={open}
-      onCancel={() => {
-        form.resetFields();
-        onCancel();
-      }}
-      footer={null}
+      onCancel={onCancel}
+      footer={[
+        <Button key="cancel" onClick={onCancel}>
+          Cancel
+        </Button>,
+        <Button key="submit" type="primary" onClick={handleSubmit}>
+          {initialValues ? "Update" : "Submit"}
+        </Button>,
+      ]}
       width={520}
     >
-      <Form form={form} layout="vertical" onFinish={onFinish}>
+      <Form form={form} layout="vertical">
         <Form.Item
           label="Product Name"
           name="name"
-          rules={[{ required: true, message: "Enter product name" }]}
+          rules={[{ required: true }]}
         >
           <Input placeholder="Enter product name" />
         </Form.Item>
@@ -72,16 +78,12 @@ const AddProductModal: React.FC<Props> = ({
         <Form.Item
           label="Select Category"
           name="category"
-          rules={[{ required: true, message: "Select category" }]}
+          rules={[{ required: true }]}
         >
           <Select placeholder="Select category" options={categories} />
         </Form.Item>
 
-        <Form.Item
-          label="Select OEM"
-          name="oem"
-          rules={[{ required: true, message: "Select OEM" }]}
-        >
+        <Form.Item label="Select OEM" name="oem" rules={[{ required: true }]}>
           <Select placeholder="Select OEM" options={oems} />
         </Form.Item>
 
@@ -93,13 +95,6 @@ const AddProductModal: React.FC<Props> = ({
             ]}
           />
         </Form.Item>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <Button onClick={onCancel}>Cancel</Button>
-          <Button type="primary" htmlType="submit">
-            {initialValues ? "Update" : "Submit"}
-          </Button>
-        </div>
       </Form>
     </Modal>
   );

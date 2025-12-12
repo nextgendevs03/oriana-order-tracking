@@ -1,21 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import { Breadcrumb, Button, Table, Tag, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+
+import {
+  useGetOEMsQuery,
+  useDeleteOEMMutation,
+} from "../../../store/api/oemApi";
 import AddOEMModal from "./AddOEMModal";
 
-interface OEM {
-  key: string;
-  name: string;
-  status: "Active" | "Inactive";
-}
+const OEMManagement = () => {
+  const { data: oems = [], isLoading } = useGetOEMsQuery();
+  const [deleteOEM] = useDeleteOEMMutation();
 
-const OEMManagement: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOEM, setEditingOEM] = useState<OEM | null>(null);
-  const [oems, setOems] = useState<OEM[]>([]);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingOEM, setEditingOEM] = React.useState<any>(null);
 
   const columns = [
     { title: "OEM Name", dataIndex: "name" },
+
     {
       title: "Status",
       dataIndex: "status",
@@ -26,10 +28,11 @@ const OEMManagement: React.FC = () => {
           <Tag color="red">Inactive</Tag>
         ),
     },
+
     {
       title: "Actions",
-      render: (_: any, record: OEM) => (
-        <div style={{ display: "flex", gap: 8 }}>
+      render: (_: any, record: any) => (
+        <>
           <Button
             icon={<EditOutlined />}
             onClick={() => {
@@ -37,43 +40,21 @@ const OEMManagement: React.FC = () => {
               setIsModalOpen(true);
             }}
           />
+
           <Popconfirm
-            title="Are you sure to delete?"
-            onConfirm={() => handleDelete(record.key)}
-            okText="Yes"
-            cancelText="No"
+            title="Delete this OEM?"
+            onConfirm={() => deleteOEM(record.oemId)}
           >
             <Button danger icon={<DeleteOutlined />} />
           </Popconfirm>
-        </div>
+        </>
       ),
     },
   ];
 
-  const handleDelete = (key: string) => {
-    setOems(oems.filter((item) => item.key !== key));
-  };
-
-  const handleSuccess = (newOEM: Omit<OEM, "key">) => {
-    if (editingOEM) {
-      setOems(
-        oems.map((item) =>
-          item.key === editingOEM.key ? { ...item, ...newOEM } : item
-        )
-      );
-      setEditingOEM(null);
-    } else {
-      const newKey = Date.now().toString();
-      setOems([...oems, { ...newOEM, key: newKey }]);
-    }
-
-    setIsModalOpen(false);
-  };
-
   return (
     <div style={{ padding: 24 }}>
-      {/* Breadcrumb */}
-      <Breadcrumb style={{ marginBottom: 16 }}>
+      <Breadcrumb>
         <Breadcrumb.Item>Home</Breadcrumb.Item>
         <Breadcrumb.Item>Product Management</Breadcrumb.Item>
         <Breadcrumb.Item>OEM Management</Breadcrumb.Item>
@@ -81,6 +62,7 @@ const OEMManagement: React.FC = () => {
 
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <h2>OEM Management</h2>
+
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -96,18 +78,14 @@ const OEMManagement: React.FC = () => {
       <Table
         columns={columns}
         dataSource={oems}
-        locale={{ emptyText: "No Data" }}
+        rowKey="oemId"
+        loading={isLoading}
         style={{ marginTop: 20 }}
       />
 
-      {/* Modal */}
       <AddOEMModal
         open={isModalOpen}
-        onCancel={() => {
-          setIsModalOpen(false);
-          setEditingOEM(null);
-        }}
-        onSuccess={handleSuccess}
+        onCancel={() => setIsModalOpen(false)}
         initialValues={editingOEM || undefined}
       />
     </div>

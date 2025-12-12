@@ -1,57 +1,56 @@
 import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Button } from "antd";
+import {
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+} from "../../../store/api/categoryApi";
 
 interface AddCategoryModalProps {
   open: boolean;
   onCancel: () => void;
-  onSuccess: (newCategory: {
-    name: string;
-    status: "Active" | "Inactive";
-  }) => void;
-  initialValues?: { name: string; status: "Active" | "Inactive" };
+  initialValues?: any;
 }
 
 const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   open,
   onCancel,
-  onSuccess,
   initialValues,
 }) => {
   const [form] = Form.useForm();
 
-  // Fill form when editing
-  useEffect(() => {
-    if (initialValues) {
-      form.setFieldsValue(initialValues);
-    } else {
-      form.resetFields();
-    }
-  }, [initialValues, form]);
+  const [createCategory] = useCreateCategoryMutation();
+  const [updateCategory] = useUpdateCategoryMutation();
 
-  const handleSubmit = () => {
-    form
-      .validateFields()
-      .then((values) => {
-        onSuccess(values);
-        form.resetFields();
-      })
-      .catch((info) => {
-        console.log("Validation Failed:", info);
+  useEffect(() => {
+    initialValues ? form.setFieldsValue(initialValues) : form.resetFields();
+  });
+
+  const handleSubmit = async () => {
+    const values = await form.validateFields();
+
+    if (initialValues) {
+      await updateCategory({
+        id: initialValues.categoryId,
+        data: values,
       });
+    } else {
+      await createCategory(values);
+    }
+
+    form.resetFields();
+    onCancel();
   };
 
   return (
     <Modal
       title={initialValues ? "Edit Category" : "Add Category"}
-      visible={open}
-      onCancel={() => {
-        form.resetFields();
-        onCancel();
-      }}
+      open={open}
+      onCancel={onCancel}
       footer={[
         <Button key="cancel" onClick={onCancel}>
           Cancel
         </Button>,
+
         <Button key="submit" type="primary" onClick={handleSubmit}>
           {initialValues ? "Update" : "Submit"}
         </Button>,
@@ -61,16 +60,12 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         <Form.Item
           label="Category Name"
           name="name"
-          rules={[{ required: true, message: "Please enter category name" }]}
+          rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
 
-        <Form.Item
-          label="Status"
-          name="status"
-          rules={[{ required: true, message: "Please select status" }]}
-        >
+        <Form.Item label="Status" name="status" rules={[{ required: true }]}>
           <Select>
             <Select.Option value="Active">Active</Select.Option>
             <Select.Option value="Inactive">Inactive</Select.Option>

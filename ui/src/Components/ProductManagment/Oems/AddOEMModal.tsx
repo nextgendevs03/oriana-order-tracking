@@ -1,52 +1,64 @@
 import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Button } from "antd";
 
+import {
+  useCreateOEMMutation,
+  useUpdateOEMMutation,
+} from "../../../store/api/oemApi";
+
 interface Props {
   open: boolean;
   onCancel: () => void;
-  onSuccess: (newOEM: { name: string; status: "Active" | "Inactive" }) => void;
-  initialValues?: { name: string; status: "Active" | "Inactive" };
+  initialValues?: any;
 }
 
-const AddOEMModal: React.FC<Props> = ({
-  open,
-  onCancel,
-  onSuccess,
-  initialValues,
-}) => {
+const AddOEMModal: React.FC<Props> = ({ open, onCancel, initialValues }) => {
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    if (initialValues) {
-      form.setFieldsValue(initialValues);
-    } else {
-      form.resetFields();
-    }
-  }, [initialValues, form]);
+  const [createOEM] = useCreateOEMMutation();
+  const [updateOEM] = useUpdateOEMMutation();
 
-  const onFinish = (values: any) => {
-    onSuccess(values);
+  useEffect(() => {
+    initialValues ? form.setFieldsValue(initialValues) : form.resetFields();
+  });
+
+  const handleSubmit = async () => {
+    const values = await form.validateFields();
+
+    if (initialValues) {
+      await updateOEM({
+        id: initialValues.oemId,
+        data: values,
+      });
+    } else {
+      await createOEM(values);
+    }
+
     form.resetFields();
+    onCancel();
   };
 
   return (
     <Modal
       title={initialValues ? "Edit OEM" : "Add OEM"}
       open={open}
-      onCancel={() => {
-        form.resetFields();
-        onCancel();
-      }}
-      footer={null}
-      width={500}
+      onCancel={onCancel}
+      footer={[
+        <Button key="cancel" onClick={onCancel}>
+          Cancel
+        </Button>,
+        <Button key="submit" type="primary" onClick={handleSubmit}>
+          {initialValues ? "Update" : "Submit"}
+        </Button>,
+      ]}
     >
-      <Form form={form} layout="vertical" onFinish={onFinish}>
+      <Form form={form} layout="vertical">
         <Form.Item
           label="OEM Name"
           name="name"
-          rules={[{ required: true, message: "Enter OEM name" }]}
+          rules={[{ required: true, message: "Enter OEM Name" }]}
         >
-          <Input placeholder="Enter OEM name" />
+          <Input placeholder="Enter OEM Name" />
         </Form.Item>
 
         <Form.Item label="Status" name="status" rules={[{ required: true }]}>
@@ -57,13 +69,6 @@ const AddOEMModal: React.FC<Props> = ({
             ]}
           />
         </Form.Item>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <Button onClick={onCancel}>Cancel</Button>
-          <Button type="primary" htmlType="submit">
-            {initialValues ? "Update" : "Submit"}
-          </Button>
-        </div>
       </Form>
     </Modal>
   );

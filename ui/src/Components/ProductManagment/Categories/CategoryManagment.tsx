@@ -1,21 +1,23 @@
-import React, { useState } from "react";
+import React from "react";
 import { Breadcrumb, Button, Table, Tag, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+
+import {
+  useGetCategoriesQuery,
+  useDeleteCategoryMutation,
+} from "../../../store/api/categoryApi";
 import AddCategoryModal from "./AddCategoryModal";
 
-interface Category {
-  key: string;
-  name: string;
-  status: "Active" | "Inactive";
-}
+const CategoryManagement = () => {
+  const { data: categories = [], isLoading } = useGetCategoriesQuery();
+  const [deleteCategory] = useDeleteCategoryMutation();
 
-const CategoryManagement: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [editingCategory, setEditingCategory] = React.useState(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
 
   const columns = [
     { title: "Name", dataIndex: "name" },
+
     {
       title: "Status",
       dataIndex: "status",
@@ -26,10 +28,11 @@ const CategoryManagement: React.FC = () => {
           <Tag color="red">Inactive</Tag>
         ),
     },
+
     {
       title: "Actions",
-      render: (_: any, record: Category) => (
-        <div style={{ display: "flex", gap: 8 }}>
+      render: (_: unknown, record: any) => (
+        <>
           <Button
             icon={<EditOutlined />}
             onClick={() => {
@@ -37,46 +40,21 @@ const CategoryManagement: React.FC = () => {
               setIsModalOpen(true);
             }}
           />
+
           <Popconfirm
-            title="Are you sure to delete?"
-            onConfirm={() => handleDelete(record.key)}
-            okText="Yes"
-            cancelText="No"
+            title="Are you sure?"
+            onConfirm={() => deleteCategory(record.categoryId)}
           >
             <Button danger icon={<DeleteOutlined />} />
           </Popconfirm>
-        </div>
+        </>
       ),
     },
   ];
 
-  const handleDelete = (key: string) => {
-    setCategories(categories.filter((category) => category.key !== key));
-  };
-
-  const handleSuccess = (newCategory: Omit<Category, "key">) => {
-    if (editingCategory) {
-      setCategories(
-        categories.map((category) =>
-          category.key === editingCategory.key
-            ? { ...category, ...newCategory }
-            : category
-        )
-      );
-      setEditingCategory(null);
-    } else {
-      setCategories([
-        ...categories,
-        { ...newCategory, key: Date.now().toString() },
-      ]);
-    }
-    setIsModalOpen(false);
-  };
-
   return (
     <div style={{ padding: 24 }}>
-      {/* Breadcrumb */}
-      <Breadcrumb style={{ marginBottom: 16 }}>
+      <Breadcrumb>
         <Breadcrumb.Item>Home</Breadcrumb.Item>
         <Breadcrumb.Item>Product Management</Breadcrumb.Item>
         <Breadcrumb.Item>Category Management</Breadcrumb.Item>
@@ -99,19 +77,14 @@ const CategoryManagement: React.FC = () => {
       <Table
         columns={columns}
         dataSource={categories}
-        locale={{ emptyText: "No Data" }}
-        style={{ marginTop: 20 }}
+        rowKey="categoryId"
+        loading={isLoading}
       />
 
-      {/* Modal */}
       <AddCategoryModal
         open={isModalOpen}
-        onCancel={() => {
-          setIsModalOpen(false);
-          setEditingCategory(null);
-        }}
-        onSuccess={handleSuccess}
-        initialValues={editingCategory || undefined}
+        onCancel={() => setIsModalOpen(false)}
+        initialValues={editingCategory ?? undefined}
       />
     </div>
   );
