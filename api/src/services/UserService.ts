@@ -4,6 +4,7 @@ import { UserListResponse, UserResponse } from '../schemas/response/UserResponse
 import { CreateUserRequest, UpdateUserRequest } from '../schemas/request/UserRequest';
 import { IUserRepository } from '../repositories/UserRepository';
 import { User } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 export interface IUserService {
   getAllUsers(): Promise<UserListResponse>;
@@ -15,41 +16,49 @@ export interface IUserService {
 
 @injectable()
 export class UserService implements IUserService {
-  constructor(@inject(TYPES.UserRepository) private userRepository: IUserRepository) {}
+  constructor(
+    @inject(TYPES.UserRepository)
+    private userRepository: IUserRepository
+  ) {}
+  // hash pwd using bcryptjs
+  private async hashPassword(password: string): Promise<string> {
+    const hashStrength = 10;
+    return await bcrypt.hash(password, hashStrength);
+  }
 
   async createUser(data: CreateUserRequest): Promise<UserResponse> {
-    const user: User = await this.userRepository.create(data);
+    const plainPassword = data.password;
+    const encryptedPassword = await this.hashPassword(plainPassword);
+    const userData: CreateUserRequest = {
+      username: data.username,
+      email: data.email,
+      password: encryptedPassword, // ONLY THIS FIELD IS ENCRYPTED
+      role: data.role,
+      isActive: data.isActive,
+      createdBy: data.createdBy,
+      updatedBy: data.updatedBy,
+    };
 
-    // Get the first active role name, or empty string if no roles
-    //  const roleName = user.userRoles?.[0]?.role?.roleName || '';
+    const user: User = await this.userRepository.create(userData);
 
-    const response: UserResponse = {
-      userId: user.userId,
+    return {
       username: user.username,
       email: user.email,
       password: user.password,
       role: 'roleName',
       isActive: user.isActive,
     };
-
-    return response;
   }
 
   async getUserById(id: string): Promise<UserResponse | null> {
     const user: User | null = await this.userRepository.findById(id);
 
-    if (!user) {
-      return null;
-    }
-
-    // Get the first active role name, or empty string if no roles
-    // const roleName = user.userRoles?.[0]?.role?.roleName || '';
+    if (!user) return null;
 
     return {
-      userId: user.userId,
       username: user.username,
       email: user.email,
-      password: user.password,
+      password: user.password, // Return encrypted password from database
       role: 'roleName',
       isActive: user.isActive,
     };
@@ -57,36 +66,31 @@ export class UserService implements IUserService {
 
   async getAllUsers(): Promise<UserListResponse> {
     const users = await this.userRepository.findAll();
-    const modifiedUsers = users.map((user: User) => {
-      // Get the first active role name, or empty string if no roles
-      //   const roleName = user.userRoles?.[0]?.role?.roleName || '';
 
-      return {
-        userId: user.userId,
-        username: user.username,
-        email: user.email,
-        password: user.password,
-        role: 'roleName',
-        isActive: user.isActive,
-        name: user.username,
-        createdAt: user.createdAt.toISOString(),
-      };
-    });
-    return {
-      items: modifiedUsers,
-    };
-  }
-  async updateUser(id: string, data: UpdateUserRequest): Promise<UserResponse> {
-    const user: User = await this.userRepository.update(id, data);
-
-    // Get the first active role name, or empty string if no roles
-    // const roleName = user.userRoles?.[0]?.role?.roleName || '';
-
-    return {
-      userId: user.userId,
+    const modifiedUsers = users.map((user: User) => ({
       username: user.username,
       email: user.email,
       password: user.password,
+      role: 'roleName',
+      isActive: user.isActive,
+      name: user.username,
+      createdAt: user.createdAt.toISOString(),
+    }));
+
+    return { items: modifiedUsers };
+  }
+
+  async updateUser(id: string, data: UpdateUserRequest): Promise<UserResponse> {
+    // If password is provided, encrypt ONLY the password
+    if (data.password) {
+      data.password = await this.hashPassword(data.password); //  ONLY password encrypted
+    }
+    const user: User = await this.userRepository.update(id, data);
+
+    return {
+      username: user.username,
+      email: user.email,
+      password: user.password, // Return encrypted password from database
       role: 'roleName',
       isActive: user.isActive,
     };
