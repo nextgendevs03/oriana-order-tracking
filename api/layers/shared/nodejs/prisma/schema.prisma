@@ -147,3 +147,53 @@ model Permission {
   @@index([isActive])
   @@map("permissions")
 }
+
+model Category {
+  categoryId   String    @id @default(uuid()) @map("category_id")
+  categoryName String    @map("category_name") @db.VarChar(100)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdBy    String    @map("created_by") @db.VarChar(100)
+  updatedBy    String    @map("updated_by") @db.VarChar(100)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  products     Product[]
+
+  @@index([categoryName])
+  @@index([isActive])
+  @@map("categories")
+}
+
+model OEM {
+  oemId     String    @id @default(uuid()) @map("oem_id")
+  oemName   String    @map("oem_name") @db.VarChar(100)
+  isActive  Boolean   @default(true) @map("is_active")
+  createdBy String    @map("created_by") @db.VarChar(100)
+  updatedBy String    @map("updated_by") @db.VarChar(100)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  products  Product[]
+
+  @@index([oemName])
+  @@index([isActive])
+  @@map("oems")
+}
+
+model Product {
+  productId   String   @id @default(uuid()) @map("product_id")
+  productName String   @map("product_name") @db.VarChar(100)
+  isActive    Boolean  @default(true) @map("is_active")
+  categoryId  String   @map("category_id")
+  category    Category @relation(fields: [categoryId], references: [categoryId])
+  oemId       String   @map("oem_id")
+  oem         OEM      @relation(fields: [oemId], references: [oemId])
+  createdBy   String   @map("created_by") @db.VarChar(100)
+  updatedBy   String   @map("updated_by") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([productName])
+  @@index([isActive])
+  @@index([categoryId])
+  @@index([oemId])
+  @@map("products")
+}
