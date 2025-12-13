@@ -23,4 +23,9 @@ export * from './request/AuthRequest';
 export * from './response/AuthResponse';
 
 export * from './request/UserRequest';
+// Response schemas
 export * from './response/UserResponse';
+// Request schemas
+export * from './request/CategoryRequest';
+// Response schemas
+export * from './response/CategoryResponse';

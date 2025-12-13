@@ -16,12 +16,15 @@ import userReducer from "./userSlice";
 import poReducer from "./poSlice";
 import roleReducer from "./roleSlice";
 import authReducer from "./authSlice";
+import categoryReducer from "./categorySlice";
+import oemReducer from "./oemSlice";
+import productReducer from "./productSlice";
 
 const persistConfig = {
   key: "root",
   version: 1,
   storage,
-  whitelist: ["po", "auth", "permission", "user", "role"], 
+  whitelist: ["po", "auth", "permission", "user", "role", "category", "oem", "product"], 
   blacklist: [baseApi.reducerPath],
 };
 
@@ -31,6 +34,9 @@ const rootReducer = combineReducers({
    role: roleReducer,
    po: poReducer,
    auth: authReducer,
+   category: categoryReducer,
+   oem: oemReducer,
+   product: productReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

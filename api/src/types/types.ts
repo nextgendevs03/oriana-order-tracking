@@ -5,6 +5,9 @@ export const TYPES = {
   PermissionController: Symbol.for('PermissionController'),
   RoleController: Symbol.for('RoleController'),
   UserController: Symbol.for('UserController'),
+  CategoryController: Symbol.for('CategoryController'),
+  OEMController: Symbol.for('OEMController'),
+  ProductController: Symbol.for('ProductController'),
 
   // Services
   POService: Symbol.for('POService'),
@@ -13,12 +16,18 @@ export const TYPES = {
   RoleService: Symbol.for('RoleService'),
   UserService: Symbol.for('UserService'),
   PermissionService: Symbol.for('PermissionService'),
+  CategoryService: Symbol.for('CategoryService'),
+  OEMService: Symbol.for('OEMService'),
+  ProductService: Symbol.for('ProductService'),
 
   // Repositories
   AuthRepository: Symbol.for('AuthRepository'),
   PermissionRepository: Symbol.for('PermissionRepository'),
   RoleRepository: Symbol.for('RoleRepository'),
   UserRepository: Symbol.for('UserRepository'),
+  CategoryRepository: Symbol.for('CategoryRepository'),
+  OEMRepository: Symbol.for('OEMRepository'),
+  ProductRepository: Symbol.for('ProductRepository'),
 
   // Database
   PrismaClient: Symbol.for('PrismaClient'),

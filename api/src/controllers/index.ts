@@ -28,3 +28,9 @@ export * from './AuthController';
 export * from './PermissionController';
 // Role Controller
 export * from './RoleController';
+// Category Controller
+export * from './CategoryController';
+// OEM Controller
+export * from './OEMController';
+// Product Controller
+export * from './ProductController';

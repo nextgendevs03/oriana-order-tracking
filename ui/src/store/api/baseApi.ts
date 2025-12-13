@@ -50,6 +50,9 @@ export const baseApi = createApi({
     'User', // Users
     'Role', // Roles
     'Permission', // Permissions
+    'Category', // Categories
+    'OEM', // OEMs
+    'Product', // Products
   ],
 
   // Base endpoints - empty, will be extended by feature APIs
