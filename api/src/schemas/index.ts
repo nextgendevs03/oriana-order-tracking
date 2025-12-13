@@ -18,7 +18,10 @@ export * from './response/PermissionResponse';
 export * from './request/RoleRequest';
 // Response schemas
 export * from './response/RoleResponse';
-// Request schemas
+
+export * from './request/AuthRequest';
+export * from './response/AuthResponse';
+
 export * from './request/UserRequest';
 // Response schemas
 export * from './response/UserResponse';

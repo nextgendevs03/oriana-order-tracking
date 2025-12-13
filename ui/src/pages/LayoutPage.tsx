@@ -3,6 +3,8 @@ import { Layout, Typography, Avatar, Space, Button, theme } from "antd";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import SidebarMenu from "../Components/SidebarMenu";
 import { Outlet } from "react-router-dom";
+import { useAppSelector } from "store/hooks";
+import { RootState } from "store";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -13,12 +15,12 @@ const LayoutPage: React.FC = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  const username = localStorage.getItem("loggedUser") || "Guest";
+  const username = useAppSelector((state: RootState) => state.auth.auth.username);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* Sidebar */}
-      <Sider trigger={null} collapsible collapsed={collapsed}>
+      <Sider trigger={null} collapsible={true} collapsed={collapsed}>
         <div
           style={{
             height: 64,
@@ -44,7 +46,7 @@ const LayoutPage: React.FC = () => {
             {collapsed ? "OSG" : "OSG India"}
           </Title>
         </div>
-        <SidebarMenu />
+        <SidebarMenu collapsed={collapsed} />
       </Sider>
 
       <Layout>

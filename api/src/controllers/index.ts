@@ -14,6 +14,7 @@
 // Purchase Order Controller
 export * from './POController';
 export * from './UserController';
+export * from './AuthController';
 
 // User Managment Controller
 // Add new controller exports below:

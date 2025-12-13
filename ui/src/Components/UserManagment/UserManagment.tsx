@@ -12,8 +12,8 @@ import {
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import UserManagmentModal from "./UserManagmentModal";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { selectUsers, updateUserStatus } from "../../store/userSlice";
+import { useAppDispatch } from "../../store/hooks";
+import { updateUserStatus } from "../../store/userSlice";
 import {
   useGetUsersQuery,
   useDeleteUserMutation,
@@ -32,7 +32,7 @@ const UserManagement = () => {
 
   const { data, isLoading: isGettingUsers, refetch } = useGetUsersQuery();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-  const users = useAppSelector(selectUsers);
+  // const users = useAppSelector(selectUsers);
 
   const handleEdit = (record: UserResponse & { id?: string }) => {
     setEditingUser(record);

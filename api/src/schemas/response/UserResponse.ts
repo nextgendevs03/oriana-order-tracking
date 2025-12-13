@@ -2,7 +2,7 @@ export interface UserResponse {
   userId?: string;
   username: string;
   email: string;
-  password: string;
+  password?: string;
   role: string;
 
   isActive: boolean;
