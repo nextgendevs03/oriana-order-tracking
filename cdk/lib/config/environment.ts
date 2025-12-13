@@ -28,10 +28,22 @@ const defaultFeatures: FeatureFlags = {
   kms: false,
 };
 
+/**
+ * Database connection configuration (non-sensitive).
+ * Credentials (username/password) are stored in AWS Secrets Manager.
+ */
+export interface DatabaseConfig {
+  host: string;
+  port: number;
+  name: string;
+  ssl: boolean;
+}
+
 export interface EnvironmentConfig {
   environment: Environment;
   stackName: string;
   description: string;
+  /** Secrets Manager secret ID for database credentials (username/password only) */
   dbSecretId: string;
   logRetentionDays: number;
   lambdaMemorySize: number;
@@ -41,6 +53,8 @@ export interface EnvironmentConfig {
   tags: Record<string, string>;
   /** Feature flags to enable/disable AWS services */
   features: FeatureFlags;
+  /** Database connection settings (non-sensitive) */
+  database: DatabaseConfig;
 }
 
 const baseConfig = {
@@ -71,6 +85,12 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       ...defaultFeatures,
       s3: true, // Enable S3 for dev
     },
+    database: {
+      host: "db.xxxxxxxxxxxx.supabase.co", // TODO: Replace with your Supabase host
+      port: 5432,
+      name: "postgres",
+      ssl: true,
+    },
   },
   qa: {
     ...baseConfig,
@@ -91,6 +111,12 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       ...defaultFeatures,
       s3: true, // Enable S3 for qa
     },
+    database: {
+      host: "db.xxxxxxxxxxxx.supabase.co", // TODO: Replace with your QA Supabase host
+      port: 5432,
+      name: "postgres",
+      ssl: true,
+    },
   },
   prod: {
     ...baseConfig,
@@ -110,6 +136,12 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     features: {
       ...defaultFeatures,
       s3: true, // Enable S3 for prod
+    },
+    database: {
+      host: "oriana-prod.xxxxxxxxxxxx.ap-south-1.rds.amazonaws.com", // TODO: Replace with your RDS endpoint
+      port: 5432,
+      name: "oriana",
+      ssl: true,
     },
   },
 };
