@@ -1,6 +1,12 @@
 import React from "react";
 import { Menu } from "antd";
-import { HomeOutlined, UserOutlined, SettingOutlined, LogoutOutlined } from "@ant-design/icons";
+import {
+  HomeOutlined,
+  UserOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+  AppstoreOutlined,
+} from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MenuProps } from "antd";
 import Sider from "antd/es/layout/Sider";
@@ -14,6 +20,8 @@ const SidebarMenu = () => {
       case "1":
         navigate("/dashboard");
         break;
+
+      // Admin
       case "2-1":
         navigate("/user-management");
         break;
@@ -21,45 +29,47 @@ const SidebarMenu = () => {
         navigate("/role-management");
         break;
       case "2-3":
-        navigate("/admin/permissions");
+        navigate("/permissions");
         break;
+
+      // Product Management main page
+      case "3":
+        navigate("/product-management");
+        break;
+
       default:
         break;
     }
   };
 
   const menuItems: MenuProps["items"] = [
-    { 
-      key: "1", 
-      icon: <HomeOutlined />, 
-      label: "Dashboard" 
+    {
+      key: "1",
+      icon: <HomeOutlined />,
+      label: "Dashboard",
     },
-    { 
-      key: "2", 
-      icon: <SettingOutlined />, 
+    {
+      key: "2",
+      icon: <SettingOutlined />,
       label: "Admin",
       children: [
-        { 
-          key: "2-1", 
-          label: "User Management", 
-          icon: <UserOutlined /> 
-        },
-        { 
-          key: "2-2", 
-          label: "Role Management", 
-          icon: <UserOutlined /> 
-        },
-        { 
-          key: "2-3", 
-          label: "Permissions", 
-          icon: <UserOutlined /> 
-        },
-      ]
+        { key: "2-1", label: "User Management", icon: <UserOutlined /> },
+        { key: "2-2", label: "Role Management", icon: <UserOutlined /> },
+        { key: "2-3", label: "Permissions", icon: <UserOutlined /> },
+      ],
     },
-    { 
-      key: "3", 
-      icon: <UserOutlined />, 
-      label: "Profile" 
+
+    // 🔥 Product Management Single Click Menu
+    {
+      key: "3",
+      icon: <AppstoreOutlined />,
+      label: "Product Management",
+    },
+
+    {
+      key: "4",
+      icon: <UserOutlined />,
+      label: "Profile",
     },
   ];
 
@@ -77,7 +87,6 @@ const SidebarMenu = () => {
         flexDirection: "column",
       }}
     >
-      {/* Logo */}
       <div
         style={{
           height: 60,
@@ -93,18 +102,15 @@ const SidebarMenu = () => {
         OSG India
       </div>
 
-      {/* Menu */}
       <Menu
         theme="dark"
         mode="inline"
-        selectedKeys={[location.pathname]}
-        defaultOpenKeys={["admin"]}
+        defaultOpenKeys={["2"]}
         items={menuItems}
         onClick={handleMenuClick}
         style={{ background: "#001529", flex: 1 }}
       />
 
-      {/* ✅ Logout always visible */}
       <div
         onClick={() => navigate("/")}
         style={{
