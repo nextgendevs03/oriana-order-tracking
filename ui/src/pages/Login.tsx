@@ -1,19 +1,43 @@
 import React from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
-import { useNavigate, Link } from "react-router-dom";
-const { Title, Text } = Typography;
+import { useNavigate } from "react-router-dom";
+import { useLoginMutation } from "../store/api/authApi";
+import { addAuth, setIsLoggedIn } from "store/authSlice";
+import { useDispatch } from "react-redux";
+
+const { Title } = Typography;
 interface LoginData {
   username: string;
   password: string;
 }
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const onFinish = (values: LoginData) => {
-    localStorage.setItem("loggedUser", values.username);
+  const [login, { isLoading }] = useLoginMutation();
 
-    message.success("Login Successful!");
-    navigate("/dashboard"); 
+  const onFinish = async (values: LoginData) => {
+    try {
+      const loginPayload = {
+        username: values.username,
+        password: values.password,
+      };
+      await login(loginPayload).unwrap();
+      
+      dispatch(addAuth({ username: values.username }));
+      dispatch(setIsLoggedIn(true));
+
+      message.success("Login Successful!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      const errorMessage =
+        error?.data?.error?.message ||
+        error?.data?.message ||
+        error?.message ||
+        "An error occurred. Please try again.";
+      message.error(errorMessage);
+    }
   };
 
   return (
@@ -46,7 +70,7 @@ const Login: React.FC = () => {
             <Input.Password />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" block>
+          <Button type="primary" htmlType="submit" block loading={isLoading}>
             Login
           </Button>
         </Form>
@@ -56,6 +80,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
-
-

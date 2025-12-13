@@ -1,52 +1,34 @@
 export const TYPES = {
   // Controllers
   POController: Symbol.for('POController'),
+  AuthController: Symbol.for('AuthController'),
+  PermissionController: Symbol.for('PermissionController'),
+  RoleController: Symbol.for('RoleController'),
+  UserController: Symbol.for('UserController'),
+  CategoryController: Symbol.for('CategoryController'),
+  OEMController: Symbol.for('OEMController'),
+  ProductController: Symbol.for('ProductController'),
+
   // Services
   POService: Symbol.for('POService'),
-  // Repositories
+  AuthService: Symbol.for('AuthService'),
   PORepository: Symbol.for('PORepository'),
+  RoleService: Symbol.for('RoleService'),
+  UserService: Symbol.for('UserService'),
+  PermissionService: Symbol.for('PermissionService'),
+  CategoryService: Symbol.for('CategoryService'),
+  OEMService: Symbol.for('OEMService'),
+  ProductService: Symbol.for('ProductService'),
+
+  // Repositories
+  AuthRepository: Symbol.for('AuthRepository'),
+  PermissionRepository: Symbol.for('PermissionRepository'),
+  RoleRepository: Symbol.for('RoleRepository'),
+  UserRepository: Symbol.for('UserRepository'),
+  CategoryRepository: Symbol.for('CategoryRepository'),
+  OEMRepository: Symbol.for('OEMRepository'),
+  ProductRepository: Symbol.for('ProductRepository'),
+
   // Database
   PrismaClient: Symbol.for('PrismaClient'),
-  //
-  // RolePermissionController: Symbol.for('RolePermissionController'),
-  //
-  //RolePermissionService: Symbol.for('RolePermissionService'),
-  //
-  //RolePermissionRepository: Symbol.for('RolePermissionRepository'),
-  //
-  PermissionController: Symbol.for('PermissionController'),
-  //
-  PermissionService: Symbol.for('PermissionService'),
-  //
-  PermissionRepository: Symbol.for('PermissionRepository'),
-  //
-  RoleController: Symbol.for('RoleController'),
-  //
-  RoleService: Symbol.for('RoleService'),
-  //
-  RoleRepository: Symbol.for('RoleRepository'),
-  //
-  UserService: Symbol.for('UserService'),
-  //
-  UserRepository: Symbol.for('UserRepository'),
-  //
-  UserController: Symbol.for('UserController'),
-  //
-  CategoryController: Symbol.for('CategoryController'),
-  //
-  CategoryService: Symbol.for('CategoryService'),
-  //
-  CategoryRepository: Symbol.for('CategoryRepository'),
-  //
-  OEMController: Symbol.for('OEMController'),
-  //
-  OEMService: Symbol.for('OEMService'),
-  //
-  OEMRepository: Symbol.for('OEMRepository'),
-  //
-  ProductController: Symbol.for('ProductController'),
-  //
-  ProductService: Symbol.for('ProductService'),
-  //
-  ProductRepository: Symbol.for('ProductRepository'),
 };

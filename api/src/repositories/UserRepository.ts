@@ -15,10 +15,7 @@ export class UserRepository implements IUserRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
   async create(data: CreateUserRequest): Promise<User> {
-    // Extract role from data (it's not a Prisma field)
     const { role, ...userData } = data;
-
-    // Create user without role field
     const user = await this.prisma.user.create({
       data: userData,
       include: {
@@ -104,8 +101,20 @@ export class UserRepository implements IUserRepository {
       throw new Error('User not found');
     }
 
-    // Extract role from data (it's not a Prisma field)
-    const { role } = data;
+    const { role, ...updateFields } = data;
+    const userUpdateData: any = {};
+    if (updateFields.email !== undefined) userUpdateData.email = updateFields.email;
+    if (updateFields.password !== undefined) userUpdateData.password = updateFields.password;
+    if (updateFields.isActive !== undefined) userUpdateData.isActive = updateFields.isActive;
+    if (updateFields.updatedBy !== undefined) userUpdateData.updatedBy = updateFields.updatedBy;
+
+    // Actually update the user record in database
+    if (Object.keys(userUpdateData).length > 0) {
+      await this.prisma.user.update({
+        where: { userId: id },
+        data: userUpdateData,
+      });
+    }
 
     // If role is provided, update the UserRole relationship
     if (role !== undefined) {
