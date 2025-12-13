@@ -6,12 +6,18 @@ import {
   SettingOutlined,
   LogoutOutlined,
   AppstoreOutlined,
+  UserAddOutlined,
+  SafetyCertificateOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MenuProps } from "antd";
-import Sider from "antd/es/layout/Sider";
 
-const SidebarMenu = () => {
+interface SidebarMenuProps {
+  collapsed?: boolean;
+}
+
+const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,12 +37,15 @@ const SidebarMenu = () => {
       case "2-3":
         navigate("/permissions");
         break;
-
-      // Product Management main page
-      case "3":
+      case "2-4":
         navigate("/product-management");
         break;
-
+      case "3":
+        navigate("/profile");
+        break;
+      case "4":
+        navigate("/");
+        break;
       default:
         break;
     }
@@ -53,80 +62,39 @@ const SidebarMenu = () => {
       icon: <SettingOutlined />,
       label: "Admin",
       children: [
-        { key: "2-1", label: "User Management", icon: <UserOutlined /> },
-        { key: "2-2", label: "Role Management", icon: <UserOutlined /> },
-        { key: "2-3", label: "Permissions", icon: <UserOutlined /> },
+        { key: "2-1", label: "User Management", icon: <UserAddOutlined /> },
+        { key: "2-2", label: "Role Management", icon: <KeyOutlined /> },
+        { key: "2-3", label: "Permissions", icon: <SafetyCertificateOutlined /> },
+        { key: "2-4", label: "Product Management", icon: <AppstoreOutlined /> },
       ],
     },
 
-    // 🔥 Product Management Single Click Menu
     {
       key: "3",
-      icon: <AppstoreOutlined />,
-      label: "Product Management",
-    },
-
-    {
-      key: "4",
       icon: <UserOutlined />,
       label: "Profile",
+    },
+    {
+      key: "4",
+      icon:  <LogoutOutlined />,
+      label: "Logout",
     },
   ];
 
   return (
-    <Sider
-      width={220}
+    <Menu
       theme="dark"
-      style={{
-        background: "#001529",
-        height: "100vh",
-        position: "fixed",
-        left: 0,
-        top: 0,
-        display: "flex",
-        flexDirection: "column",
+      mode="inline"
+      defaultOpenKeys={["2"]}
+      items={menuItems}
+      onClick={handleMenuClick}
+      style={{ 
+        background: "#001529", 
+        flex: 1,
+        borderRight: 0,
       }}
-    >
-      <div
-        style={{
-          height: 60,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-          fontSize: 18,
-          fontWeight: 600,
-          borderBottom: "1px solid #0a1d2f",
-        }}
-      >
-        OSG India
-      </div>
-
-      <Menu
-        theme="dark"
-        mode="inline"
-        defaultOpenKeys={["2"]}
-        items={menuItems}
-        onClick={handleMenuClick}
-        style={{ background: "#001529", flex: 1 }}
-      />
-
-      <div
-        onClick={() => navigate("/")}
-        style={{
-          padding: 20,
-          color: "white",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          borderTop: "1px solid #0a1d2f",
-        }}
-      >
-        <LogoutOutlined />
-        Logout
-      </div>
-    </Sider>
+      inlineCollapsed={collapsed}
+    />
   );
 };
 
