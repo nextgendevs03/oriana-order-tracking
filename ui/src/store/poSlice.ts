@@ -139,7 +139,7 @@ export interface POData {
   uploadedDocuments?: PODocument[];
 }
 
-interface POState {
+export interface POState {
   poList: POData[];
   dispatchDetails: DispatchDetail[];
   preCommissioningDetails: PreCommissioning[];

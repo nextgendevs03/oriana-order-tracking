@@ -1,15 +1,15 @@
-import { baseApi } from ".";
-import { RoleListResponse, RoleResponse, CreateRoleRequest, UpdateRoleRequest, ListRoleRequest } from "@OrianaTypes";
+import { baseApi } from "./baseApi";
+import { RoleListResponse, RoleResponse, CreateRoleRequest, UpdateRoleRequest, ListRoleRequest } from "../../types/orianaTypes";
 
 export const roleApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllRoles: builder.query<RoleListResponse, ListRoleRequest>({
-      query: (params) => ({ url: "role/", method: "GET", params }),
+      query: (params: ListRoleRequest) => ({ url: "role/", method: "GET", params }),
       providesTags: ["Role"],
     }),
 
     createRole: builder.mutation<RoleResponse, CreateRoleRequest>({
-      query: (body) => ({
+      query: (body: CreateRoleRequest) => ({
         url: "role/",
         method: "POST",
         body: { ...body },
@@ -21,7 +21,7 @@ export const roleApi = baseApi.injectEndpoints({
       RoleResponse,
       { id: string; data: UpdateRoleRequest }
     >({
-      query: ({ id, data }) => ({
+      query: ({ id, data }: { id: string; data: UpdateRoleRequest }) => ({
         url: `role/${id}`,
         method: "PUT",
         body: data,
@@ -30,7 +30,7 @@ export const roleApi = baseApi.injectEndpoints({
     }),
 
     deleteRole: builder.mutation<{ id: string; deleted: boolean }, string>({
-      query: (id) => ({ url: `role/${id}`, method: "DELETE" }),
+      query: (id: string) => ({ url: `role/${id}`, method: "DELETE" }),
       invalidatesTags: ["Role"],
     }),
   }),

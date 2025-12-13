@@ -19,10 +19,34 @@ export const TYPES = {
   PermissionService: Symbol.for('PermissionService'),
   //
   PermissionRepository: Symbol.for('PermissionRepository'),
+  //
   RoleController: Symbol.for('RoleController'),
+  //
   RoleService: Symbol.for('RoleService'),
+  //
   RoleRepository: Symbol.for('RoleRepository'),
+  //
   UserService: Symbol.for('UserService'),
+  //
   UserRepository: Symbol.for('UserRepository'),
+  //
   UserController: Symbol.for('UserController'),
+  //
+  CategoryController: Symbol.for('CategoryController'),
+  //
+  CategoryService: Symbol.for('CategoryService'),
+  //
+  CategoryRepository: Symbol.for('CategoryRepository'),
+  //
+  OEMController: Symbol.for('OEMController'),
+  //
+  OEMService: Symbol.for('OEMService'),
+  //
+  OEMRepository: Symbol.for('OEMRepository'),
+  //
+  ProductController: Symbol.for('ProductController'),
+  //
+  ProductService: Symbol.for('ProductService'),
+  //
+  ProductRepository: Symbol.for('ProductRepository'),
 };
