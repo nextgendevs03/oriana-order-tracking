@@ -18,7 +18,7 @@ import {
   useGetUsersQuery,
   useDeleteUserMutation,
 } from "../../store/api/userApi";
-import { UserResponse } from "../../types/orianaTypes"; 
+import { UserResponse } from "@OrianaTypes";
 
 const { Search } = Input;
 const { Option } = Select;

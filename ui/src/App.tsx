@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import LayoutPage from "./pages/LayoutPage";
 import React from "react";
 import UserManagement from "./Components/UserManagment/UserManagment";
+// Import pages
 import CreatePO from "./pages/CreatePO";
 import PODetails from "./pages/PODetails";
 import Dashboard from "./pages/Dashboard";
@@ -13,6 +14,8 @@ import {
   OEMManagement,
   ProductList,
 } from "./Components/ProductManagement";
+import RoleManagement from "./Components/Admin/RoleManagment/RoleManagment";
+import PermissionsManagement from "./Components/Admin/PermissionManagment/PermissionManagment";
 
 const App: React.FC = () => {
   return (
@@ -52,6 +55,12 @@ const App: React.FC = () => {
           <Route path="/product-management/products" element={<LayoutPage />}>
             <Route index element={<ProductList />} />
           </Route>
+        <Route path="/role-management" element={<LayoutPage />}>
+          <Route index element={<RoleManagement />} />
+        </Route>
+        <Route path="/permissions" element={<LayoutPage />}>
+            <Route index element={<PermissionsManagement />} />
+            </Route>
           
           {/* Fallback redirect */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
