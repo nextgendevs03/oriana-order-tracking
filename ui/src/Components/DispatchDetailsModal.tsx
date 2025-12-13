@@ -6,6 +6,7 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import type { DispatchDetail } from "../store/poSlice";
+import { formatLabel, getStatusColorByType } from "../utils";
 
 const { Text } = Typography;
 
@@ -32,33 +33,6 @@ const DispatchDetailsModal: React.FC<DispatchDetailsModalProps> = ({
       setActiveTab(initialTab);
     }
   }, [visible, initialTab]);
-
-  const formatLabel = (value: string) => {
-    if (!value) return "";
-    return value
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
-
-  const getStatusColor = (status: string, type: "clearance" | "dispatch" | "delivery" = "dispatch") => {
-    if (type === "clearance") {
-      const colorMap: Record<string, string> = {
-        pending: "orange",
-        approved: "green",
-        rejected: "red",
-        on_hold: "blue",
-      };
-      return colorMap[status] || "default";
-    }
-    
-    const colorMap: Record<string, string> = {
-      done: "green",
-      pending: "orange",
-      hold: "blue",
-      cancelled: "red",
-    };
-    return colorMap[status] || "default";
-  };
 
   // Dispatch Details Tab Content
   const renderDispatchDetails = () => {
@@ -155,7 +129,7 @@ const DispatchDetailsModal: React.FC<DispatchDetailsModalProps> = ({
           </Descriptions.Item>
           <Descriptions.Item label="No Due Clearance">
             {dispatch.noDuesClearance ? (
-              <Tag color={getStatusColor(dispatch.noDuesClearance, "clearance")}>
+              <Tag color={getStatusColorByType(dispatch.noDuesClearance, "clearance")}>
                 {formatLabel(dispatch.noDuesClearance)}
               </Tag>
             ) : (
@@ -185,7 +159,7 @@ const DispatchDetailsModal: React.FC<DispatchDetailsModalProps> = ({
           </Descriptions.Item>
           <Descriptions.Item label="Dispatch Status">
             {dispatch.dispatchStatus ? (
-              <Tag color={getStatusColor(dispatch.dispatchStatus)}>
+              <Tag color={getStatusColorByType(dispatch.dispatchStatus, "dispatch")}>
                 {formatLabel(dispatch.dispatchStatus)}
               </Tag>
             ) : (
@@ -313,7 +287,7 @@ const DispatchDetailsModal: React.FC<DispatchDetailsModalProps> = ({
         </Descriptions.Item>
         <Descriptions.Item label="Delivery Status">
           {dispatch.deliveryStatus ? (
-            <Tag color={getStatusColor(dispatch.deliveryStatus, "delivery")}>
+            <Tag color={getStatusColorByType(dispatch.deliveryStatus, "delivery")}>
               {formatLabel(dispatch.deliveryStatus)}
             </Tag>
           ) : (

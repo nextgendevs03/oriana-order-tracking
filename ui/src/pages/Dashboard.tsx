@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Table, Button, Tag } from "antd";
 import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { POData } from "../store/poSlice";
 import type { ColumnsType } from "antd/es/table";
+import { getPaymentStatusColor, getPoStatusColor, formatLabel } from "../utils";
 
 interface PORecord {
   key: string;
@@ -49,44 +50,6 @@ const Dashboard: React.FC = () => {
 
   const handleCreatePO = () => {
     navigate("/create-po");
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case "advanced":
-      case "received":
-        return "green";
-      case "pending":
-        return "orange";
-      case "15_dc":
-      case "30_dc":
-        return "blue";
-      case "lc":
-        return "purple";
-      default:
-        return "default";
-    }
-  };
-
-  const getPoStatusColor = (status: string) => {
-    switch (status) {
-      case "po_received":
-        return "green";
-      case "po_confirmed_phone":
-        return "blue";
-      case "on_call":
-        return "orange";
-      case "on_mail":
-        return "purple";
-      default:
-        return "default";
-    }
-  };
-
-  const formatLabel = (value: string) => {
-    return value
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
   // Generate unique filter options from data

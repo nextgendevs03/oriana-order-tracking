@@ -18,6 +18,7 @@ import {
 import dayjs from "dayjs";
 import type { UploadFile } from "antd/es/upload/interface";
 import FileUpload from "./FileUpload";
+import { deliveryStatusOptions, textFieldRules, selectFieldRules, dateFieldRules } from "../utils";
 
 interface DeliveryConfirmationFormModalProps {
   visible: boolean;
@@ -38,13 +39,6 @@ const DeliveryConfirmationFormModal: React.FC<DeliveryConfirmationFormModalProps
 
   const isEditMode = !!editData;
 
-  // Dropdown options for delivery status
-  const deliveryStatusOptions = [
-    { value: "done", label: "Done" },
-    { value: "pending", label: "Pending" },
-    { value: "hold", label: "Hold" },
-    { value: "cancelled", label: "Cancelled" },
-  ];
 
   // Get dispatch options - only show dispatches where dispatchStatus is "done"
   // Disable if already has delivery confirmation (unless editing that dispatch)
@@ -141,15 +135,6 @@ const DeliveryConfirmationFormModal: React.FC<DeliveryConfirmationFormModalProps
     onClose();
   };
 
-  const textFieldRules = [
-    { required: true, message: "This field is required" },
-  ];
-
-  const selectFieldRules = [
-    { required: true, message: "Please select an option" },
-  ];
-
-  const dateFieldRules = [{ required: true, message: "Please select a date" }];
 
   return (
     <Modal

@@ -22,6 +22,7 @@ import {
   POItem,
 } from "../store/poSlice";
 import dayjs from "dayjs";
+import { formatLabel, textFieldRulesWithMinLength, dateFieldRules } from "../utils";
 
 const { Text } = Typography;
 
@@ -127,13 +128,6 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
     });
   };
 
-  const formatLabel = (value: string) => {
-    if (!value) return "";
-    return value
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
-
   const handleProductChange = (values: string[]) => {
     setSelectedProducts(values);
     // Reset quantities for products that are deselected
@@ -212,12 +206,6 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
     onClose();
   };
 
-  const textFieldRules = [
-    { required: true, message: "This field is required" },
-    { min: 3, message: "Minimum 3 characters required" },
-  ];
-
-  const dateFieldRules = [{ required: true, message: "Please select a date" }];
 
   // Quantity validation rule for each product
   const getQuantityValidator = (product: string) => {
@@ -300,7 +288,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
             <Form.Item
               name="projectName"
               label="Project Name"
-              rules={textFieldRules}
+              rules={textFieldRulesWithMinLength}
             >
               <Input placeholder="Enter project name" />
             </Form.Item>
@@ -363,7 +351,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
             <Form.Item
               name="projectLocation"
               label="Project Location"
-              rules={textFieldRules}
+              rules={textFieldRulesWithMinLength}
             >
               <Input placeholder="Enter project location" />
             </Form.Item>
@@ -372,7 +360,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
             <Form.Item
               name="deliveryLocation"
               label="Delivery Location"
-              rules={textFieldRules}
+              rules={textFieldRulesWithMinLength}
             >
               <Input placeholder="Enter delivery location" />
             </Form.Item>
@@ -384,7 +372,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
             <Form.Item
               name="deliveryAddress"
               label="Delivery Address"
-              rules={textFieldRules}
+              rules={textFieldRulesWithMinLength}
             >
               <Input.TextArea placeholder="Enter delivery address" rows={2} />
             </Form.Item>
@@ -414,7 +402,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
             <Form.Item
               name="deliveryContact"
               label="Delivery Contact"
-              rules={textFieldRules}
+              rules={textFieldRulesWithMinLength}
             >
               <Input placeholder="Enter delivery contact" />
             </Form.Item>

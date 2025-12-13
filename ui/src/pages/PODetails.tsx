@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Collapse,
   Typography,
@@ -41,6 +41,12 @@ import {
   selectCommissioningStatusInfo,
   selectWarrantyStatusInfo,
 } from "../store/poSelectors";
+import {
+  getPaymentStatusColor,
+  getPoStatusColor,
+  getAccordionStatusColor,
+  formatLabel,
+} from "../utils";
 
 const { Title } = Typography;
 const { Panel } = Collapse;
@@ -120,7 +126,7 @@ const PODetails: React.FC = () => {
         ...item,
         serialNumbers: undefined,
       }));
-      
+
       const updatedDispatch: DispatchDetail = {
         ...targetDispatch,
         dispatchedItems: clearedDispatchedItems,
@@ -342,18 +348,6 @@ const PODetails: React.FC = () => {
     }
   };
 
-  // Helper function to get status tag color
-  const getAccordionStatusColor = (status: string) => {
-    switch (status) {
-      case "Done":
-        return "green";
-      case "In-Progress":
-        return "orange";
-      case "Not Started":
-      default:
-        return "default";
-    }
-  };
 
   // Helper function to render accordion header with status
   const renderAccordionHeader = (title: string, status: string) => (
@@ -381,46 +375,6 @@ const PODetails: React.FC = () => {
     setEditingWarranty(null);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "po_received":
-        return "green";
-      case "po_confirmed_phone":
-        return "blue";
-      case "on_call":
-        return "orange";
-      case "on_mail":
-        return "purple";
-      case "closed":
-        return "red";
-      default:
-        return "default";
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case "advanced":
-      case "received":
-        return "green";
-      case "pending":
-        return "orange";
-      case "15_dc":
-      case "30_dc":
-        return "blue";
-      case "lc":
-        return "purple";
-      default:
-        return "default";
-    }
-  };
-
-  const formatLabel = (value: string) => {
-    if (!value) return "";
-    return value
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
 
   const itemColumns: ColumnsType<POItem> = [
     {
@@ -541,11 +495,11 @@ const PODetails: React.FC = () => {
         // Disable delete if dispatch status is "done" OR delivery status exists
         const hasDeliveryStatus = !!record.deliveryStatus;
         const isDeleteDisabled = isDispatchDone || hasDeliveryStatus;
-        const deleteDisabledReason = hasDeliveryStatus 
-          ? "Delete disabled - Delivery confirmation exists" 
-          : isDispatchDone 
-          ? "Delete disabled - Dispatch status is Done" 
-          : "Delete";
+        const deleteDisabledReason = hasDeliveryStatus
+          ? "Delete disabled - Delivery confirmation exists"
+          : isDispatchDone
+            ? "Delete disabled - Dispatch status is Done"
+            : "Delete";
         return (
           <Space size="small">
             <Button
@@ -1258,7 +1212,7 @@ const PODetails: React.FC = () => {
               {selectedPO.clientPoDate}
             </Descriptions.Item>
             <Descriptions.Item label="PO Status">
-              <Tag color={getStatusColor(selectedPO.poStatus)}>
+              <Tag color={getPoStatusColor(selectedPO.poStatus)}>
                 {formatLabel(selectedPO.poStatus)}
               </Tag>
             </Descriptions.Item>

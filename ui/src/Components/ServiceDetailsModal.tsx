@@ -6,6 +6,7 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import type { PreCommissioning } from "../store/poSlice";
+import { formatLabel, getStatusColor } from "../utils";
 
 export type ServiceDetailsTab = "precommissioning" | "commissioning" | "warranty";
 
@@ -31,29 +32,6 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
     }
   }, [visible, initialTab]);
 
-  const formatLabel = (value: string) => {
-    if (!value) return "";
-    return value
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
-
-  const getStatusColor = (status: string) => {
-    const colorMap: Record<string, string> = {
-      Done: "green",
-      done: "green",
-      Pending: "orange",
-      pending: "orange",
-      Hold: "blue",
-      hold: "blue",
-      Cancelled: "red",
-      cancelled: "red",
-      confirmed: "green",
-      rejected: "red",
-      in_progress: "processing",
-    };
-    return colorMap[status] || "default";
-  };
 
   // Pre-Commissioning Tab Content
   const renderPreCommissioningDetails = () => {

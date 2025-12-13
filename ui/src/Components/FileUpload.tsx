@@ -1,4 +1,3 @@
-import React from "react";
 import { Upload, Button, Typography, message } from "antd";
 import {
   UploadOutlined,
@@ -206,8 +205,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {minFiles > 0 && maxFiles > 1
               ? ` (${minFiles}-${maxFiles} files)`
               : maxFiles > 1
-              ? ` (Max ${maxFiles} files)`
-              : ""}
+                ? ` (Max ${maxFiles} files)`
+                : ""}
           </Button>
         )}
       </Upload>

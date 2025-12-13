@@ -18,6 +18,7 @@ import {
 } from "../store/poSlice";
 import type { UploadFile } from "antd/es/upload/interface";
 import FileUpload from "./FileUpload";
+import { formatLabel, textFieldRules, selectFieldRules } from "../utils";
 
 interface SerialOption {
   value: string;
@@ -49,13 +50,6 @@ const PreCommissioningFormModal: React.FC<PreCommissioningFormModalProps> = ({
   const [fileList, setFileList] = useState<UploadFile[]>([]);
 
   const isEditMode = !!editData;
-
-  const formatLabel = (value: string) => {
-    if (!value) return "";
-    return value
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
 
   // Get all serial numbers from dispatches with deliveryStatus === "done"
   // Exclude serials that already have pre-commissioning entries (unless editing)
@@ -164,7 +158,7 @@ const PreCommissioningFormModal: React.FC<PreCommissioningFormModalProps> = ({
       if (isEditMode && editData) {
         // Update existing pre-commissioning entry
         const [dispatchId, product, serialNumber] = values.serialNumbers[0].split("__");
-        
+
         const updatedPC: PreCommissioning = {
           ...editData,
           dispatchId,
@@ -189,7 +183,7 @@ const PreCommissioningFormModal: React.FC<PreCommissioningFormModalProps> = ({
         const newEntries: PreCommissioning[] = values.serialNumbers.map(
           (serialValue: string, index: number) => {
             const [dispatchId, product, serialNumber] = serialValue.split("__");
-            
+
             return {
               id: `PC-${(timestamp + index).toString().slice(-8)}`,
               poId: poId,
@@ -229,13 +223,6 @@ const PreCommissioningFormModal: React.FC<PreCommissioningFormModalProps> = ({
     onClose();
   };
 
-  const textFieldRules = [
-    { required: true, message: "This field is required" },
-  ];
-
-  const selectFieldRules = [
-    { required: true, message: "Please select an option" },
-  ];
 
   return (
     <Modal

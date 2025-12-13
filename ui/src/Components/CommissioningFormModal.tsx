@@ -18,6 +18,7 @@ import {
 } from "../store/poSlice";
 import type { UploadFile } from "antd/es/upload/interface";
 import FileUpload from "./FileUpload";
+import { commissioningStatusOptions, textFieldRules, selectFieldRules } from "../utils";
 
 interface CommissioningFormModalProps {
   visible: boolean;
@@ -57,21 +58,7 @@ const CommissioningFormModal: React.FC<CommissioningFormModalProps> = ({
       }));
   }, [preCommissioningDetails, poId, editData]);
 
-  const textFieldRules = [
-    { required: true, message: "This field is required" },
-  ];
 
-  const selectFieldRules = [
-    { required: true, message: "Please select an option" },
-  ];
-
-  // Commissioning Status options
-  const commissioningStatusOptions = [
-    { value: "Done", label: "Done" },
-    { value: "Pending", label: "Pending" },
-    { value: "Hold", label: "Hold" },
-    { value: "Cancelled", label: "Cancelled" },
-  ];
 
   // Initialize form with edit data
   useEffect(() => {

@@ -1,4 +1,3 @@
-import React from "react";
 import { Menu } from "antd";
 import {
   HomeOutlined,
@@ -76,7 +75,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
     },
     {
       key: "4",
-      icon:  <LogoutOutlined />,
+      icon: <LogoutOutlined />,
       label: "Logout",
     },
   ];
@@ -88,8 +87,8 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
       defaultOpenKeys={["2"]}
       items={menuItems}
       onClick={handleMenuClick}
-      style={{ 
-        background: "#001529", 
+      style={{
+        background: "#001529",
         flex: 1,
         borderRight: 0,
       }}

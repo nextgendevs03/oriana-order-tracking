@@ -21,6 +21,7 @@ import {
 import dayjs from "dayjs";
 import type { UploadFile } from "antd/es/upload/interface";
 import FileUpload from "./FileUpload";
+import { formatLabel, noDuesClearanceOptions, dispatchStatusOptions, textFieldRules, selectFieldRules, dateFieldRules } from "../utils";
 
 const { Text } = Typography;
 
@@ -44,20 +45,6 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
 
   const isEditMode = !!editData;
 
-  // Dropdown options
-  const noDuesClearanceOptions = [
-    { value: "pending", label: "Pending" },
-    { value: "approved", label: "Approved" },
-    { value: "rejected", label: "Rejected" },
-    { value: "on_hold", label: "On Hold" },
-  ];
-
-  const dispatchStatusOptions = [
-    { value: "done", label: "Done" },
-    { value: "pending", label: "Pending" },
-    { value: "hold", label: "Hold" },
-    { value: "cancelled", label: "Cancelled" },
-  ];
 
   // Get dispatch options - disable if already has document (check dispatchStatus field)
   const dispatchOptions = useMemo(() => {
@@ -118,13 +105,6 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
       setFileList([]);
     }
   }, [visible, editData, form]);
-
-  const formatLabel = (value: string) => {
-    if (!value) return "";
-    return value
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  };
 
   const handleSubmit = async () => {
     try {
@@ -200,15 +180,6 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
     onClose();
   };
 
-  const textFieldRules = [
-    { required: true, message: "This field is required" },
-  ];
-
-  const selectFieldRules = [
-    { required: true, message: "Please select an option" },
-  ];
-
-  const dateFieldRules = [{ required: true, message: "Please select a date" }];
 
   // Serial number validator - checks if comma-separated count matches quantity
   const getSerialNumberValidator = (quantity: number) => {

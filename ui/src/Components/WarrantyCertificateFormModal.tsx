@@ -18,6 +18,7 @@ import {
 } from "../store/poSlice";
 import type { UploadFile } from "antd/es/upload/interface";
 import FileUpload from "./FileUpload";
+import { warrantyStatusOptions, textFieldRules, selectFieldRules } from "../utils";
 
 interface WarrantyCertificateFormModalProps {
   visible: boolean;
@@ -57,21 +58,7 @@ const WarrantyCertificateFormModal: React.FC<WarrantyCertificateFormModalProps> 
       }));
   }, [preCommissioningDetails, poId, editData]);
 
-  const textFieldRules = [
-    { required: true, message: "This field is required" },
-  ];
 
-  const selectFieldRules = [
-    { required: true, message: "Please select an option" },
-  ];
-
-  // Warranty Status options
-  const warrantyStatusOptions = [
-    { value: "Done", label: "Done" },
-    { value: "Pending", label: "Pending" },
-    { value: "Hold", label: "Hold" },
-    { value: "Cancelled", label: "Cancelled" },
-  ];
 
   // Initialize form with edit data
   useEffect(() => {

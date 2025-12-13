@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import React from "react";
 
 // Pages
 import Login from "./pages/Login";
@@ -52,15 +51,15 @@ const App: React.FC = () => {
 
         {/* Product Management Routes */}
         <Route path="/product-management" element={<LayoutPage />}>
-          <Route index element={<ProductManagement />} />      
+          <Route index element={<ProductManagement />} />
         </Route>
 
         <Route path="/product-management/categories" element={<LayoutPage />}>
-         <Route index element={<CategoryManagement />} />
+          <Route index element={<CategoryManagement />} />
         </Route>
 
         <Route path="/product-management/oems" element={<LayoutPage />}>
-          <Route index element={<OEMManagement />} /> 
+          <Route index element={<OEMManagement />} />
         </Route>
 
         <Route path="/product-management/products" element={<LayoutPage />}>

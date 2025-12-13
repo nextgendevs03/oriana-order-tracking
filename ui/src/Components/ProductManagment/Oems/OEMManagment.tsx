@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { Breadcrumb, Button, Table, Tag, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
@@ -12,8 +12,8 @@ const OEMManagement = () => {
   const { data: oems = [], isLoading } = useGetOEMsQuery();
   const [deleteOEM] = useDeleteOEMMutation();
 
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingOEM, setEditingOEM] = React.useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOEM, setEditingOEM] = useState<any>(null);
 
   const columns = [
     { title: "OEM Name", dataIndex: "name" },

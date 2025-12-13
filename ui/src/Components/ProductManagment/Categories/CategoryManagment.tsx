@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { Breadcrumb, Button, Table, Tag, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
@@ -12,8 +12,8 @@ const CategoryManagement = () => {
   const { data: categories = [], isLoading } = useGetCategoriesQuery();
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  const [editingCategory, setEditingCategory] = React.useState(null);
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const columns = [
     { title: "Name", dataIndex: "name" },

@@ -1,4 +1,3 @@
-import React from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useLoginMutation } from "../store/api/authApi";
@@ -24,7 +23,7 @@ const Login: React.FC = () => {
         password: values.password,
       };
       await login(loginPayload).unwrap();
-      
+
       dispatch(addAuth({ username: values.username }));
       dispatch(setIsLoggedIn(true));
 
