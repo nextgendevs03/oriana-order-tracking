@@ -56,3 +56,16 @@ export const baseApi = createApi({
   endpoints: () => ({}),
 });
 
+// If user is authenticated, add JWT token
+      // Note: Adjust the path if you store token differently
+      // Currently using currentUser object - add 'token' field to User interface if needed
+      //const currentUser = state.auth.currentUser;
+
+      // Example: If you add a token field to your User interface
+      // const token = currentUser?.token;
+      // if (token) {
+      //   headers.set('Authorization', `Bearer ${token}`);
+      // }
+
+      // For now, using a placeholder - update when JWT is implemented
+      // You can also use sessionStorage/localStorage for token storage

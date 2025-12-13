@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
 import { IAuthRepository } from '../repositories/AuthRepository';
 import { LoginRequest, LoginResponse } from '../schemas';
-import { ValidationError } from '@oriana/shared';
+import { ValidationError, AppError } from '@oriana/shared';
 
 export interface IAuthService {
   login(data: LoginRequest): Promise<LoginResponse>;
@@ -20,19 +20,13 @@ export class AuthService implements IAuthService {
     const user = await this.authRepository.findByUsernameOrEmail(data.username);
 
     if (!user) {
-      return {
-        success: false,
-        message: 'Invalid username or password',
-      };
+      throw new AppError('Invalid username or password', 401, 'UNAUTHORIZED');
     }
 
     const isPasswordValid = await this.authRepository.validatePassword(user, data.password);
 
     if (!isPasswordValid) {
-      return {
-        success: false,
-        message: 'Invalid username or password',
-      };
+      throw new AppError('Invalid username or password', 401, 'UNAUTHORIZED');
     }
 
     return {

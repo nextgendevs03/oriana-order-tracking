@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Switch, message } from "antd";
-// import { useAppDispatch } from "../../store/hooks";
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
@@ -25,7 +24,6 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
   editingUser,
 }) => {
   const [form] = Form.useForm<CreateUserRequest>();
- // const dispatch = useAppDispatch();
   const userId = `USER-${Date.now().toString().slice(-6)}`;
 
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();

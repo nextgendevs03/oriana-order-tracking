@@ -21,14 +21,13 @@ interface PORecord {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const poList = useAppSelector((state) => state.po.poList);
-
+  const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
   // Check if user is authenticated
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
       navigate("/");
     }
-  }, [navigate]);
+  }, [isLoggedIn, navigate]);
 
   // Transform Redux data to table format
   const dataSource: PORecord[] = poList.map((po: POData) => ({

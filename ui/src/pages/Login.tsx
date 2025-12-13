@@ -2,6 +2,8 @@ import React from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useLoginMutation } from "../store/api/authApi";
+import { addAuth, setIsLoggedIn } from "store/authSlice";
+import { useDispatch } from "react-redux";
 
 const { Title } = Typography;
 interface LoginData {
@@ -11,30 +13,26 @@ interface LoginData {
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const [login, { isLoading }] = useLoginMutation();
 
   const onFinish = async (values: LoginData) => {
     try {
-      const data = await login({
+      const loginPayload = {
         username: values.username,
         password: values.password,
-      }).unwrap();
+      };
+      await login(loginPayload).unwrap();
+      
+      dispatch(addAuth({ username: values.username }));
+      dispatch(setIsLoggedIn(true));
 
-      if (data.success === true) {
-        localStorage.setItem("loggedUser", values.username);
-        localStorage.setItem("isLoggedIn", "true");
-        message.success("Login Successful!");
-        navigate("/dashboard");
-      } else {
-        // Show error message from backend
-        const errorMessage =
-          data.message || "Login failed. Please check your credentials.";
-        message.error(errorMessage);
-      }
+      message.success("Login Successful!");
+      navigate("/dashboard");
     } catch (error: any) {
-      console.error("Login error:", error);
-      // Handle RTK Query error format
       const errorMessage =
+        error?.data?.error?.message ||
         error?.data?.message ||
         error?.message ||
         "An error occurred. Please try again.";

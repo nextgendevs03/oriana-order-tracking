@@ -44,7 +44,6 @@ export class UserService implements IUserService {
     return {
       username: user.username,
       email: user.email,
-      password: user.password,
       role: 'roleName',
       isActive: user.isActive,
     };
@@ -58,7 +57,6 @@ export class UserService implements IUserService {
     return {
       username: user.username,
       email: user.email,
-      password: user.password, // Return encrypted password from database
       role: 'roleName',
       isActive: user.isActive,
     };
@@ -70,7 +68,6 @@ export class UserService implements IUserService {
     const modifiedUsers = users.map((user: User) => ({
       username: user.username,
       email: user.email,
-      password: user.password,
       role: 'roleName',
       isActive: user.isActive,
       name: user.username,
@@ -90,7 +87,6 @@ export class UserService implements IUserService {
     return {
       username: user.username,
       email: user.email,
-      password: user.password, // Return encrypted password from database
       role: 'roleName',
       isActive: user.isActive,
     };

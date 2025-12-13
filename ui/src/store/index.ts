@@ -15,6 +15,7 @@ import permissionReducer from "./permissionSlice";
 import userReducer from "./userSlice";
 import poReducer from "./poSlice";
 import roleReducer from "./roleSlice";
+import authReducer from "./authSlice";
 
 const persistConfig = {
   key: "root",
@@ -29,6 +30,7 @@ const rootReducer = combineReducers({
    user: userReducer,
    role: roleReducer,
    po: poReducer,
+   auth: authReducer,
   [baseApi.reducerPath]: baseApi.reducer,
 });
 

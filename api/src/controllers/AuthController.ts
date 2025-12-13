@@ -1,7 +1,14 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'inversify';
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { Controller, Post, Body, createSuccessResponse, ValidationError } from '@oriana/shared';
+import {
+  Controller,
+  Post,
+  Body,
+  createSuccessResponse,
+  ValidationError,
+  createErrorResponse,
+} from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IAuthService } from '../services/AuthService';
 import { LoginRequest, LoginResponse } from '../schemas';
@@ -21,22 +28,11 @@ export class AuthController implements IAuthController {
       throw new ValidationError('Username and password are required');
     }
 
-    const result: LoginResponse = await this.authService.login(data);
-
-    if (result.success) {
+    try {
+      const result: LoginResponse = await this.authService.login(data);
       return createSuccessResponse(result, 200);
-    } else {
-      return {
-        statusCode: 401,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          success: false,
-          message: result.message,
-        }),
-      };
+    } catch (error) {
+      return createErrorResponse(error as Error);
     }
   }
 }
