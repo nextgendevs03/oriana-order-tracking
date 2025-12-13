@@ -2,10 +2,11 @@ import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-sec
 import { getAppConfig, DatabaseConfig, getLocalDatabaseConfig, buildDatabaseUrl } from '../config';
 import { logger } from './logger';
 
-interface DatabaseSecrets {
-  host: string;
-  port: number;
-  dbname: string;
+/**
+ * Database credentials stored in AWS Secrets Manager.
+ * Non-sensitive connection details (host, port, database, ssl) come from environment variables.
+ */
+interface DatabaseCredentials {
   username: string;
   password: string;
 }
@@ -31,6 +32,8 @@ const getSecretsClient = (): SecretsManagerClient => {
 
 /**
  * Get database configuration with caching.
+ * Connection settings (host, port, database, ssl) come from environment variables.
+ * Credentials (username, password) are fetched from Secrets Manager.
  * Caches config for 5 minutes to reduce Secrets Manager calls.
  */
 export const getDatabaseConfig = async (): Promise<DatabaseConfig> => {
@@ -70,21 +73,23 @@ export const getDatabaseConfig = async (): Promise<DatabaseConfig> => {
       throw new Error('Secret value is empty');
     }
 
-    const secrets: DatabaseSecrets = JSON.parse(response.SecretString);
+    // Only credentials come from Secrets Manager
+    const credentials: DatabaseCredentials = JSON.parse(response.SecretString);
     const duration = Date.now() - startTime;
 
+    // Merge connection settings from env vars with credentials from Secrets Manager
     cachedDbConfig = {
-      host: secrets.host,
-      port: secrets.port,
-      database: secrets.dbname,
-      username: secrets.username,
-      password: secrets.password,
-      ssl: process.env.DB_SSL === 'true',
+      host: appConfig.database.host,
+      port: appConfig.database.port,
+      database: appConfig.database.database,
+      ssl: appConfig.database.ssl,
+      username: credentials.username,
+      password: credentials.password,
     };
 
     cachedDatabaseUrl = buildDatabaseUrl(cachedDbConfig);
     configCacheExpiry = now + CACHE_TTL_MS;
-    logger.info(`Retrieved database configuration in ${duration}ms`);
+    logger.info(`Retrieved database credentials in ${duration}ms`);
     return cachedDbConfig;
   } catch (error) {
     logger.error('Failed to retrieve database credentials from Secrets Manager', error);

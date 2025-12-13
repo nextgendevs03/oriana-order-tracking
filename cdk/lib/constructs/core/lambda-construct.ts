@@ -114,6 +114,12 @@ export class LambdaConstruct extends Construct {
       timeout: Duration.seconds(config.lambdaTimeout),
       environment: {
         ENVIRONMENT: config.environment,
+        // Database connection settings (non-sensitive)
+        DB_HOST: config.database.host,
+        DB_PORT: config.database.port.toString(),
+        DB_NAME: config.database.name,
+        DB_SSL: config.database.ssl.toString(),
+        // Secrets Manager secret ID for credentials (username/password only)
         DB_SECRET_ID: config.dbSecretId,
         LOG_LEVEL: config.environment === "prod" ? "INFO" : "DEBUG",
         NODE_OPTIONS: "--enable-source-maps",
