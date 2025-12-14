@@ -15,38 +15,48 @@ export interface ICategoryRepository {
 export class CategoryRepository implements ICategoryRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(): Promise<Category[]> {
-    return this.prisma.Category.findMany({
+  async findAll(): Promise<CategoryResponse[]> {
+    const categories = await this.prisma.category.findMany({
       orderBy: { createdAt: 'desc' },
     });
+
+    // Map Prisma Category objects to CategoryResponse format, ensuring 'createdAt'/'updatedAt' are strings
+    return categories.map((category) => ({
+      categoryId: category.categoryId,
+      categoryName: category.categoryName,
+      isActive: category.isActive,
+      createdBy: category.createdBy,
+      updatedBy: category.updatedBy,
+    }));
   }
 
   async findById(id: string): Promise<Category | null> {
-    return this.prisma.Category.findUnique({ where: { categoryId: id } });
+    return this.prisma.category.findUnique({ where: { categoryId: id } });
   }
 
   async create(data: CreateCategoryRequest): Promise<Category> {
-    return this.prisma.Category.create({
+    return this.prisma.category.create({
       data: {
-        name: data.name,
-        status: data.status,
-        createdBy: data.createdBy || null,
+        categoryName: data.categoryName,
+        isActive: data.isActive ?? true,
+        createdBy: data.createdBy ?? '',
+        updatedBy: data.createdBy ?? '',
       },
     });
   }
 
   async update(id: string, data: UpdateCategoryRequest): Promise<Category> {
-    return this.prisma.Category.update({
+    return this.prisma.category.update({
       where: { categoryId: id },
       data: {
-        name: data.name,
-        status: data.status,
-        updatedBy: data.updatedBy || null,
+        categoryName: data.categoryName,
+        isActive: data.isActive ?? true,
+        updatedBy: data.updatedBy ?? undefined,
       },
     });
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.Category.delete({ where: { categoryId: id } });
+    await this.prisma.category.delete({ where: { categoryId: id } });
   }
 }

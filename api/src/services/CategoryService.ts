@@ -14,29 +14,31 @@ export interface ICategoryService {
 
 @injectable()
 export class CategoryService implements ICategoryService {
-  constructor(@inject(TYPES.CategoryRepository) private repo: ICategoryRepository) {}
+  constructor(
+    @inject(TYPES.CategoryRepository)
+    private categoryRepository: ICategoryRepository
+  ) {}
 
   async createCategory(data: CreateCategoryRequest): Promise<CategoryResponse> {
-    const created = await this.repo.create(data);
-    return created as unknown as CategoryResponse;
+    const created = await this.categoryRepository.create(data);
+    return created;
   }
 
   async getAllCategories(): Promise<CategoryResponse[]> {
-    const rows = await this.repo.findAll();
-    return rows as unknown as CategoryResponse[];
+    return this.categoryRepository.findAll();
   }
 
   async getCategoryById(id: string): Promise<CategoryResponse | null> {
-    const c = await this.repo.findById(id);
-    return c as unknown as CategoryResponse | null;
+    const category = await this.categoryRepository.findById(id);
+    return category;
   }
 
   async updateCategory(id: string, data: UpdateCategoryRequest): Promise<CategoryResponse> {
-    const updated = await this.repo.update(id, data);
-    return updated as unknown as CategoryResponse;
+    const updatedCategory = await this.categoryRepository.update(id, data);
+    return updatedCategory;
   }
 
-  async deleteCategory(id: string): Promise<void> {
-    await this.repo.delete(id);
+  async deleteCategory(id: string) {
+    await this.categoryRepository.delete(id);
   }
 }

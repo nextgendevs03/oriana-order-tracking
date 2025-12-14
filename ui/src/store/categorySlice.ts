@@ -10,8 +10,8 @@ const initialState: CategoryUIState = {
   searchText: "",
 };
 
-const categorySlice = createSlice({
-  name: "category",
+const categorySlice = createSlice({ 
+  name: 'CategorySlice',
   initialState,
   reducers: {
     setSelectedCategory(state, action: PayloadAction<string | null>) {

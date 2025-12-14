@@ -23,7 +23,7 @@ export interface IOEMController {
   delete(id: string): Promise<APIGatewayProxyResult>;
 }
 
-@Controller({ path: '/api/oem', lambdaName: 'oem' })
+@Controller({ path: '/api/oem', lambdaName: 'productManagement' })
 @injectable()
 export class OEMController implements IOEMController {
   constructor(@inject(TYPES.OEMService) private oemService: IOEMService) {}

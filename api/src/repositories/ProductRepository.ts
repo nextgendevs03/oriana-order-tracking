@@ -6,8 +6,8 @@ import { ProductResponse } from 'src/schemas/response/ProductResponse';
 
 export interface IProductRepository {
   findAll(): Promise<ProductResponse[]>;
-  findById(id: string): Promise<Product | null>;
-  create(data: CreateProductRequest): Promise<Product>;
+  findById(id: string): Promise<ProductResponse | null>;
+  create(data: CreateProductRequest): Promise<ProductResponse | null>;
   update(id: string, data: UpdateProductRequest): Promise<Product>;
   delete(id: string): Promise<void>;
 }
@@ -16,37 +16,82 @@ export interface IProductRepository {
 export class ProductRepository implements IProductRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(): Promise<Product[]> {
-    return this.prisma.product.findMany({ orderBy: { createdAt: 'desc' } });
-  }
-
-  async findById(id: string): Promise<Product | null> {
-    return this.prisma.product.findUnique({ where: { productId: id } });
-  }
-
-  async create(data: CreateProductRequest): Promise<Product> {
-    return this.prisma.product.create({
-      data: {
-        name: data.name,
-        category: data.category,
-        oem: data.oem,
-        status: data.status,
-        createdBy: data.createdBy || null,
+  async findAll(): Promise<ProductResponse[]> {
+    const products = await this.prisma.product.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: true,
+        oem: true,
       },
     });
+    return products.map(
+      (product): ProductResponse => ({
+        productId: product.productId,
+        productName: product.productName,
+        categoryId: product.category.categoryId,
+        categoryName: product.category.categoryName,
+        oemId: product.oem.oemId,
+        oemName: product.oem.oemName,
+        status: product.isActive ?? true,
+        createdBy: product.createdBy,
+        updatedBy: product.updatedBy,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+      })
+    );
+  }
+
+  async findById(id: string): Promise<ProductResponse | null> {
+    const product = await this.prisma.product.findUnique({
+      where: { productId: id },
+      include: {
+        category: true,
+        oem: true,
+      },
+    });
+    if (!product) return null;
+    return {
+      productId: product.productId,
+      productName: product.productName,
+      categoryId: product.categoryId,
+      categoryName: product.category.categoryName,
+      oemName: product.oem.oemName,
+      oemId: product.oemId,
+      status: product.isActive ?? true,
+      createdBy: product.createdBy,
+      updatedBy: product.updatedBy,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    };
+  }
+
+  async create(data: CreateProductRequest): Promise<ProductResponse | null> {
+    const product = await this.prisma.product.create({
+      data: {
+        productName: data.productName,
+        category: { connect: { categoryId: data.categoryId } },
+        oem: { connect: { oemId: data.oemId } },
+        isActive: data.isActive,
+        createdBy: data.createdBy ?? '',
+        updatedBy: data.createdBy ?? '',
+      },
+    });
+
+    return await this.findById(product.productId);
   }
 
   async update(id: string, data: UpdateProductRequest): Promise<Product> {
-    return this.prisma.product.update({
+    const product = await this.prisma.product.update({
       where: { productId: id },
       data: {
-        name: data.name,
-        category: data.category,
-        oem: data.oem,
-        status: data.status,
-        updatedBy: data.updatedBy || null,
+        productName: data.productName,
+        category: { connect: { categoryId: data.categoryId } },
+        oem: { connect: { oemId: data.oemId } },
+        isActive: data.isActive ?? true,
+        updatedBy: data.updatedBy ?? '',
       },
     });
+    return product;
   }
 
   async delete(id: string): Promise<void> {

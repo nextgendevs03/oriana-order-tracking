@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Button } from "antd";
-
 import {
   useCreateOEMMutation,
   useUpdateOEMMutation,
@@ -14,28 +13,37 @@ interface Props {
 
 const AddOEMModal: React.FC<Props> = ({ open, onCancel, initialValues }) => {
   const [form] = Form.useForm();
-
   const [createOEM] = useCreateOEMMutation();
   const [updateOEM] = useUpdateOEMMutation();
 
   useEffect(() => {
-    initialValues ? form.setFieldsValue(initialValues) : form.resetFields();
-  });
-
-  const handleSubmit = async () => {
-    const values = await form.validateFields();
-
     if (initialValues) {
-      await updateOEM({
-        id: initialValues.oemId,
-        data: values,
+      form.setFieldsValue({
+        name: initialValues.name,
+        isActive: initialValues.status,
       });
     } else {
-      await createOEM(values);
+      form.resetFields();
     }
+  }, [initialValues, form]);
 
-    form.resetFields();
-    onCancel();
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+
+      if (initialValues) {
+        await updateOEM({
+          id: initialValues.oemId,
+          data: values,
+        }).unwrap();
+      } else {
+        await createOEM(values).unwrap();
+      }
+      form.resetFields();
+      onCancel();
+    } catch (error) {
+      console.error("Error submitting OEM:", error);
+    }
   };
 
   return (
@@ -61,11 +69,15 @@ const AddOEMModal: React.FC<Props> = ({ open, onCancel, initialValues }) => {
           <Input placeholder="Enter OEM Name" />
         </Form.Item>
 
-        <Form.Item label="Status" name="status" rules={[{ required: true }]}>
+        <Form.Item
+          label="Status"
+          name="isActive"
+          rules={[{ required: true, message: "Select status" }]}
+        >
           <Select
             options={[
-              { label: "Active", value: "Active" },
-              { label: "Inactive", value: "Inactive" },
+              { label: "Active", value: true },
+              { label: "Inactive", value: false },
             ]}
           />
         </Form.Item>
