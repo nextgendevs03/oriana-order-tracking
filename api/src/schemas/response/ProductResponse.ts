@@ -1,11 +1,13 @@
 export interface ProductResponse {
   productId: string;
-  name: string;
-  category: string;
-  oem: string;
-  status: 'Active' | 'Inactive';
-  createdBy?: string | null;
-  updatedBy?: string | null;
+  productName: string;
+  categoryName: string;
+  oemName: string;
+  categoryId: string;
+  oemId: string;
+  status: boolean;
+  createdBy: string;
+  updatedBy: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -18,7 +18,7 @@ import { OEMRepository } from '../repositories/OEMRepository';
 import { ProductRepository } from '../repositories/ProductRepository';
 
 defineLambda({
-  name: 'master-lambda',
+  name: 'productManagement',
 
   controllers: [CategoryController, OEMController, ProductController],
 
@@ -39,4 +39,4 @@ defineLambda({
   prismaSymbol: TYPES.PrismaClient,
 });
 
-export const handler = createLambdaHandler('master-lambda');
+export const handler = createLambdaHandler('productManagement');
