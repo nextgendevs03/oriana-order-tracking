@@ -1,4 +1,4 @@
-import { useState, useMemo, type FC } from "react";
+import { useState, useMemo, useEffect, type FC } from "react";
 import {
   Form,
   Input,
@@ -9,6 +9,7 @@ import {
   Col,
   InputNumber,
   Typography,
+  AutoComplete,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../store/hooks";
@@ -19,6 +20,7 @@ import FileUpload from "../Components/FileUpload";
 import POItemsTable from "../Components/POItemsTable";
 import { useGetCategoriesQuery } from "../store/api/categoryApi";
 import { useGetOEMsQuery } from "../store/api/oemApi";
+import { useGetClientsQuery } from "../store/api/clientApi";
 import {
   poStatusOptions,
   dispatchOptions,
@@ -56,31 +58,72 @@ const CreatePO: FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
 
   // Fetch categories and OEMs from API
-  const { data: categoriesData = [] } = useGetCategoriesQuery();
-  const { data: oemsData = [] } = useGetOEMsQuery();
+  const { data: categoriesData = [], error: categoriesError } =
+    useGetCategoriesQuery();
+  const { data: oemsData = [], error: oemsError } = useGetOEMsQuery();
+
+  // Fetch clients based on search term (min 3 characters)
+  const shouldFetchClients = clientSearchTerm.length >= 3;
+  const { data: clientsData = [], error: clientsError } = useGetClientsQuery(
+    shouldFetchClients
+      ? { clientName: clientSearchTerm, isActive: true }
+      : undefined
+  );
+
+  // Log errors for debugging
+  useEffect(() => {
+    if (categoriesError) {
+      console.error("Failed to fetch categories:", categoriesError);
+    }
+  }, [categoriesError]);
+
+  useEffect(() => {
+    if (oemsError) {
+      console.error("Failed to fetch OEMs:", oemsError);
+    }
+  }, [oemsError]);
+
+  useEffect(() => {
+    if (clientsError) {
+      console.error("Failed to fetch clients:", clientsError);
+    }
+  }, [clientsError]);
 
   // Transform API data to dropdown options format
   // Filter only Active items and map to { value, label } format
   const categoryOptions = useMemo(() => {
+    if (!categoriesData || categoriesError) return [];
     return categoriesData
-      .filter((category) => category.status === "Active")
+      .filter((category) => category.isActive)
       .map((category) => ({
         value: category.categoryId,
-        label: category.name,
+        label: category.categoryName,
       }));
-  }, [categoriesData]);
+  }, [categoriesData, categoriesError]);
 
   const oemNameOptions = useMemo(() => {
+    if (!oemsData || oemsError) return [];
+    // The oemApi transformResponse adds isActive field
+    // Check both isActive (from transform) and status (original boolean field)
     return oemsData
-      .filter((oem) => oem.status === "Active")
+      .filter((oem) => oem.isActive)
       .map((oem) => ({
         value: oem.oemId,
         label: oem.name,
       }));
-  }, [oemsData]);
+  }, [oemsData, oemsError]);
 
+  // Transform clients data to AutoComplete options
+  const clientOptions = useMemo(() => {
+    if (!clientsData || clientsError || !shouldFetchClients) return [];
+    return clientsData.map((client) => ({
+      value: client.clientName,
+      label: client.clientName,
+    }));
+  }, [clientsData, clientsError, shouldFetchClients]);
 
   const updateCalculatedFields = (index: number) => {
     const poItems = form.getFieldValue("poItems") || [];
@@ -105,7 +148,6 @@ const CreatePO: FC = () => {
       form.setFieldsValue({ poItems: newItems });
     }
   };
-
 
   const onFinish = (values: Record<string, unknown>) => {
     // Generate unique PO ID
@@ -149,7 +191,8 @@ const CreatePO: FC = () => {
       paymentStatus: values.paymentStatus as string,
       remarks: values.remarks as string,
       createdAt: new Date().toISOString(),
-      uploadedDocuments: uploadedDocuments.length > 0 ? uploadedDocuments : undefined,
+      uploadedDocuments:
+        uploadedDocuments.length > 0 ? uploadedDocuments : undefined,
     };
 
     console.log("Form Data:", poData);
@@ -164,7 +207,6 @@ const CreatePO: FC = () => {
     // Navigate to dashboard
     navigate("/dashboard");
   };
-
 
   // Validation for at least 1 PO item with min 1 quantity
   const poItemsValidator = async (_: unknown, value: ItemDetail[]) => {
@@ -212,7 +254,32 @@ const CreatePO: FC = () => {
               label="Client Name"
               rules={textFieldRulesWithMinLength}
             >
-              <Input placeholder="Enter client name" />
+              <AutoComplete
+                options={clientOptions}
+                onSearch={(value) => setClientSearchTerm(value)}
+                placeholder="Enter client name (min 3 characters)"
+                filterOption={false}
+                notFoundContent={
+                  shouldFetchClients &&
+                  clientsData.length === 0 &&
+                  !clientsError ? (
+                    <Button
+                      type="link"
+                      style={{ padding: 0 }}
+                      onClick={() => {
+                        // TODO: Open add client modal or navigate to client creation
+                        console.log("Add new client");
+                      }}
+                    >
+                      + Add Client
+                    </Button>
+                  ) : shouldFetchClients ? (
+                    "No clients found"
+                  ) : (
+                    "Type at least 3 characters to search"
+                  )
+                }
+              />
             </Form.Item>
           </Col>
         </Row>
@@ -475,7 +542,6 @@ const CreatePO: FC = () => {
             </Row>
           )}
         </Form.Item>
-
       </Form>
     </div>
   );

@@ -1,10 +1,10 @@
 import { injectable, inject } from 'inversify';
-import { PrismaClient, Category } from '@prisma/client';
+import { PrismaClient, Category, Prisma } from '@prisma/client';
 import { TYPES } from '../types/types';
 import { CreateCategoryRequest, UpdateCategoryRequest } from '../schemas/request/CategoryRequest';
 import { CategoryResponse } from 'src/schemas/response/CategoryResponse';
 export interface ICategoryRepository {
-  findAll(): Promise<CategoryResponse[]>;
+  findAll(filters?: { isActive?: boolean; categoryName?: string }): Promise<CategoryResponse[]>;
   findById(id: string): Promise<Category | null>;
   create(data: CreateCategoryRequest): Promise<Category>;
   update(id: string, data: UpdateCategoryRequest): Promise<Category>;
@@ -15,8 +15,25 @@ export interface ICategoryRepository {
 export class CategoryRepository implements ICategoryRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(): Promise<CategoryResponse[]> {
+  async findAll(filters?: {
+    isActive?: boolean;
+    categoryName?: string;
+  }): Promise<CategoryResponse[]> {
+    const where: Prisma.CategoryWhereInput = {};
+
+    if (filters?.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+
+    if (filters?.categoryName) {
+      where.categoryName = {
+        contains: filters.categoryName,
+        mode: 'insensitive',
+      };
+    }
+
     const categories = await this.prisma.category.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
     });
 

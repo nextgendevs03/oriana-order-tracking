@@ -6,7 +6,10 @@ import { CategoryResponse } from '../schemas/response/CategoryResponse';
 
 export interface ICategoryService {
   createCategory(data: CreateCategoryRequest): Promise<CategoryResponse>;
-  getAllCategories(): Promise<CategoryResponse[]>;
+  getAllCategories(filters?: {
+    isActive?: boolean;
+    categoryName?: string;
+  }): Promise<CategoryResponse[]>;
   getCategoryById(id: string): Promise<CategoryResponse | null>;
   updateCategory(id: string, data: UpdateCategoryRequest): Promise<CategoryResponse>;
   deleteCategory(id: string): Promise<void>;
@@ -24,8 +27,11 @@ export class CategoryService implements ICategoryService {
     return created;
   }
 
-  async getAllCategories(): Promise<CategoryResponse[]> {
-    return this.categoryRepository.findAll();
+  async getAllCategories(filters?: {
+    isActive?: boolean;
+    categoryName?: string;
+  }): Promise<CategoryResponse[]> {
+    return this.categoryRepository.findAll(filters);
   }
 
   async getCategoryById(id: string): Promise<CategoryResponse | null> {

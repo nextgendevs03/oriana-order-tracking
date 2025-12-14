@@ -8,6 +8,7 @@ export const TYPES = {
   CategoryController: Symbol.for('CategoryController'),
   OEMController: Symbol.for('OEMController'),
   ProductController: Symbol.for('ProductController'),
+  ClientController: Symbol.for('ClientController'),
 
   // Services
   POService: Symbol.for('POService'),
@@ -19,6 +20,7 @@ export const TYPES = {
   CategoryService: Symbol.for('CategoryService'),
   OEMService: Symbol.for('OEMService'),
   ProductService: Symbol.for('ProductService'),
+  ClientService: Symbol.for('ClientService'),
 
   // Repositories
   AuthRepository: Symbol.for('AuthRepository'),
@@ -28,6 +30,7 @@ export const TYPES = {
   CategoryRepository: Symbol.for('CategoryRepository'),
   OEMRepository: Symbol.for('OEMRepository'),
   ProductRepository: Symbol.for('ProductRepository'),
+  ClientRepository: Symbol.for('ClientRepository'),
 
   // Database
   PrismaClient: Symbol.for('PrismaClient'),

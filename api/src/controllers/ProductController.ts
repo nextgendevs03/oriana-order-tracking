@@ -8,6 +8,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   createSuccessResponse,
   createErrorResponse,
 } from '@oriana/shared';
@@ -17,7 +18,12 @@ import { CreateProductRequest, UpdateProductRequest } from '../schemas/request/P
 
 export interface IProductController {
   create(data: CreateProductRequest): Promise<APIGatewayProxyResult>;
-  getAll(): Promise<APIGatewayProxyResult>;
+  getAll(
+    name?: string,
+    isActive?: string,
+    categoryId?: string,
+    oemId?: string
+  ): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateProductRequest): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
@@ -45,9 +51,19 @@ export class ProductController implements IProductController {
 
   // GET ALL
   @Get('/')
-  async getAll(): Promise<APIGatewayProxyResult> {
+  async getAll(
+    @Query('name') name?: string,
+    @Query('isActive') isActive?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('oemId') oemId?: string
+  ): Promise<APIGatewayProxyResult> {
     try {
-      const products = await this.productService.getAllProducts();
+      const products = await this.productService.getAllProducts({
+        name: name || undefined,
+        isActive: isActive ? isActive === 'true' : undefined,
+        categoryId: categoryId || undefined,
+        oemId: oemId || undefined,
+      });
       return createSuccessResponse(products);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error fetching products');

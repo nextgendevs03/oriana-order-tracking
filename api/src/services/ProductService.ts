@@ -6,7 +6,12 @@ import { ProductResponse } from '../schemas/response/ProductResponse';
 
 export interface IProductService {
   createProduct(data: CreateProductRequest): Promise<ProductResponse | null>;
-  getAllProducts(): Promise<ProductResponse[]>;
+  getAllProducts(filters?: {
+    name?: string;
+    isActive?: boolean;
+    categoryId?: string;
+    oemId?: string;
+  }): Promise<ProductResponse[]>;
   getProductById(id: string): Promise<ProductResponse | null>;
   updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse | null>;
   deleteProduct(id: string): Promise<void>;
@@ -21,8 +26,13 @@ export class ProductService implements IProductService {
     return created ?? null;
   }
 
-  async getAllProducts(): Promise<ProductResponse[]> {
-    const rows = await this.repo.findAll();
+  async getAllProducts(filters?: {
+    name?: string;
+    isActive?: boolean;
+    categoryId?: string;
+    oemId?: string;
+  }): Promise<ProductResponse[]> {
+    const rows = await this.repo.findAll(filters);
     return rows;
   }
 

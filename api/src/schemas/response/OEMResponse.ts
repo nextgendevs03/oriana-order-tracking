@@ -1,7 +1,7 @@
 export interface OEMResponse {
   oemId: string;
   name: string;
-  status: boolean;
+  isActive: boolean;
   createdBy?: string | null;
   updatedBy?: string | null;
   createdAt: Date;

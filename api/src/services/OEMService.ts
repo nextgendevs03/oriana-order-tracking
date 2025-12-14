@@ -6,7 +6,7 @@ import { OEMResponse } from '../schemas/response/OEMResponse';
 
 export interface IOEMService {
   createOEM(data: CreateOEMRequest): Promise<OEMResponse>;
-  getAllOEMs(): Promise<OEMResponse[]>;
+  getAllOEMs(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]>;
   getOEMById(id: string): Promise<OEMResponse | null>;
   updateOEM(id: string, data: UpdateOEMRequest): Promise<OEMResponse>;
   deleteOEM(id: string): Promise<void>;
@@ -18,22 +18,22 @@ export class OEMService implements IOEMService {
 
   async createOEM(data: CreateOEMRequest): Promise<OEMResponse> {
     const created = await this.repo.create(data);
-    return created as unknown as OEMResponse;
+    return created;
   }
 
-  async getAllOEMs(): Promise<OEMResponse[]> {
-    const rows = await this.repo.findAll();
-    return rows as unknown as OEMResponse[];
+  async getAllOEMs(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]> {
+    const rows = await this.repo.findAll(filters);
+    return rows;
   }
 
   async getOEMById(id: string): Promise<OEMResponse | null> {
     const o = await this.repo.findById(id);
-    return o as unknown as OEMResponse | null;
+    return o;
   }
 
   async updateOEM(id: string, data: UpdateOEMRequest): Promise<OEMResponse> {
     const updated = await this.repo.update(id, data);
-    return updated as unknown as OEMResponse;
+    return updated;
   }
 
   async deleteOEM(id: string): Promise<void> {

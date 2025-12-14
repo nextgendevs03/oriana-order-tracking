@@ -53,6 +53,7 @@ export const baseApi = createApi({
     'Category', // Categories
     'OEM', // OEMs
     'Product', // Products
+    'Client', // Clients
   ],
 
   // Base endpoints - empty, will be extended by feature APIs

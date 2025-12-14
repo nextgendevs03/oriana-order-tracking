@@ -6,21 +6,24 @@ import { TYPES } from '../types/types';
 import { CategoryController } from '../controllers/CategoryController';
 import { OEMController } from '../controllers/OEMController';
 import { ProductController } from '../controllers/ProductController';
+import { ClientController } from '../controllers/ClientController';
 
 // --- Services ---
 import { CategoryService } from '../services/CategoryService';
 import { OEMService } from '../services/OEMService';
 import { ProductService } from '../services/ProductService';
+import { ClientService } from '../services/ClientService';
 
 // --- Repositories ---
 import { CategoryRepository } from '../repositories/CategoryRepository';
 import { OEMRepository } from '../repositories/OEMRepository';
 import { ProductRepository } from '../repositories/ProductRepository';
+import { ClientRepository } from '../repositories/ClientRepository';
 
 defineLambda({
   name: 'productManagement',
 
-  controllers: [CategoryController, OEMController, ProductController],
+  controllers: [CategoryController, OEMController, ProductController, ClientController],
 
   bindings: [
     // Category
@@ -34,6 +37,10 @@ defineLambda({
     // Product
     { symbol: TYPES.ProductService, implementation: ProductService },
     { symbol: TYPES.ProductRepository, implementation: ProductRepository },
+
+    // Client
+    { symbol: TYPES.ClientService, implementation: ClientService },
+    { symbol: TYPES.ClientRepository, implementation: ClientRepository },
   ],
 
   prismaSymbol: TYPES.PrismaClient,

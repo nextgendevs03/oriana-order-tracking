@@ -8,6 +8,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   createSuccessResponse,
   createErrorResponse,
 } from '@oriana/shared';
@@ -18,7 +19,7 @@ import { CreateCategoryRequest, UpdateCategoryRequest } from '../schemas/request
 
 export interface ICategoryController {
   create(data: CreateCategoryRequest): Promise<APIGatewayProxyResult>;
-  getAll(): Promise<APIGatewayProxyResult>;
+  getAll(isActive?: string, categoryName?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateCategoryRequest): Promise<APIGatewayProxyResult>;
   delete(id: string, data: { updatedBy: string }): Promise<APIGatewayProxyResult>;
@@ -42,9 +43,12 @@ export class CategoryController implements ICategoryController {
   }
 
   @Get('/')
-  async getAll() {
+  async getAll(@Query('isActive') isActive?: string, @Query('categoryName') categoryName?: string) {
     try {
-      const categories = await this.categoryService.getAllCategories();
+      const categories = await this.categoryService.getAllCategories({
+        isActive: isActive ? isActive === 'true' : undefined,
+        categoryName: categoryName || undefined,
+      });
       return createSuccessResponse(categories);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);

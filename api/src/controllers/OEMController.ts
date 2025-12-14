@@ -8,6 +8,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   createSuccessResponse,
   createErrorResponse,
 } from '@oriana/shared';
@@ -17,7 +18,7 @@ import { CreateOEMRequest, UpdateOEMRequest } from '../schemas/request/OEMReques
 
 export interface IOEMController {
   create(data: CreateOEMRequest): Promise<APIGatewayProxyResult>;
-  getAll(): Promise<APIGatewayProxyResult>;
+  getAll(oemName?: string, isActive?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateOEMRequest): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
@@ -40,9 +41,15 @@ export class OEMController implements IOEMController {
   }
 
   @Get('/')
-  async getAll(): Promise<APIGatewayProxyResult> {
+  async getAll(
+    @Query('oemName') oemName?: string,
+    @Query('isActive') isActive?: string
+  ): Promise<APIGatewayProxyResult> {
     try {
-      const oems = await this.oemService.getAllOEMs();
+      const oems = await this.oemService.getAllOEMs({
+        oemName: oemName || undefined,
+        isActive: isActive ? isActive === 'true' : undefined,
+      });
       return createSuccessResponse(oems);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error fetching OEMs');

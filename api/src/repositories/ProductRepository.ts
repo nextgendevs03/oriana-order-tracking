@@ -1,11 +1,16 @@
 import { injectable, inject } from 'inversify';
-import { PrismaClient, Product } from '@prisma/client';
+import { PrismaClient, Product, Prisma } from '@prisma/client';
 import { TYPES } from '../types/types';
 import { CreateProductRequest, UpdateProductRequest } from '../schemas/request/ProductRequest';
 import { ProductResponse } from 'src/schemas/response/ProductResponse';
 
 export interface IProductRepository {
-  findAll(): Promise<ProductResponse[]>;
+  findAll(filters?: {
+    name?: string;
+    isActive?: boolean;
+    categoryId?: string;
+    oemId?: string;
+  }): Promise<ProductResponse[]>;
   findById(id: string): Promise<ProductResponse | null>;
   create(data: CreateProductRequest): Promise<ProductResponse | null>;
   update(id: string, data: UpdateProductRequest): Promise<Product>;
@@ -16,8 +21,35 @@ export interface IProductRepository {
 export class ProductRepository implements IProductRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(): Promise<ProductResponse[]> {
+  async findAll(filters?: {
+    name?: string;
+    isActive?: boolean;
+    categoryId?: string;
+    oemId?: string;
+  }): Promise<ProductResponse[]> {
+    const where: Prisma.ProductWhereInput = {};
+
+    if (filters?.name) {
+      where.productName = {
+        contains: filters.name,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters?.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+
+    if (filters?.categoryId) {
+      where.categoryId = filters.categoryId;
+    }
+
+    if (filters?.oemId) {
+      where.oemId = filters.oemId;
+    }
+
     const products = await this.prisma.product.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         category: true,
@@ -28,11 +60,15 @@ export class ProductRepository implements IProductRepository {
       (product): ProductResponse => ({
         productId: product.productId,
         productName: product.productName,
-        categoryId: product.category.categoryId,
-        categoryName: product.category.categoryName,
-        oemId: product.oem.oemId,
-        oemName: product.oem.oemName,
-        status: product.isActive ?? true,
+        category: {
+          categoryId: product.category.categoryId,
+          categoryName: product.category.categoryName,
+        },
+        oem: {
+          oemId: product.oem.oemId,
+          oemName: product.oem.oemName,
+        },
+        isActive: product.isActive ?? true,
         createdBy: product.createdBy,
         updatedBy: product.updatedBy,
         createdAt: product.createdAt,
@@ -53,11 +89,15 @@ export class ProductRepository implements IProductRepository {
     return {
       productId: product.productId,
       productName: product.productName,
-      categoryId: product.categoryId,
-      categoryName: product.category.categoryName,
-      oemName: product.oem.oemName,
-      oemId: product.oemId,
-      status: product.isActive ?? true,
+      category: {
+        categoryId: product.category.categoryId,
+        categoryName: product.category.categoryName,
+      },
+      oem: {
+        oemId: product.oem.oemId,
+        oemName: product.oem.oemName,
+      },
+      isActive: product.isActive ?? true,
       createdBy: product.createdBy,
       updatedBy: product.updatedBy,
       createdAt: product.createdAt,

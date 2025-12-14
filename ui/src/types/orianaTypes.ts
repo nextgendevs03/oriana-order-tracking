@@ -12,3 +12,5 @@ export * from "../../../api/src/schemas/request/OEMRequest";
 export * from "../../../api/src/schemas/response/OEMResponse";
 export * from "../../../api/src/schemas/request/ProductRequest";
 export * from "../../../api/src/schemas/response/ProductResponse";
+export * from "../../../api/src/schemas/request/ClientRequest";
+export * from "../../../api/src/schemas/response/ClientResponse";

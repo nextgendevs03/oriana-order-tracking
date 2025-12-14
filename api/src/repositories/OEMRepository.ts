@@ -1,11 +1,11 @@
 import { injectable, inject } from 'inversify';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { TYPES } from '../types/types';
 import { CreateOEMRequest, UpdateOEMRequest } from '../schemas/request/OEMRequest';
 import { OEMResponse } from '../schemas/response/OEMResponse';
 
 export interface IOEMRepository {
-  findAll(): Promise<OEMResponse[]>;
+  findAll(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]>;
   findById(id: string): Promise<OEMResponse | null>;
   create(data: CreateOEMRequest): Promise<OEMResponse>;
   update(id: string, data: UpdateOEMRequest): Promise<OEMResponse>;
@@ -16,14 +16,28 @@ export interface IOEMRepository {
 export class OEMRepository implements IOEMRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(): Promise<OEMResponse[]> {
+  async findAll(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]> {
+    const where: Prisma.OEMWhereInput = {};
+
+    if (filters?.oemName) {
+      where.oemName = {
+        contains: filters.oemName,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters?.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+
     const oems = await this.prisma.oEM.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
     });
     return oems.map((oem) => ({
       oemId: oem.oemId,
       name: oem.oemName,
-      status: oem.isActive,
+      isActive: oem.isActive,
       createdAt: oem.createdAt,
       updatedAt: oem.updatedAt,
       createdBy: oem.createdBy,
@@ -37,7 +51,7 @@ export class OEMRepository implements IOEMRepository {
     return {
       oemId: oem.oemId,
       name: oem.oemName,
-      status: oem.isActive ?? true,
+      isActive: oem.isActive ?? true,
       createdBy: oem.createdBy,
       updatedBy: oem.updatedBy,
       createdAt: oem.createdAt,
@@ -57,7 +71,7 @@ export class OEMRepository implements IOEMRepository {
     return {
       oemId: oem.oemId,
       name: oem.oemName,
-      status: oem.isActive ?? true,
+      isActive: oem.isActive ?? true,
       createdBy: oem.createdBy,
       updatedBy: oem.updatedBy,
       createdAt: oem.createdAt,
@@ -77,7 +91,7 @@ export class OEMRepository implements IOEMRepository {
     return {
       oemId: oem.oemId,
       name: oem.oemName,
-      status: oem.isActive ?? true,
+      isActive: oem.isActive ?? true,
       createdBy: oem.createdBy,
       updatedBy: oem.updatedBy,
       createdAt: oem.createdAt,
