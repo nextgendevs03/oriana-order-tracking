@@ -1,13 +1,9 @@
+import { CreateProductRequest, ProductResponse, UpdateProductRequest } from "@OrianaTypes";
 import { baseApi } from "./baseApi";
-import {
-  CreateProductRequest,
-  UpdateProductRequest,
-  ProductResponse,
-} from "@OrianaTypes";
 
 export const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getProducts: builder.query<ProductResponse[], void>({
+    getProducts: builder.query<{data: ProductResponse[]}, void>({
       query: () => ({ url: "product/", method: "GET" }),
       providesTags: ["Product"],
     }),
@@ -21,10 +17,7 @@ export const productApi = baseApi.injectEndpoints({
       invalidatesTags: ["Product"],
     }),
 
-    updateProduct: builder.mutation<
-      ProductResponse,
-      { id: string; data: UpdateProductRequest }
-    >({
+    updateProduct: builder.mutation<ProductResponse, { id: string; data: UpdateProductRequest }>({
       query: ({ id, data }) => ({
         url: `product/${id}`,
         method: "PUT",
@@ -33,7 +26,7 @@ export const productApi = baseApi.injectEndpoints({
       invalidatesTags: ["Product"],
     }),
 
-    deleteProduct: builder.mutation<{ deleted: boolean }, string>({
+    deleteProduct: builder.mutation<void, string>({
       query: (id) => ({
         url: `product/${id}`,
         method: "DELETE",

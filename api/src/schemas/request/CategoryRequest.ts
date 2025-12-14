@@ -1,11 +1,11 @@
 export interface CreateCategoryRequest {
-  name: string;
-  status: 'Active' | 'Inactive';
+  categoryName: string;
+  isActive: boolean;
   createdBy: string;
 }
 
 export interface UpdateCategoryRequest {
-  name?: string;
-  status?: 'Active' | 'Inactive';
+  categoryName?: string;
+  isActive?: boolean;
   updatedBy: string;
 }

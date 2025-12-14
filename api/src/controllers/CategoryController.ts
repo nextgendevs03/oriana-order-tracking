@@ -21,10 +21,9 @@ export interface ICategoryController {
   getAll(): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateCategoryRequest): Promise<APIGatewayProxyResult>;
-  delete(id: string): Promise<APIGatewayProxyResult>;
+  delete(id: string, data: { updatedBy: string }): Promise<APIGatewayProxyResult>;
 }
-
-@Controller({ path: '/api/category', lambdaName: 'category' })
+@Controller({ path: '/api/category', lambdaName: 'productManagement' })
 @injectable()
 export class CategoryController implements ICategoryController {
   constructor(
@@ -33,60 +32,52 @@ export class CategoryController implements ICategoryController {
   ) {}
 
   @Post('/')
-  async create(@Body() data: CreateCategoryRequest): Promise<APIGatewayProxyResult> {
+  async create(@Body() data: CreateCategoryRequest) {
     try {
       const category = await this.categoryService.createCategory(data);
       return createSuccessResponse(category, 201);
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error('Error creating category');
-      return createErrorResponse(error);
+      return createErrorResponse(err as Error);
     }
   }
 
   @Get('/')
-  async getAll(): Promise<APIGatewayProxyResult> {
+  async getAll() {
     try {
       const categories = await this.categoryService.getAllCategories();
       return createSuccessResponse(categories);
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error('Error fetching categories');
-      return createErrorResponse(error);
+      return createErrorResponse(err as Error);
     }
   }
 
   @Get('/{id}')
-  async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
+  async getById(@Param('id') id: string) {
     try {
       const category = await this.categoryService.getCategoryById(id);
       return createSuccessResponse(category);
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error('Error fetching category');
-      return createErrorResponse(error);
+      return createErrorResponse(err as Error);
     }
   }
 
   @Put('/{id}')
-  async update(
-    @Param('id') id: string,
-    @Body() data: UpdateCategoryRequest
-  ): Promise<APIGatewayProxyResult> {
+  async update(@Param('id') id: string, @Body() data: UpdateCategoryRequest) {
     try {
       const updated = await this.categoryService.updateCategory(id, data);
       return createSuccessResponse(updated);
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error('Error updating category');
-      return createErrorResponse(error);
+      return createErrorResponse(err as Error);
     }
   }
 
   @Delete('/{id}')
-  async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
+  async delete(@Param('id') id: string) {
     try {
       await this.categoryService.deleteCategory(id);
       return createSuccessResponse({ deleted: true });
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error('Error deleting category');
-      return createErrorResponse(error);
+      return createErrorResponse(err as Error);
     }
   }
 }

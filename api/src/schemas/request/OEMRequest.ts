@@ -1,11 +1,11 @@
 export interface CreateOEMRequest {
   name: string;
-  status: 'Active' | 'Inactive';
+  status: boolean;
   createdBy?: string;
 }
 
 export interface UpdateOEMRequest {
   name?: string;
-  status?: 'Active' | 'Inactive';
+  status?: boolean;
   updatedBy?: string;
 }

@@ -16,13 +16,13 @@ const CategoryManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const columns = [
-    { title: "Name", dataIndex: "name" },
+    { title: "Category Name", dataIndex: "categoryName" },
 
     {
       title: "Status",
-      dataIndex: "status",
-      render: (val: string) =>
-        val === "Active" ? (
+      dataIndex: "isActive",
+      render: (val: boolean) =>
+        val === true ? (
           <Tag color="green">Active</Tag>
         ) : (
           <Tag color="red">Inactive</Tag>

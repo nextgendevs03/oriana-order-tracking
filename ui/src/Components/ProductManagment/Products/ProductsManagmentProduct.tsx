@@ -4,45 +4,61 @@ import {
   useGetProductsQuery,
   useDeleteProductMutation,
 } from "../../../store/api/productApi";
-
 import AddProductModal from "./AddProductModal";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 
-const ProductManagementProducts: React.FC = () => {
-  const { data: products = [], isLoading } = useGetProductsQuery();
+const ProductManagementProducts: React.FC = () => 
+{ 
+  const { data, isLoading } = useGetProductsQuery();
+
+
   const [deleteProduct] = useDeleteProductMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
-  const columns = [
-    { title: "Product Name", dataIndex: "name" },
-    { title: "Category", dataIndex: "category" },
-    { title: "OEM", dataIndex: "oem" },
+  const handleEdit = (record: any) => {
+    setEditingProduct({
+      productId: record.productId,
+      productName: record.productName,
+      categoryId: record.category?.categoryId,
+      oemId: record.oem?.oemId,
+      isActive: record.isActive,
+    });
+    setIsModalOpen(true);
+  };
 
+  const columns = [
+    {
+      title: "Product Name",
+      dataIndex: "productName",
+    },
+    {
+      title: "Category",
+      dataIndex: "categoryName",
+    },
+    {
+      title: "OEM",
+      dataIndex: "oemName",
+    },
     {
       title: "Status",
       dataIndex: "status",
-      render: (text: string) =>
-        text === "Active" ? (
+      render: (status: boolean) =>
+        status ? (
           <Tag color="green">Active</Tag>
         ) : (
           <Tag color="red">Inactive</Tag>
         ),
     },
-
     {
       title: "Actions",
       render: (_: any, record: any) => (
         <>
           <Button
             icon={<EditOutlined />}
-            onClick={() => {
-              setEditingProduct(record);
-              setIsModalOpen(true);
-            }}
+            onClick={() => handleEdit(record)}
           />
-
           <Popconfirm
             title="Delete this product?"
             onConfirm={() => deleteProduct(record.productId)}
@@ -64,7 +80,6 @@ const ProductManagementProducts: React.FC = () => {
 
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <h2>Product Management</h2>
-
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -78,9 +93,9 @@ const ProductManagementProducts: React.FC = () => {
       </div>
 
       <Table
-        columns={columns}
-        dataSource={products}
         rowKey="productId"
+        columns={columns}
+        dataSource={data?.data || []}
         loading={isLoading}
         style={{ marginTop: 20 }}
       />

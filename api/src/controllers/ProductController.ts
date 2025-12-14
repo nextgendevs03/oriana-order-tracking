@@ -23,61 +23,74 @@ export interface IProductController {
   delete(id: string): Promise<APIGatewayProxyResult>;
 }
 
-@Controller({ path: '/api/product', lambdaName: 'product' })
+@Controller({ path: '/api/product', lambdaName: 'productManagement' })
 @injectable()
 export class ProductController implements IProductController {
-  constructor(@inject(TYPES.ProductService) private productService: IProductService) {}
+  constructor(
+    @inject(TYPES.ProductService)
+    private productService: IProductService
+  ) {}
 
+  // CREATE
   @Post('/')
   async create(@Body() data: CreateProductRequest): Promise<APIGatewayProxyResult> {
     try {
-      const p = await this.productService.createProduct(data);
-      return createSuccessResponse(p, 201);
-    } catch (err: any) {
-      return createErrorResponse(err.message || 'Error creating product');
+      const product = await this.productService.createProduct(data);
+      return createSuccessResponse(product, 201);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Error creating product');
+      return createErrorResponse(error);
     }
   }
 
+  // GET ALL
   @Get('/')
   async getAll(): Promise<APIGatewayProxyResult> {
     try {
       const products = await this.productService.getAllProducts();
       return createSuccessResponse(products);
-    } catch (err: any) {
-      return createErrorResponse(err.message || 'Error fetching products');
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Error fetching products');
+      return createErrorResponse(error);
     }
   }
 
+  // GET BY ID
   @Get('/{id}')
   async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     try {
       const product = await this.productService.getProductById(id);
       return createSuccessResponse(product);
-    } catch (err: any) {
-      return createErrorResponse(err.message || 'Error fetching product');
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Error fetching product');
+      return createErrorResponse(error);
     }
   }
 
+  // UPDATE
   @Put('/{id}')
   async update(
     @Param('id') id: string,
     @Body() data: UpdateProductRequest
   ): Promise<APIGatewayProxyResult> {
     try {
-      const p = await this.productService.updateProduct(id, data);
-      return createSuccessResponse(p);
-    } catch (err: any) {
-      return createErrorResponse(err.message || 'Error updating product');
+      const product = await this.productService.updateProduct(id, data);
+      return createSuccessResponse(product);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Error updating product');
+      return createErrorResponse(error);
     }
   }
 
+  // DELETE
   @Delete('/{id}')
   async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     try {
       await this.productService.deleteProduct(id);
       return createSuccessResponse({ deleted: true });
-    } catch (err: any) {
-      return createErrorResponse(err.message || 'Error deleting product');
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('Error deleting product');
+      return createErrorResponse(error);
     }
   }
 }

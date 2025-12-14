@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Breadcrumb, Button, Table, Tag, Popconfirm } from "antd";
+import React, { useState } from "react";
+import { Breadcrumb, Button, Table, Tag, Popconfirm, message } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 import {
@@ -15,26 +15,36 @@ const OEMManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOEM, setEditingOEM] = useState<any>(null);
 
-  const columns = [
-    { title: "OEM Name", dataIndex: "name" },
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteOEM(id).unwrap();
+      message.success("OEM deleted successfully");
+    } catch (error) {
+      message.error("Failed to delete OEM");
+    }
+  };
 
+  const columns = [
+    {
+      title: "OEM Name",
+      dataIndex: "name",
+    },
     {
       title: "Status",
       dataIndex: "status",
-      render: (val: string) =>
-        val === "Active" ? (
-          <Tag color="green">Active</Tag>
-        ) : (
-          <Tag color="red">Inactive</Tag>
-        ),
+      render: (status: boolean) => (
+        <Tag color={status ? "green" : "red"}>
+          {status ? "Active" : "Inactive"}
+        </Tag>
+      ),
     },
-
     {
       title: "Actions",
       render: (_: any, record: any) => (
         <>
           <Button
             icon={<EditOutlined />}
+            style={{ marginRight: 8 }}
             onClick={() => {
               setEditingOEM(record);
               setIsModalOpen(true);
@@ -43,7 +53,7 @@ const OEMManagement = () => {
 
           <Popconfirm
             title="Delete this OEM?"
-            onConfirm={() => deleteOEM(record.oemId)}
+            onConfirm={() => handleDelete(record.oemId)}
           >
             <Button danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -60,9 +70,14 @@ const OEMManagement = () => {
         <Breadcrumb.Item>OEM Management</Breadcrumb.Item>
       </Breadcrumb>
 
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 16,
+        }}
+      >
         <h2>OEM Management</h2>
-
         <Button
           type="primary"
           icon={<PlusOutlined />}
