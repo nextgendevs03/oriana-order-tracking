@@ -5,10 +5,10 @@ import { CreateProductRequest, UpdateProductRequest } from '../schemas/request/P
 import { ProductResponse } from '../schemas/response/ProductResponse';
 
 export interface IProductService {
-  createProduct(data: CreateProductRequest): Promise<ProductResponse>;
+  createProduct(data: CreateProductRequest): Promise<ProductResponse | null>;
   getAllProducts(): Promise<ProductResponse[]>;
   getProductById(id: string): Promise<ProductResponse | null>;
-  updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse>;
+  updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse | null>;
   deleteProduct(id: string): Promise<void>;
 }
 
@@ -16,24 +16,24 @@ export interface IProductService {
 export class ProductService implements IProductService {
   constructor(@inject(TYPES.ProductRepository) private repo: IProductRepository) {}
 
-  async createProduct(data: CreateProductRequest): Promise<ProductResponse> {
+  async createProduct(data: CreateProductRequest): Promise<ProductResponse | null> {
     const created = await this.repo.create(data);
-    return created as unknown as ProductResponse;
+    return created ?? null;
   }
 
   async getAllProducts(): Promise<ProductResponse[]> {
     const rows = await this.repo.findAll();
-    return rows as unknown as ProductResponse[];
+    return rows;
   }
 
   async getProductById(id: string): Promise<ProductResponse | null> {
     const p = await this.repo.findById(id);
-    return p as unknown as ProductResponse | null;
+    return p ?? null;
   }
 
-  async updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse> {
-    const updated = await this.repo.update(id, data);
-    return updated as unknown as ProductResponse;
+  async updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse | null> {
+    await this.repo.update(id, data);
+    return await this.repo.findById(id);
   }
 
   async deleteProduct(id: string): Promise<void> {

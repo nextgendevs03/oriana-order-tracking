@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { PrismaClient, OEM } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { TYPES } from '../types/types';
 import { CreateOEMRequest, UpdateOEMRequest } from '../schemas/request/OEMRequest';
 import { OEMResponse } from '../schemas/response/OEMResponse';
@@ -16,38 +16,76 @@ export interface IOEMRepository {
 export class OEMRepository implements IOEMRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(): Promise<OEM[]> {
-    return this.prisma.OEM.findMany({
+  async findAll(): Promise<OEMResponse[]> {
+    const oems = await this.prisma.oEM.findMany({
       orderBy: { createdAt: 'desc' },
     });
+    return oems.map((oem) => ({
+      oemId: oem.oemId,
+      name: oem.oemName,
+      status: oem.isActive,
+      createdAt: oem.createdAt,
+      updatedAt: oem.updatedAt,
+      createdBy: oem.createdBy,
+      updatedBy: oem.updatedBy,
+    }));
   }
 
-  async findById(id: string): Promise<OEM | null> {
-    return this.prisma.OEM.findUnique({ where: { oemId: id } });
+  async findById(id: string): Promise<OEMResponse | null> {
+    const oem = await this.prisma.oEM.findUnique({ where: { oemId: id } });
+    if (!oem) return null;
+    return {
+      oemId: oem.oemId,
+      name: oem.oemName,
+      status: oem.isActive ?? true,
+      createdBy: oem.createdBy,
+      updatedBy: oem.updatedBy,
+      createdAt: oem.createdAt,
+      updatedAt: oem.updatedAt,
+    };
   }
 
-  async create(data: CreateOEMRequest): Promise<OEM> {
-    return this.prisma.OEM.create({
+  async create(data: CreateOEMRequest): Promise<OEMResponse> {
+    const oem = await this.prisma.oEM.create({
       data: {
-        name: data.name,
-        status: data.status,
-        createdBy: data.createdBy || null,
+        oemName: data.name,
+        isActive: data.status ?? true,
+        createdBy: data.createdBy ?? '',
+        updatedBy: data.createdBy ?? '',
       },
     });
+    return {
+      oemId: oem.oemId,
+      name: oem.oemName,
+      status: oem.isActive ?? true,
+      createdBy: oem.createdBy,
+      updatedBy: oem.updatedBy,
+      createdAt: oem.createdAt,
+      updatedAt: oem.updatedAt,
+    };
   }
 
-  async update(id: string, data: UpdateOEMRequest): Promise<OEM> {
-    return this.prisma.OEM.update({
+  async update(id: string, data: UpdateOEMRequest): Promise<OEMResponse> {
+    const oem = await this.prisma.oEM.update({
       where: { oemId: id },
       data: {
-        name: data.name,
-        status: data.status,
-        updatedBy: data.updatedBy || null,
+        ...(data.name && { oemName: data.name }),
+        ...(data.status !== undefined && { isActive: data.status ?? true }),
+        ...(data.updatedBy && { updatedBy: data.updatedBy }),
       },
     });
+    return {
+      oemId: oem.oemId,
+      name: oem.oemName,
+      status: oem.isActive ?? true,
+      createdBy: oem.createdBy,
+      updatedBy: oem.updatedBy,
+      createdAt: oem.createdAt,
+      updatedAt: oem.updatedAt,
+    };
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.OEM.delete({ where: { oemId: id } });
+    await this.prisma.oEM.delete({ where: { oemId: id } });
   }
 }

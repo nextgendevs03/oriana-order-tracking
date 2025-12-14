@@ -21,20 +21,42 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   const [createCategory] = useCreateCategoryMutation();
   const [updateCategory] = useUpdateCategoryMutation();
 
+  // --- Set initial values properly (boolean for isActive) ---
   useEffect(() => {
-    initialValues ? form.setFieldsValue(initialValues) : form.resetFields();
-  });
+    if (initialValues) {
+      form.setFieldsValue({
+        ...initialValues,
+        isActive:
+          initialValues.isActive === true ||
+          initialValues.isActive === "true", // Convert string to boolean
+      });
+    } else {
+      form.resetFields();
+    }
+  }, [initialValues, form]);
 
   const handleSubmit = async () => {
     const values = await form.validateFields();
 
+    // Ensure isActive is boolean
+    const dataToSend = {
+      ...values,
+      isActive: Boolean(values.isActive),
+    };
+
     if (initialValues) {
       await updateCategory({
         id: initialValues.categoryId,
-        data: values,
+        data: {
+          ...dataToSend,
+          updatedBy: "admin", 
+        },
       });
     } else {
-      await createCategory(values);
+      await createCategory({
+        ...dataToSend,
+        createdBy: "admin", 
+      });
     }
 
     form.resetFields();
@@ -59,16 +81,20 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       <Form form={form} layout="vertical">
         <Form.Item
           label="Category Name"
-          name="name"
+          name="categoryName"
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
 
-        <Form.Item label="Status" name="status" rules={[{ required: true }]}>
+        <Form.Item
+          label="Status"
+          name="isActive"
+          rules={[{ required: true }]}
+        >
           <Select>
-            <Select.Option value="Active">Active</Select.Option>
-            <Select.Option value="Inactive">Inactive</Select.Option>
+            <Select.Option value={true}>Active</Select.Option>
+            <Select.Option value={false}>Inactive</Select.Option>
           </Select>
         </Form.Item>
       </Form>

@@ -1,15 +1,15 @@
 export interface CreateProductRequest {
-  name: string;
-  category: string;
-  oem: string;
-  status: 'Active' | 'Inactive';
+  productName: string;
+  categoryId: string;
+  oemId: string;
+  isActive: boolean;
   createdBy?: string;
 }
 
 export interface UpdateProductRequest {
-  name?: string;
-  category?: string;
-  oem?: string;
-  status?: 'Active' | 'Inactive';
+  productName?: string;
+  categoryId?: string;
+  oemId?: string;
+  isActive?: boolean;
   updatedBy?: string;
 }
