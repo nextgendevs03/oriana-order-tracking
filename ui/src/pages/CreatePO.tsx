@@ -18,9 +18,11 @@ import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
 import FileUpload from "../Components/FileUpload";
 import POItemsTable from "../Components/POItemsTable";
+import AddClientModal from "../Components/AddClientModal";
 import { useGetCategoriesQuery } from "../store/api/categoryApi";
 import { useGetOEMsQuery } from "../store/api/oemApi";
 import { useGetClientsQuery } from "../store/api/clientApi";
+import { useDebounce } from "../hooks";
 import {
   poStatusOptions,
   dispatchOptions,
@@ -59,17 +61,21 @@ const CreatePO: FC = () => {
   const dispatch = useAppDispatch();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+
+  // Debounce client search term with 500ms delay
+  const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 500);
 
   // Fetch categories and OEMs from API
   const { data: categoriesData = [], error: categoriesError } =
     useGetCategoriesQuery();
   const { data: oemsData = [], error: oemsError } = useGetOEMsQuery();
 
-  // Fetch clients based on search term (min 3 characters)
-  const shouldFetchClients = clientSearchTerm.length >= 3;
-  const { data: clientsData = [], error: clientsError } = useGetClientsQuery(
+  // Fetch clients based on debounced search term (min 3 characters)
+  const shouldFetchClients = debouncedClientSearchTerm.length >= 3;
+  const { data: clientsData = [], error: clientsError, refetch: refetchClients } = useGetClientsQuery(
     shouldFetchClients
-      ? { clientName: clientSearchTerm, isActive: true }
+      ? { clientName: debouncedClientSearchTerm, isActive: true }
       : undefined
   );
 
@@ -124,6 +130,15 @@ const CreatePO: FC = () => {
       label: client.clientName,
     }));
   }, [clientsData, clientsError, shouldFetchClients]);
+
+  // Handle successful client creation
+  const handleClientCreated = (newClientName: string) => {
+    // Set the newly created client name in the form
+    form.setFieldValue("clientName", newClientName);
+    setClientSearchTerm(newClientName);
+    // Refetch clients to include the new client
+    refetchClients();
+  };
 
   const updateCalculatedFields = (index: number) => {
     const poItems = form.getFieldValue("poItems") || [];
@@ -266,10 +281,7 @@ const CreatePO: FC = () => {
                     <Button
                       type="link"
                       style={{ padding: 0 }}
-                      onClick={() => {
-                        // TODO: Open add client modal or navigate to client creation
-                        console.log("Add new client");
-                      }}
+                      onClick={() => setIsAddClientModalOpen(true)}
                     >
                       + Add Client
                     </Button>
@@ -543,6 +555,14 @@ const CreatePO: FC = () => {
           )}
         </Form.Item>
       </Form>
+
+      {/* Add Client Modal */}
+      <AddClientModal
+        open={isAddClientModalOpen}
+        onCancel={() => setIsAddClientModalOpen(false)}
+        onSuccess={handleClientCreated}
+        initialClientName={clientSearchTerm}
+      />
     </div>
   );
 };
