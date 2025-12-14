@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import LayoutPage from "./pages/LayoutPage";
 import Dashboard from "./pages/Dashboard";
+import SummaryDashboard from "./pages/SummaryDashboard";
 import Settings from "./pages/Settings";
 import CreatePO from "./pages/CreatePO";
 import PODetails from "./pages/PODetails";
@@ -29,6 +30,9 @@ const App: React.FC = () => {
         {/* Protected Routes with Layout */}
         <Route path="/dashboard" element={<LayoutPage />}>
           <Route index element={<Dashboard />} />
+        </Route>
+        <Route path="/summary-dashboard" element={<LayoutPage />}>
+          <Route index element={<SummaryDashboard />} />
         </Route>
         <Route path="/settings" element={<LayoutPage />}>
           <Route index element={<Settings />} />
