@@ -13,8 +13,9 @@ import storage from "redux-persist/lib/storage";
 import { baseApi } from "./api/baseApi";
 import permissionReducer from "./permissionSlice";
 import userReducer from "./userSlice";
-import roleReducer from "./roleSlice";
 import poReducer from "./poSlice";
+import roleReducer from "./roleSlice";
+import authReducer from "./authSlice";
 import categoryReducer from "./categorySlice";
 import oemReducer from "./oemSlice";
 import productReducer from "./productSlice";
@@ -32,6 +33,7 @@ const rootReducer = combineReducers({
    user: userReducer,
    role: roleReducer,
    po: poReducer,
+   auth: authReducer,
    category: categoryReducer,
    oem: oemReducer,
    product: productReducer,

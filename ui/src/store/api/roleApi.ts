@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import { RoleListResponse, RoleResponse, CreateRoleRequest, UpdateRoleRequest, ListRoleRequest } from "../../types/orianaTypes";
+import { RoleListResponse, RoleResponse, CreateRoleRequest, UpdateRoleRequest, ListRoleRequest } from "@OrianaTypes";
 
 export const roleApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

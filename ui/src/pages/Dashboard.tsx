@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Table, Button, Tag } from "antd";
 import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,13 @@ interface PORecord {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const poList = useAppSelector((state) => state.po.poList);
+  const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate("/");
+    }
+  }, [isLoggedIn, navigate]);
 
   // Transform Redux data to table format
   const dataSource: PORecord[] = poList.map((po: POData) => ({
@@ -84,7 +91,9 @@ const Dashboard: React.FC = () => {
 
   // Generate unique filter options from data
   const clientNameFilters = useMemo(() => {
-    const uniqueNames = Array.from(new Set(dataSource.map((item) => item.clientName)));
+    const uniqueNames = Array.from(
+      new Set(dataSource.map((item) => item.clientName))
+    );
     return uniqueNames.map((name) => ({ text: name, value: name }));
   }, [dataSource]);
 
