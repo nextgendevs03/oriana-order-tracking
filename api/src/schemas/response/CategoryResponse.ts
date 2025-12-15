@@ -1,9 +1,7 @@
 export interface CategoryResponse {
   categoryId: string;
-  name: string;
-  status: 'Active' | 'Inactive';
+  categoryName: string;
+  isActive: boolean;
   createdBy: string;
   updatedBy: string;
-  createdAt: Date;
-  updatedAt: Date;
 }

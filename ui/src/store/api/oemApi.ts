@@ -1,10 +1,34 @@
 import { baseApi } from "./baseApi";
-import { CreateOEMRequest, UpdateOEMRequest, OEMResponse } from "@OrianaTypes";
+import {
+  CreateOEMRequest,
+  UpdateOEMRequest,
+  OEMResponse,
+} from "@OrianaTypes";
 
 export const oemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+   
     getOEMs: builder.query<OEMResponse[], void>({
-      query: () => ({ url: "oem/", method: "GET" }),
+      query: () => ({
+        url: "oem/",
+        method: "GET",
+      }),
+
+      transformResponse: (response: any) => {
+        const list = Array.isArray(response)
+          ? response
+          : response?.data || [];
+
+        return list.map((item: any) => ({
+          ...item,
+
+          isActive:
+            typeof item.isActive === "boolean"
+              ? item.isActive
+              : item.status === "Active",
+        }));
+      },
+
       providesTags: ["OEM"],
     }),
 
@@ -12,7 +36,7 @@ export const oemApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: "oem/",
         method: "POST",
-        body,
+        body, 
       }),
       invalidatesTags: ["OEM"],
     }),
@@ -24,7 +48,7 @@ export const oemApi = baseApi.injectEndpoints({
       query: ({ id, data }) => ({
         url: `oem/${id}`,
         method: "PUT",
-        body: data,
+        body: data, 
       }),
       invalidatesTags: ["OEM"],
     }),
