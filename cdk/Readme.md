@@ -69,22 +69,35 @@ CDK Synth Time:
 ```
 cdk/
 ├── bin/
-│   └── cdk.ts                 # CDK app entry point
+│   └── cdk.ts                      # CDK app entry point
+├── config/                         # Service-specific configurations
+│   ├── index.ts                    # Exports all configs
+│   ├── s3.config.ts                # S3 bucket configurations
+│   └── rds.config.ts               # RDS database configurations
 ├── lib/
 │   ├── config/
-│   │   └── environment.ts     # Environment configurations
+│   │   └── environment.ts          # Environment configs & feature flags
 │   ├── constructs/
-│   │   ├── lambda-construct.ts
-│   │   └── api-gateway-construct.ts
+│   │   ├── core/
+│   │   │   ├── lambda-construct.ts
+│   │   │   └── api-gateway-construct.ts
+│   │   ├── storage/
+│   │   │   └── s3-construct.ts     # S3 bucket creation
+│   │   ├── database/
+│   │   │   └── rds-construct.ts    # RDS PostgreSQL database
+│   │   ├── hosting/
+│   │   │   └── static-site-construct.ts  # UI hosting (S3 + CloudFront)
+│   │   └── permissions/
+│   │       └── lambda-permissions.ts
 │   ├── stacks/
-│   │   └── api-stack.ts       # Main API stack
+│   │   └── api-stack.ts            # Main API stack
 │   └── utils/
-│       └── manifest-reader.ts # Reads app-manifest.json
-├── events/                    # Test event payloads
+│       └── manifest-reader.ts      # Reads app-manifest.json
+├── events/                         # Test event payloads
 │   ├── po-create.json
 │   └── po-list.json
-├── env.json                   # Local environment variables
-├── cdk.json                   # CDK configuration
+├── env.local.json                  # Local environment variables
+├── cdk.json                        # CDK configuration
 ├── package.json
 └── tsconfig.json
 ```
@@ -202,21 +215,34 @@ npm run synth:dev && sam local start-api -p 5000 -t cdk.out/ApiStack-dev.templat
 | `npm run invoke:po` | Invoke PO Lambda locally |
 | `npm run invoke:po:event` | Invoke with test event |
 
-### Build & Synth
+### Build Commands
 | Script | Description |
 |--------|-------------|
 | `npm run build` | Compile CDK TypeScript |
 | `npm run build:api` | Build API + generate manifest |
+| `npm run build:ui` | Build UI (React) |
+| `npm run build:all` | Build both API + UI |
 | `npm run synth:dev` | Synthesize dev stack |
 | `npm run synth:qa` | Synthesize QA stack |
 | `npm run synth:prod` | Synthesize prod stack |
 
-### Deployment
+### Deployment - Full (API + UI)
 | Script | Description |
 |--------|-------------|
-| `npm run deploy:dev` | Build + Deploy to dev |
-| `npm run deploy:qa` | Build + Deploy to QA |
-| `npm run deploy:prod` | Build + Deploy to production |
+| `npm run deploy:dev` | Build API + UI + Deploy to dev |
+| `npm run deploy:qa` | Build API + UI + Deploy to QA |
+| `npm run deploy:prod` | Build API + UI + Deploy to production |
+
+### Deployment - API Only (Faster)
+| Script | Description |
+|--------|-------------|
+| `npm run deploy:api:dev` | Build API only + Deploy to dev |
+| `npm run deploy:api:qa` | Build API only + Deploy to QA |
+| `npm run deploy:api:prod` | Build API only + Deploy to production |
+
+### Other Commands
+| Script | Description |
+|--------|-------------|
 | `npm run diff:dev` | Show changes for dev |
 | `npm run destroy:dev` | Destroy dev stack |
 | `npm run bootstrap` | Bootstrap CDK |
@@ -262,11 +288,41 @@ Routes are automatically added to API Gateway!
 
 ## Environment-Specific Configuration
 
-| Environment | Stack Name | Database | Memory | Timeout |
-|-------------|------------|----------|--------|---------|
-| dev | ApiStack-dev | Supabase | 256 MB | 30s |
-| qa | ApiStack-qa | RDS | 512 MB | 30s |
-| prod | ApiStack-prod | RDS | 1024 MB | 30s |
+| Environment | Stack Name | Database | Memory | UI Hosting | RDS |
+|-------------|------------|----------|--------|------------|-----|
+| dev | ApiStack-dev | Neon/Supabase | 256 MB | ✅ CloudFront | ❌ |
+| qa | ApiStack-qa | Neon/Supabase | 512 MB | ✅ CloudFront | ❌ |
+| prod | ApiStack-prod | AWS RDS | 1024 MB | ✅ CloudFront | ✅ |
+
+### Feature Flags
+
+Configure in `cdk/lib/config/environment.ts`:
+
+```typescript
+features: {
+  s3: true,         // S3 buckets for file storage
+  staticSite: true, // UI hosting (S3 + CloudFront)
+  rds: true,        // AWS RDS PostgreSQL (prod only recommended)
+}
+```
+
+### Infrastructure Created
+
+| Resource | Dev/QA | Production |
+|----------|--------|------------|
+| Lambda Functions | ✅ | ✅ |
+| API Gateway | ✅ | ✅ |
+| S3 Buckets (uploads, documents) | ✅ | ✅ (RETAIN) |
+| UI Hosting (S3 + CloudFront) | ✅ | ✅ (RETAIN) |
+| RDS PostgreSQL | ❌ | ✅ (SNAPSHOT on delete) |
+| VPC | ❌ | ✅ (for RDS) |
+
+### Data Protection
+
+Production resources use `RemovalPolicy.RETAIN` or `RemovalPolicy.SNAPSHOT`:
+- **S3 Buckets**: Won't be deleted on stack updates
+- **RDS Database**: Creates final snapshot before any deletion
+- **RDS Deletion Protection**: Enabled for production
 
 ## Performance Optimizations
 
@@ -274,6 +330,91 @@ Routes are automatically added to API Gateway!
 - **Connection Reuse**: `AWS_NODEJS_CONNECTION_REUSE_ENABLED=1`
 - **esbuild**: ~100x faster builds
 - **Manifest-based routing**: No runtime route scanning
+
+## UI Deployment (Static Site Hosting)
+
+The UI is automatically deployed to S3 + CloudFront when you run `npm run deploy:dev`.
+
+### Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Route53   │────▶│  CloudFront │────▶│  S3 Bucket  │
+│ (Optional)  │     │    (CDN)    │     │(Static Site)│
+└─────────────┘     └─────────────┘     └─────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │  ACM Cert   │
+                    │(Free HTTPS) │
+                    └─────────────┘
+```
+
+### Features
+
+- **CloudFront CDN**: Global edge caching for fast load times
+- **HTTPS**: Automatic HTTPS with CloudFront's default certificate
+- **SPA Routing**: 404/403 errors redirect to index.html for client-side routing
+- **Cache Invalidation**: Automatic cache invalidation on each deploy
+- **Cost Optimized**: Uses PRICE_CLASS_100 for non-prod (cheaper, fewer edge locations)
+
+### Outputs
+
+After deployment, you'll see:
+```
+Outputs:
+StaticSiteConstruct.WebsiteURL = https://d1234567890.cloudfront.net
+StaticSiteConstruct.WebsiteBucketName = oriana-ui-dev
+StaticSiteConstruct.DistributionId = E1234567890
+```
+
+### Estimated Costs
+
+| Service | Monthly Cost |
+|---------|-------------|
+| S3 Storage | ~$0.01-0.05 |
+| CloudFront (first 1TB free) | $0 |
+| **Total** | **~$0.50-1/month** |
+
+## RDS Database (Production Only)
+
+Production environment uses AWS RDS PostgreSQL.
+
+### Configuration
+
+Edit `cdk/config/rds.config.ts`:
+
+```typescript
+prod: {
+  instanceClass: ec2.InstanceClass.T4G,
+  instanceSize: ec2.InstanceSize.MICRO, // ~$12/month (cheapest)
+  allocatedStorage: 20,
+  multiAz: false, // Enable for high availability (~2x cost)
+  deletionProtection: true,
+}
+```
+
+### Instance Sizes & Costs
+
+| Instance | vCPU/RAM | Single-AZ | Multi-AZ |
+|----------|----------|-----------|----------|
+| db.t4g.micro | 2/1GB | ~$12/mo | ~$24/mo |
+| db.t4g.small | 2/2GB | ~$24/mo | ~$48/mo |
+| db.t4g.medium | 2/4GB | ~$48/mo | ~$96/mo |
+
+### Data Protection
+
+- **Deletion Protection**: Enabled (prevents accidental deletion)
+- **RemovalPolicy.SNAPSHOT**: Creates final snapshot if stack is deleted
+- **Automated Backups**: 7 days retention
+
+### Database Credentials
+
+Credentials are automatically stored in AWS Secrets Manager at `/oriana/prod/db`.
+
+```bash
+# Retrieve credentials
+aws secretsmanager get-secret-value --secret-id /oriana/prod/db
+```
 
 ## Secrets Manager Setup
 

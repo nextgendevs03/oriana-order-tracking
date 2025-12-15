@@ -12,6 +12,10 @@ export interface FeatureFlags {
   vpc: boolean;
   cognito: boolean;
   kms: boolean;
+  /** Enable static site hosting (S3 + CloudFront) for UI */
+  staticSite: boolean;
+  /** Enable RDS PostgreSQL database (recommended for prod only) */
+  rds: boolean;
 }
 
 /**
@@ -26,6 +30,8 @@ const defaultFeatures: FeatureFlags = {
   vpc: false,
   cognito: false,
   kms: false,
+  staticSite: false,
+  rds: false,
 };
 
 /**
@@ -84,6 +90,8 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     features: {
       ...defaultFeatures,
       s3: true, // Enable S3 for dev
+      staticSite: true, // Enable UI hosting for dev
+      rds: false, // Dev uses external DB (Neon/Supabase)
     },
     database: {
       host: "db.xxxxxxxxxxxx.supabase.co", // TODO: Replace with your Supabase host
@@ -110,6 +118,8 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     features: {
       ...defaultFeatures,
       s3: true, // Enable S3 for qa
+      staticSite: true, // Enable UI hosting for qa
+      rds: false, // QA uses external DB (Neon/Supabase)
     },
     database: {
       host: "db.xxxxxxxxxxxx.supabase.co", // TODO: Replace with your QA Supabase host
@@ -136,9 +146,11 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     features: {
       ...defaultFeatures,
       s3: true, // Enable S3 for prod
+      staticSite: true, // Enable UI hosting for prod
+      rds: true, // Enable AWS RDS for production
     },
     database: {
-      host: "oriana-prod.xxxxxxxxxxxx.ap-south-1.rds.amazonaws.com", // TODO: Replace with your RDS endpoint
+      host: "", // Will be set from RDS construct output
       port: 5432,
       name: "oriana",
       ssl: true,

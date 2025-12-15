@@ -70,6 +70,33 @@ For production deployments:
 - Set `DB_SECRET_ID` environment variable to the secret ARN/name
 - Set `DB_SSL=true` for secure connections
 
+### AWS RDS (Production)
+
+Production uses AWS RDS PostgreSQL, automatically provisioned via CDK:
+
+```bash
+# RDS is created when deploying with features.rds: true
+cd cdk
+npm run deploy:prod
+```
+
+**RDS Configuration** (`cdk/config/rds.config.ts`):
+- Instance: `db.t4g.micro` (~$12/month) - configurable
+- Storage: 20GB gp3, auto-scales to 100GB
+- Backups: 7 days retention
+- Deletion Protection: Enabled
+
+**Retrieve RDS credentials:**
+```bash
+aws secretsmanager get-secret-value --secret-id /oriana/prod/db --query SecretString --output text
+```
+
+**Connect to RDS:**
+```bash
+# Get endpoint from CDK outputs or AWS Console
+psql "host=oriana-db-prod.xxx.rds.amazonaws.com port=5432 dbname=oriana user=oriana_admin sslmode=require"
+```
+
 ---
 
 ## Commands Reference
@@ -561,4 +588,58 @@ npx prisma migrate reset
 
 ---
 
-*Last updated: 7 December 2025*
+---
+
+## Production Database (AWS RDS)
+
+### Environment Setup
+
+| Environment | Database | Managed By |
+|-------------|----------|------------|
+| dev | Neon/Supabase | Manual (external) |
+| qa | Neon/Supabase | Manual (external) |
+| prod | AWS RDS PostgreSQL | CDK (automatic) |
+
+### RDS Instance Sizing
+
+Configure in `cdk/config/rds.config.ts`:
+
+| Instance | vCPU | RAM | Cost (Single-AZ) |
+|----------|------|-----|------------------|
+| db.t4g.micro | 2 | 1 GB | ~$12/month |
+| db.t4g.small | 2 | 2 GB | ~$24/month |
+| db.t4g.medium | 2 | 4 GB | ~$48/month |
+
+### Data Protection
+
+- **Deletion Protection**: Enabled - prevents accidental deletion
+- **RemovalPolicy.SNAPSHOT**: Creates final snapshot if stack is deleted
+- **Automated Backups**: 7 days retention (configurable)
+
+### Running Migrations on RDS
+
+```bash
+# After deploying RDS, run migrations
+npm run db:migrate:prod
+```
+
+This script:
+1. Fetches credentials from Secrets Manager
+2. Connects to RDS securely
+3. Applies pending Prisma migrations
+
+### Troubleshooting RDS
+
+**Connection timeout:**
+- Check security group allows your IP (if connecting from local)
+- Verify RDS is publicly accessible (for dev/qa) or use VPN/bastion for private
+
+**"Password authentication failed":**
+```bash
+# Verify credentials in Secrets Manager
+aws secretsmanager get-secret-value --secret-id /oriana/prod/db
+```
+
+---
+
+*Last updated: 15 December 2025*
