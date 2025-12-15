@@ -22,18 +22,34 @@ import {
 } from "@ant-design/icons";
 import { useParams } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
-import { deleteDispatchDetail, deletePreCommissioning, updatePO, updateDispatchDetail } from "../store/poSlice";
-import type { ColumnsType } from "antd/es/table";
-import type { POItem, DispatchDetail, PreCommissioning } from "../store/poSlice";
-import DispatchFormModal from "../Components/DispatchFormModal";
-import DispatchDocumentFormModal from "../Components/DispatchDocumentFormModal";
-import DeliveryConfirmationFormModal from "../Components/DeliveryConfirmationFormModal";
-import PreCommissioningFormModal from "../Components/PreCommissioningFormModal";
-import CommissioningFormModal from "../Components/CommissioningFormModal";
-import WarrantyCertificateFormModal from "../Components/WarrantyCertificateFormModal";
-import DispatchDetailsModal, { DispatchDetailsTab } from "../Components/DispatchDetailsModal";
-import ServiceDetailsModal, { ServiceDetailsTab } from "../Components/ServiceDetailsModal";
 import {
+  deleteDispatchDetail,
+  deletePreCommissioning,
+  updatePO,
+  updateDispatchDetail,
+} from "../store/poSlice";
+import type { ColumnsType } from "antd/es/table";
+import type {
+  POItem,
+  DispatchDetail,
+  PreCommissioning,
+} from "../store/poSlice";
+import DispatchFormModal from "../Components/POManagement/DispatchFormModal";
+import DispatchDocumentFormModal from "../Components/POManagement/DispatchDocumentFormModal";
+import DeliveryConfirmationFormModal from "../Components/POManagement/DeliveryConfirmationFormModal";
+import PreCommissioningFormModal from "../Components/POManagement/PreCommissioningFormModal";
+import CommissioningFormModal from "../Components/POManagement/CommissioningFormModal";
+import WarrantyCertificateFormModal from "../Components/POManagement/WarrantyCertificateFormModal";
+import DispatchDetailsModal, {
+  DispatchDetailsTab,
+} from "../Components/POManagement/DispatchDetailsModal";
+import ServiceDetailsModal, {
+  ServiceDetailsTab,
+} from "../Components/POManagement/ServiceDetailsModal";
+import {
+  selectPOList,
+  selectDispatchDetails,
+  selectPreCommissioningDetails,
   selectDispatchStatusInfo,
   selectDocumentStatus,
   selectDeliveryStatus,
@@ -74,8 +90,7 @@ const PODetails: React.FC = () => {
     useState(false);
   const [editingCommissioning, setEditingCommissioning] =
     useState<PreCommissioning | null>(null);
-  const [isWarrantyModalVisible, setIsWarrantyModalVisible] =
-    useState(false);
+  const [isWarrantyModalVisible, setIsWarrantyModalVisible] = useState(false);
   const [editingWarranty, setEditingWarranty] =
     useState<PreCommissioning | null>(null);
   // Unified Dispatch Details View Modal
@@ -94,11 +109,9 @@ const PODetails: React.FC = () => {
     useState<ServiceDetailsTab>("precommissioning");
 
   // Fetch PO from poList using poId from route params
-  const poList = useAppSelector((state) => state.po.poList);
-  const dispatchDetails = useAppSelector((state) => state.po.dispatchDetails);
-  const preCommissioningDetails = useAppSelector(
-    (state) => state.po.preCommissioningDetails
-  );
+  const poList = useAppSelector(selectPOList);
+  const dispatchDetails = useAppSelector(selectDispatchDetails);
+  const preCommissioningDetails = useAppSelector(selectPreCommissioningDetails);
 
   // Find the PO by ID
   const selectedPO = poList.find((po) => po.id === poId);
@@ -122,10 +135,12 @@ const PODetails: React.FC = () => {
     const targetDispatch = currentPODispatches.find((d) => d.id === dispatchId);
     if (targetDispatch) {
       // Clear serial numbers from dispatched items
-      const clearedDispatchedItems = targetDispatch.dispatchedItems.map((item) => ({
-        ...item,
-        serialNumbers: undefined,
-      }));
+      const clearedDispatchedItems = targetDispatch.dispatchedItems.map(
+        (item) => ({
+          ...item,
+          serialNumbers: undefined,
+        })
+      );
 
       const updatedDispatch: DispatchDetail = {
         ...targetDispatch,
@@ -162,7 +177,10 @@ const PODetails: React.FC = () => {
   };
 
   // Unified view handler for dispatch details modal
-  const handleViewDispatchDetails = (record: DispatchDetail, tab: DispatchDetailsTab) => {
+  const handleViewDispatchDetails = (
+    record: DispatchDetail,
+    tab: DispatchDetailsTab
+  ) => {
     setViewingDispatchDetails(record);
     setDispatchDetailsTab(tab);
     setIsDispatchDetailsModalVisible(true);
@@ -174,7 +192,10 @@ const PODetails: React.FC = () => {
   };
 
   // Unified view handler for service details modal
-  const handleViewServiceDetails = (record: PreCommissioning, tab: ServiceDetailsTab) => {
+  const handleViewServiceDetails = (
+    record: PreCommissioning,
+    tab: ServiceDetailsTab
+  ) => {
     setViewingServiceDetails(record);
     setServiceDetailsTab(tab);
     setIsServiceDetailsModalVisible(true);
@@ -308,12 +329,22 @@ const PODetails: React.FC = () => {
 
   // ============= ACCORDION STATUS FROM SELECTORS =============
 
-  const dispatchStatusInfo = useAppSelector(selectDispatchStatusInfo(poId || ""));
+  const dispatchStatusInfo = useAppSelector(
+    selectDispatchStatusInfo(poId || "")
+  );
   const documentStatus = useAppSelector(selectDocumentStatus(poId || ""));
-  const deliveryConfirmationStatus = useAppSelector(selectDeliveryStatus(poId || ""));
-  const preCommissioningAccordionStatus = useAppSelector(selectPreCommissioningStatusInfo(poId || ""));
-  const commissioningAccordionStatus = useAppSelector(selectCommissioningStatusInfo(poId || ""));
-  const warrantyAccordionStatus = useAppSelector(selectWarrantyStatusInfo(poId || ""));
+  const deliveryConfirmationStatus = useAppSelector(
+    selectDeliveryStatus(poId || "")
+  );
+  const preCommissioningAccordionStatus = useAppSelector(
+    selectPreCommissioningStatusInfo(poId || "")
+  );
+  const commissioningAccordionStatus = useAppSelector(
+    selectCommissioningStatusInfo(poId || "")
+  );
+  const warrantyAccordionStatus = useAppSelector(
+    selectWarrantyStatusInfo(poId || "")
+  );
 
   // Check if all accordions are in "Done" state
   const allAccordionsDone = useMemo(() => {
@@ -348,12 +379,21 @@ const PODetails: React.FC = () => {
     }
   };
 
-
   // Helper function to render accordion header with status
   const renderAccordionHeader = (title: string, status: string) => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "100%",
+      }}
+    >
       <span>{title}</span>
-      <Tag color={getAccordionStatusColor(status)} style={{ marginLeft: "auto", marginRight: "16px" }}>
+      <Tag
+        color={getAccordionStatusColor(status)}
+        style={{ marginLeft: "auto", marginRight: "16px" }}
+      >
         {status}
       </Tag>
     </div>
@@ -374,7 +414,6 @@ const PODetails: React.FC = () => {
     setIsWarrantyModalVisible(false);
     setEditingWarranty(null);
   };
-
 
   const itemColumns: ColumnsType<POItem> = [
     {
@@ -426,13 +465,13 @@ const PODetails: React.FC = () => {
       title: "GST %",
       dataIndex: "gstPercent",
       key: "gstPercent",
-      render: (value) => value ? `${value}%` : "-",
+      render: (value) => (value ? `${value}%` : "-"),
     },
     {
       title: "Final Price",
       dataIndex: "finalPrice",
       key: "finalPrice",
-      render: (value) => value ? `₹${value?.toLocaleString()}` : "-",
+      render: (value) => (value ? `₹${value?.toLocaleString()}` : "-"),
     },
     {
       title: "Warranty",
@@ -515,7 +554,11 @@ const PODetails: React.FC = () => {
               onClick={() => handleEditDispatch(record)}
               style={{ padding: 0 }}
               disabled={isDispatchDone}
-              title={isDispatchDone ? "Editing disabled - Dispatch status is Done" : "Edit"}
+              title={
+                isDispatchDone
+                  ? "Editing disabled - Dispatch status is Done"
+                  : "Edit"
+              }
             />
             <Popconfirm
               title="Delete Dispatch"
@@ -578,7 +621,11 @@ const PODetails: React.FC = () => {
           rejected: "red",
           on_hold: "blue",
         };
-        return <Tag color={colorMap[value] || "default"}>{formatLabel(value || "")}</Tag>;
+        return (
+          <Tag color={colorMap[value] || "default"}>
+            {formatLabel(value || "")}
+          </Tag>
+        );
       },
     },
     {
@@ -624,7 +671,11 @@ const PODetails: React.FC = () => {
           hold: "blue",
           cancelled: "red",
         };
-        return <Tag color={colorMap[value] || "default"}>{formatLabel(value || "")}</Tag>;
+        return (
+          <Tag color={colorMap[value] || "default"}>
+            {formatLabel(value || "")}
+          </Tag>
+        );
       },
     },
     {
@@ -650,7 +701,9 @@ const PODetails: React.FC = () => {
               onClick={() => handleEditDocument(record)}
               style={{ padding: 0 }}
               disabled={isDeliveryDone}
-              title={isDeliveryDone ? "Editing disabled - Delivery is done" : "Edit"}
+              title={
+                isDeliveryDone ? "Editing disabled - Delivery is done" : "Edit"
+              }
             />
             <Popconfirm
               title="Delete Document Details"
@@ -667,7 +720,11 @@ const PODetails: React.FC = () => {
                 icon={<DeleteOutlined />}
                 style={{ padding: 0 }}
                 disabled={hasDeliveryConfirmation}
-                title={hasDeliveryConfirmation ? "Delete disabled - Delivery confirmation exists" : "Delete"}
+                title={
+                  hasDeliveryConfirmation
+                    ? "Delete disabled - Delivery confirmation exists"
+                    : "Delete"
+                }
               />
             </Popconfirm>
           </Space>
@@ -843,11 +900,7 @@ const PODetails: React.FC = () => {
           Hold: "blue",
           Cancelled: "red",
         };
-        return (
-          <Tag color={colorMap[value] || "default"}>
-            {value || "-"}
-          </Tag>
-        );
+        return <Tag color={colorMap[value] || "default"}>{value || "-"}</Tag>;
       },
     },
     {
@@ -977,11 +1030,7 @@ const PODetails: React.FC = () => {
           Hold: "blue",
           Cancelled: "red",
         };
-        return (
-          <Tag color={colorMap[value] || "default"}>
-            {value || "-"}
-          </Tag>
-        );
+        return <Tag color={colorMap[value] || "default"}>{value || "-"}</Tag>;
       },
     },
     {
@@ -1075,11 +1124,7 @@ const PODetails: React.FC = () => {
           Hold: "blue",
           Cancelled: "red",
         };
-        return (
-          <Tag color={colorMap[value] || "default"}>
-            {value || "-"}
-          </Tag>
-        );
+        return <Tag color={colorMap[value] || "default"}>{value || "-"}</Tag>;
       },
     },
     {
@@ -1195,7 +1240,9 @@ const PODetails: React.FC = () => {
             <Descriptions.Item label="OSG Order ID">
               <Tag color="blue">{selectedPO.id}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Date">{selectedPO.date}</Descriptions.Item>
+            <Descriptions.Item label="Date">
+              {selectedPO.date}
+            </Descriptions.Item>
             <Descriptions.Item label="Client Name">
               {selectedPO.clientName}
             </Descriptions.Item>
@@ -1274,7 +1321,13 @@ const PODetails: React.FC = () => {
         </Panel>
 
         {/* Dispatch Details Accordion */}
-        <Panel header={renderAccordionHeader("Dispatch Details", dispatchStatusInfo.status)} key="2">
+        <Panel
+          header={renderAccordionHeader(
+            "Dispatch Details",
+            dispatchStatusInfo.status
+          )}
+          key="2"
+        >
           {/* Add Dispatch Button */}
           <div
             style={{
@@ -1319,7 +1372,10 @@ const PODetails: React.FC = () => {
         </Panel>
 
         {/* Dispatch Document Accordion */}
-        <Panel header={renderAccordionHeader("Dispatch Document", documentStatus)} key="3">
+        <Panel
+          header={renderAccordionHeader("Dispatch Document", documentStatus)}
+          key="3"
+        >
           {/* Update Document Details Button */}
           <div
             style={{
@@ -1364,7 +1420,13 @@ const PODetails: React.FC = () => {
         </Panel>
 
         {/* Delivery Confirmation Accordion */}
-        <Panel header={renderAccordionHeader("Delivery Confirmation", deliveryConfirmationStatus)} key="4">
+        <Panel
+          header={renderAccordionHeader(
+            "Delivery Confirmation",
+            deliveryConfirmationStatus
+          )}
+          key="4"
+        >
           {/* Update Delivery Information Button */}
           <div
             style={{
@@ -1418,7 +1480,13 @@ const PODetails: React.FC = () => {
         </Panel>
 
         {/* Pre-Commissioning Accordion */}
-        <Panel header={renderAccordionHeader("Pre-Commissioning", preCommissioningAccordionStatus)} key="5">
+        <Panel
+          header={renderAccordionHeader(
+            "Pre-Commissioning",
+            preCommissioningAccordionStatus
+          )}
+          key="5"
+        >
           {/* Update Pre-Commissioning Details Button */}
           <div
             style={{
@@ -1470,7 +1538,13 @@ const PODetails: React.FC = () => {
         </Panel>
 
         {/* Final Commissioning Accordion */}
-        <Panel header={renderAccordionHeader("Final Commissioning", commissioningAccordionStatus)} key="6">
+        <Panel
+          header={renderAccordionHeader(
+            "Final Commissioning",
+            commissioningAccordionStatus
+          )}
+          key="6"
+        >
           {/* Update Commissioning Details Button */}
           <div
             style={{
@@ -1522,7 +1596,13 @@ const PODetails: React.FC = () => {
         </Panel>
 
         {/* Warranty Certificate Accordion */}
-        <Panel header={renderAccordionHeader("Warranty Certificate", warrantyAccordionStatus)} key="7">
+        <Panel
+          header={renderAccordionHeader(
+            "Warranty Certificate",
+            warrantyAccordionStatus
+          )}
+          key="7"
+        >
           {/* Update Warranty Details Button */}
           <div
             style={{

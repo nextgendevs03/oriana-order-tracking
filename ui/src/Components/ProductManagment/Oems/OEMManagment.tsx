@@ -1,19 +1,26 @@
 import React, { useState } from "react";
 import { Breadcrumb, Button, Table, Tag, Popconfirm, message } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 import {
   useGetOEMsQuery,
   useDeleteOEMMutation,
 } from "../../../store/api/oemApi";
+import type { OEMResponse } from "@OrianaTypes";
 import AddOEMModal from "./AddOEMModal";
 
-const OEMManagement = () => {
+const OEMManagement: React.FC = () => {
   const { data: oems = [], isLoading } = useGetOEMsQuery();
   const [deleteOEM] = useDeleteOEMMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOEM, setEditingOEM] = useState<any>(null);
+  const [editingOEM, setEditingOEM] = useState<OEMResponse | null>(null);
+
+  const handleEdit = (record: OEMResponse) => {
+    setEditingOEM(record);
+    setIsModalOpen(true);
+  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -24,33 +31,30 @@ const OEMManagement = () => {
     }
   };
 
-  const columns = [
+  const columns: ColumnsType<OEMResponse> = [
     {
       title: "OEM Name",
       dataIndex: "name",
     },
     {
       title: "Status",
-      dataIndex: "status",
-      render: (status: boolean) => (
-        <Tag color={status ? "green" : "red"}>
-          {status ? "Active" : "Inactive"}
-        </Tag>
-      ),
+      dataIndex: "isActive",
+      render: (_: unknown, record: OEMResponse) =>
+        record.isActive ? (
+          <Tag color="green">Active</Tag>
+        ) : (
+          <Tag color="red">Inactive</Tag>
+        ),
     },
     {
       title: "Actions",
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: OEMResponse) => (
         <>
           <Button
             icon={<EditOutlined />}
             style={{ marginRight: 8 }}
-            onClick={() => {
-              setEditingOEM(record);
-              setIsModalOpen(true);
-            }}
+            onClick={() => handleEdit(record)}
           />
-
           <Popconfirm
             title="Delete this OEM?"
             onConfirm={() => handleDelete(record.oemId)}

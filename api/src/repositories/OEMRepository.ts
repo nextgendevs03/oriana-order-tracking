@@ -63,7 +63,7 @@ export class OEMRepository implements IOEMRepository {
     const oem = await this.prisma.oEM.create({
       data: {
         oemName: data.name,
-        isActive: data.status ?? true,
+        isActive: data.isActive ?? true,
         createdBy: data.createdBy ?? '',
         updatedBy: data.createdBy ?? '',
       },
@@ -80,18 +80,28 @@ export class OEMRepository implements IOEMRepository {
   }
 
   async update(id: string, data: UpdateOEMRequest): Promise<OEMResponse> {
+    const updateData: Prisma.OEMUpdateInput = {};
+
+    if (data.name !== undefined) {
+      updateData.oemName = data.name;
+    }
+
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive;
+    }
+
+    if (data.updatedBy !== undefined) {
+      updateData.updatedBy = data.updatedBy;
+    }
+
     const oem = await this.prisma.oEM.update({
       where: { oemId: id },
-      data: {
-        ...(data.name && { oemName: data.name }),
-        ...(data.status !== undefined && { isActive: data.status ?? true }),
-        ...(data.updatedBy && { updatedBy: data.updatedBy }),
-      },
+      data: updateData,
     });
     return {
       oemId: oem.oemId,
       name: oem.oemName,
-      isActive: oem.isActive ?? true,
+      isActive: oem.isActive,
       createdBy: oem.createdBy,
       updatedBy: oem.updatedBy,
       createdAt: oem.createdAt,

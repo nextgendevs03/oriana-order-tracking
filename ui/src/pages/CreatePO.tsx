@@ -10,15 +10,16 @@ import {
   InputNumber,
   Typography,
   AutoComplete,
+  Spin,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../store/hooks";
 import { addPO, POData, PODocument } from "../store/poSlice";
 import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
-import FileUpload from "../Components/FileUpload";
-import POItemsTable from "../Components/POItemsTable";
-import AddClientModal from "../Components/AddClientModal";
+import FileUpload from "../Components/POManagement/FileUpload";
+import POItemsTable from "../Components/POManagement/POItemsTable";
+import AddClientModal from "../Components/POManagement/AddClientModal";
 import { useGetCategoriesQuery } from "../store/api/categoryApi";
 import { useGetOEMsQuery } from "../store/api/oemApi";
 import { useGetClientsQuery } from "../store/api/clientApi";
@@ -73,10 +74,14 @@ const CreatePO: FC = () => {
 
   // Fetch clients based on debounced search term (min 3 characters)
   const shouldFetchClients = debouncedClientSearchTerm.length >= 3;
-  const { data: clientsData = [], error: clientsError, refetch: refetchClients } = useGetClientsQuery(
-    shouldFetchClients
-      ? { clientName: debouncedClientSearchTerm, isActive: true }
-      : undefined
+  const {
+    data: clientsData = [],
+    error: clientsError,
+    refetch: refetchClients,
+    isLoading: isLoadingClients,
+  } = useGetClientsQuery(
+    { clientName: debouncedClientSearchTerm, isActive: true },
+    { skip: !shouldFetchClients }
   );
 
   // Log errors for debugging
@@ -269,29 +274,33 @@ const CreatePO: FC = () => {
               label="Client Name"
               rules={textFieldRulesWithMinLength}
             >
-              <AutoComplete
-                options={clientOptions}
-                onSearch={(value) => setClientSearchTerm(value)}
-                placeholder="Enter client name (min 3 characters)"
-                filterOption={false}
-                notFoundContent={
-                  shouldFetchClients &&
-                  clientsData.length === 0 &&
-                  !clientsError ? (
-                    <Button
-                      type="link"
-                      style={{ padding: 0 }}
-                      onClick={() => setIsAddClientModalOpen(true)}
-                    >
-                      + Add Client
-                    </Button>
-                  ) : shouldFetchClients ? (
-                    "No clients found"
-                  ) : (
-                    "Type at least 3 characters to search"
-                  )
-                }
-              />
+              <Spin spinning={isLoadingClients && shouldFetchClients}>
+                <AutoComplete
+                  options={clientOptions}
+                  onSearch={(value) => setClientSearchTerm(value)}
+                  placeholder="Enter client name (min 3 characters)"
+                  filterOption={false}
+                  notFoundContent={
+                    isLoadingClients && shouldFetchClients ? (
+                      "Loading clients..."
+                    ) : shouldFetchClients &&
+                      clientsData.length === 0 &&
+                      !clientsError ? (
+                      <Button
+                        type="link"
+                        style={{ padding: 0 }}
+                        onClick={() => setIsAddClientModalOpen(true)}
+                      >
+                        + Add Client
+                      </Button>
+                    ) : shouldFetchClients ? (
+                      "No clients found"
+                    ) : (
+                      "Type at least 3 characters to search"
+                    )
+                  }
+                />
+              </Spin>
             </Form.Item>
           </Col>
         </Row>

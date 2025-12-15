@@ -20,7 +20,7 @@ const AddOEMModal: React.FC<Props> = ({ open, onCancel, initialValues }) => {
     if (initialValues) {
       form.setFieldsValue({
         name: initialValues.name,
-        isActive: initialValues.status,
+        isActive: initialValues.isActive,
       });
     } else {
       form.resetFields();

@@ -1,34 +1,46 @@
 import React, { useState } from "react";
 import { Breadcrumb, Button, Table, Tag, Popconfirm } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
   useGetProductsQuery,
   useDeleteProductMutation,
 } from "../../../store/api/productApi";
+import type { ProductResponse } from "@OrianaTypes";
 import AddProductModal from "./AddProductModal";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 
-const ProductManagementProducts: React.FC = () => 
-{ 
+const ProductManagementProducts: React.FC = () => {
   const { data, isLoading } = useGetProductsQuery();
-
 
   const [deleteProduct] = useDeleteProductMutation();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+  interface EditingProduct {
+    productId: string;
+    productName: string;
+    category?: { categoryId: string };
+    oem?: { oemId: string };
+    isActive: boolean;
+  }
 
-  const handleEdit = (record: any) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<EditingProduct | null>(
+    null
+  );
+
+  const handleEdit = (record: ProductResponse) => {
     setEditingProduct({
       productId: record.productId,
       productName: record.productName,
-      categoryId: record.category?.categoryId,
-      oemId: record.oem?.oemId,
+      category: record.category
+        ? { categoryId: record.category.categoryId }
+        : undefined,
+      oem: record.oem ? { oemId: record.oem.oemId } : undefined,
       isActive: record.isActive,
     });
     setIsModalOpen(true);
   };
 
-  const columns = [
+  const columns: ColumnsType<ProductResponse> = [
     {
       title: "Product Name",
       dataIndex: "productName",
@@ -36,16 +48,19 @@ const ProductManagementProducts: React.FC = () =>
     {
       title: "Category",
       dataIndex: "categoryName",
+      render: (_: string, record: ProductResponse) =>
+        record.category?.categoryName,
     },
     {
       title: "OEM",
       dataIndex: "oemName",
+      render: (_: string, record: ProductResponse) => record.oem?.oemName,
     },
     {
       title: "Status",
-      dataIndex: "status",
-      render: (status: boolean) =>
-        status ? (
+      dataIndex: "isActive",
+      render: (_: unknown, record: ProductResponse) =>
+        record.isActive ? (
           <Tag color="green">Active</Tag>
         ) : (
           <Tag color="red">Inactive</Tag>
@@ -53,12 +68,9 @@ const ProductManagementProducts: React.FC = () =>
     },
     {
       title: "Actions",
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: ProductResponse) => (
         <>
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          />
+          <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Popconfirm
             title="Delete this product?"
             onConfirm={() => deleteProduct(record.productId)}

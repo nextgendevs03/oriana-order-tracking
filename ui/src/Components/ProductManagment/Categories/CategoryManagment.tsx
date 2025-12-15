@@ -1,46 +1,48 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Breadcrumb, Button, Table, Tag, Popconfirm } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 import {
   useGetCategoriesQuery,
   useDeleteCategoryMutation,
 } from "../../../store/api/categoryApi";
+import type { CategoryResponse } from "@OrianaTypes";
 import AddCategoryModal from "./AddCategoryModal";
 
-const CategoryManagement = () => {
+const CategoryManagement: React.FC = () => {
   const { data: categories = [], isLoading } = useGetCategoriesQuery();
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  const [editingCategory, setEditingCategory] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] =
+    useState<CategoryResponse | null>(null);
 
-  const columns = [
-    { title: "Category Name", dataIndex: "categoryName" },
+  const handleEdit = (record: CategoryResponse) => {
+    setEditingCategory(record);
+    setIsModalOpen(true);
+  };
 
+  const columns: ColumnsType<CategoryResponse> = [
+    {
+      title: "Category Name",
+      dataIndex: "categoryName",
+    },
     {
       title: "Status",
       dataIndex: "isActive",
-      render: (val: boolean) =>
-        val === true ? (
+      render: (_: unknown, record: CategoryResponse) =>
+        record.isActive ? (
           <Tag color="green">Active</Tag>
         ) : (
           <Tag color="red">Inactive</Tag>
         ),
     },
-
     {
       title: "Actions",
-      render: (_: unknown, record: any) => (
+      render: (_: unknown, record: CategoryResponse) => (
         <>
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingCategory(record);
-              setIsModalOpen(true);
-            }}
-          />
-
+          <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Popconfirm
             title="Are you sure?"
             onConfirm={() => deleteCategory(record.categoryId)}

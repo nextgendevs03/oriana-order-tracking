@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button } from "antd";
+import { Modal, Form, Input, Select, Button, message } from "antd";
 import {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
@@ -18,17 +18,19 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 }) => {
   const [form] = Form.useForm();
 
-  const [createCategory] = useCreateCategoryMutation();
-  const [updateCategory] = useUpdateCategoryMutation();
+  const [createCategory, { isLoading: isCreating }] =
+    useCreateCategoryMutation();
+  const [updateCategory, { isLoading: isUpdating }] =
+    useUpdateCategoryMutation();
+
+  const isLoading = isCreating || isUpdating;
 
   // --- Set initial values properly (boolean for isActive) ---
   useEffect(() => {
     if (initialValues) {
       form.setFieldsValue({
         ...initialValues,
-        isActive:
-          initialValues.isActive === true ||
-          initialValues.isActive === "true", // Convert string to boolean
+        isActive: initialValues.isActive === true,
       });
     } else {
       form.resetFields();
@@ -36,31 +38,45 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   }, [initialValues, form]);
 
   const handleSubmit = async () => {
-    const values = await form.validateFields();
+    try {
+      // Validate form fields - this will show validation errors if form is invalid
+      const values = await form.validateFields();
 
-    // Ensure isActive is boolean
-    const dataToSend = {
-      ...values,
-      isActive: Boolean(values.isActive),
-    };
+      // Ensure isActive is boolean
+      const dataToSend = {
+        ...values,
+        isActive: Boolean(values.isActive),
+      };
 
-    if (initialValues) {
-      await updateCategory({
-        id: initialValues.categoryId,
-        data: {
+      if (initialValues?.categoryId) {
+        await updateCategory({
+          id: initialValues.categoryId,
+          data: {
+            ...dataToSend,
+            updatedBy: "admin",
+          },
+        }).unwrap();
+        message.success("Category updated successfully");
+      } else {
+        await createCategory({
           ...dataToSend,
-          updatedBy: "admin", 
-        },
-      });
-    } else {
-      await createCategory({
-        ...dataToSend,
-        createdBy: "admin", 
-      });
-    }
+          createdBy: "admin",
+        }).unwrap();
+        message.success("Category created successfully");
+      }
 
-    form.resetFields();
-    onCancel();
+      form.resetFields();
+      onCancel();
+    } catch (error: any) {
+      // If validation fails, form.validateFields() will throw and show errors automatically
+      // If API call fails, show error message
+      if (error?.data?.message || error?.message) {
+        message.error(
+          error?.data?.message || error?.message || "Failed to save category"
+        );
+      }
+      // Validation errors are automatically displayed by Ant Design Form
+    }
   };
 
   return (
@@ -73,7 +89,12 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
           Cancel
         </Button>,
 
-        <Button key="submit" type="primary" onClick={handleSubmit}>
+        <Button
+          key="submit"
+          type="primary"
+          onClick={handleSubmit}
+          loading={isLoading}
+        >
           {initialValues ? "Update" : "Submit"}
         </Button>,
       ]}
@@ -82,17 +103,17 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         <Form.Item
           label="Category Name"
           name="categoryName"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Please enter category name" }]}
         >
-          <Input />
+          <Input placeholder="Enter category name" />
         </Form.Item>
 
         <Form.Item
           label="Status"
           name="isActive"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Please select status" }]}
         >
-          <Select>
+          <Select placeholder="Select status">
             <Select.Option value={true}>Active</Select.Option>
             <Select.Option value={false}>Inactive</Select.Option>
           </Select>

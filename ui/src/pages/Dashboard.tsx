@@ -4,6 +4,7 @@ import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { POData } from "../store/poSlice";
+import { selectPOList } from "../store/poSelectors";
 import type { ColumnsType } from "antd/es/table";
 import { getPaymentStatusColor, getPoStatusColor, formatLabel } from "../utils";
 
@@ -21,7 +22,7 @@ interface PORecord {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const poList = useAppSelector((state) => state.po.poList);
+  const poList = useAppSelector(selectPOList);
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
   // Check if user is authenticated
   useEffect(() => {

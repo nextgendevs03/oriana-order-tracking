@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button } from "antd";
+import { Modal, Form, Input, Select, Button, message } from "antd";
 import {
   useCreateProductMutation,
   useUpdateProductMutation,
@@ -13,22 +13,27 @@ interface Props {
   initialValues?: any; // backend se aaya ProductResponse
 }
 
-const AddProductModal: React.FC<Props> = ({ open, onCancel, initialValues }) => {
+const AddProductModal: React.FC<Props> = ({
+  open,
+  onCancel,
+  initialValues,
+}) => {
   const [form] = Form.useForm();
-  const [createProduct] = useCreateProductMutation();
-  const [updateProduct] = useUpdateProductMutation();
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+
+  const isLoading = isCreating || isUpdating;
 
   const { data: categories } = useGetCategoriesQuery();
   const { data: oems } = useGetOEMsQuery();
-  console.log( oems);
 
   useEffect(() => {
     if (initialValues) {
       form.setFieldsValue({
         productName: initialValues.productName,
         categoryId: initialValues.category?.categoryId, // ✅ object se ID
-        oemId: initialValues.oem?.oemId,               // ✅ object se ID
-        isActive: initialValues.status ?? initialValues.isActive,
+        oemId: initialValues.oem?.oemId, // ✅ object se ID
+        isActive: initialValues.isActive === true,
       });
     } else {
       form.resetFields();
@@ -36,21 +41,38 @@ const AddProductModal: React.FC<Props> = ({ open, onCancel, initialValues }) => 
   }, [initialValues, form]);
 
   const handleSubmit = async () => {
-    const values = await form.validateFields();
-
     try {
-      if (initialValues) {
+      // Validate form fields - this will show validation errors if form is invalid
+      const values = await form.validateFields();
+
+      // Ensure isActive is boolean
+      const dataToSend = {
+        ...values,
+        isActive: Boolean(values.isActive),
+      };
+
+      if (initialValues?.productId) {
         await updateProduct({
           id: initialValues.productId,
-          data: values,
+          data: dataToSend,
         }).unwrap();
+        message.success("Product updated successfully");
       } else {
-        await createProduct(values).unwrap();
+        await createProduct(dataToSend).unwrap();
+        message.success("Product created successfully");
       }
+
       form.resetFields();
       onCancel();
-    } catch (err) {
-      console.error("Error submitting product:", err);
+    } catch (error: any) {
+      // If validation fails, form.validateFields() will throw and show errors automatically
+      // If API call fails, show error message
+      if (error?.data?.message || error?.message) {
+        message.error(
+          error?.data?.message || error?.message || "Failed to save product"
+        );
+      }
+      // Validation errors are automatically displayed by Ant Design Form
     }
   };
 
@@ -63,7 +85,12 @@ const AddProductModal: React.FC<Props> = ({ open, onCancel, initialValues }) => 
         <Button key="cancel" onClick={onCancel}>
           Cancel
         </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit}>
+        <Button
+          key="submit"
+          type="primary"
+          onClick={handleSubmit}
+          loading={isLoading}
+        >
           {initialValues ? "Update" : "Submit"}
         </Button>,
       ]}
@@ -74,7 +101,7 @@ const AddProductModal: React.FC<Props> = ({ open, onCancel, initialValues }) => 
           name="productName"
           rules={[{ required: true, message: "Please enter product name" }]}
         >
-          <Input />
+          <Input placeholder="Enter product name" />
         </Form.Item>
 
         <Form.Item
@@ -99,7 +126,7 @@ const AddProductModal: React.FC<Props> = ({ open, onCancel, initialValues }) => 
           <Select
             placeholder="Select OEM"
             options={oems?.map((o: any) => ({
-              value: o.oemId,   // ✅ backend se ID
+              value: o.oemId, // ✅ backend se ID
               label: o.name, // ✅ Name show hoga
             }))}
           />
@@ -110,12 +137,10 @@ const AddProductModal: React.FC<Props> = ({ open, onCancel, initialValues }) => 
           name="isActive"
           rules={[{ required: true, message: "Please select status" }]}
         >
-          <Select
-            options={[
-              { label: "Active", value: true },
-              { label: "Inactive", value: false },
-            ]}
-          />
+          <Select placeholder="Select status">
+            <Select.Option value={true}>Active</Select.Option>
+            <Select.Option value={false}>Inactive</Select.Option>
+          </Select>
         </Form.Item>
       </Form>
     </Modal>

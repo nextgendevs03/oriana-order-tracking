@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generatedAt": "2025-12-14T16:04:06.044Z",
+  "generatedAt": "2025-12-15T03:40:42.867Z",
   "lambdas": {
     "po": {
       "handler": "dist/handlers/po.handler",
@@ -160,7 +160,7 @@
     },
     "productManagement": {
       "handler": "dist/handlers/productManagement.handler",
-      "controller": "CategoryController, OEMController, ProductController",
+      "controller": "CategoryController, OEMController, ProductController, ClientController",
       "routes": [
         {
           "method": "POST",
@@ -250,6 +250,36 @@
           "method": "DELETE",
           "path": "/api/product/{id}",
           "controller": "ProductController",
+          "action": "delete"
+        },
+        {
+          "method": "POST",
+          "path": "/api/client",
+          "controller": "ClientController",
+          "action": "create"
+        },
+        {
+          "method": "GET",
+          "path": "/api/client",
+          "controller": "ClientController",
+          "action": "getAll"
+        },
+        {
+          "method": "GET",
+          "path": "/api/client/{id}",
+          "controller": "ClientController",
+          "action": "getById"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/client/{id}",
+          "controller": "ClientController",
+          "action": "update"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/client/{id}",
+          "controller": "ClientController",
           "action": "delete"
         }
       ]

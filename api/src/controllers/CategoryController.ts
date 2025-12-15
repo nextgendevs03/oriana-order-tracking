@@ -45,9 +45,10 @@ export class CategoryController implements ICategoryController {
   @Get('/')
   async getAll(@Query('isActive') isActive?: string, @Query('categoryName') categoryName?: string) {
     try {
+      const trimmedCategoryName = categoryName?.trim();
       const categories = await this.categoryService.getAllCategories({
         isActive: isActive ? isActive === 'true' : undefined,
-        categoryName: categoryName || undefined,
+        categoryName: trimmedCategoryName || undefined,
       });
       return createSuccessResponse(categories);
     } catch (err: unknown) {
