@@ -24,3 +24,13 @@ export * from './decorators';
 
 // Core router exports
 export * from './core';
+
+// Web token exports
+export {
+  generateAccessToken,
+  verifyAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  generateTokens,
+} from './utils/webtoken';
+export type { JWTPayload, TokenResult } from './utils/webtoken';

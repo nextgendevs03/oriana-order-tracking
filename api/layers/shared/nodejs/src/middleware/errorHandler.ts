@@ -126,15 +126,63 @@ const formatPrismaError = (
 
   // Prisma known request errors (unique constraint, foreign key, etc.)
   if (errorName === 'PrismaClientKnownRequestError') {
-    const prismaError = error as Error & { code?: string; meta?: { target?: string[] } };
+    const prismaError = error as Error & {
+      code?: string;
+      meta?: {
+        modelName?: string;
+        target?: string[];
+      };
+    };
 
-    switch (prismaError.code) {
+    // Try to extract error code from message if not directly available
+    let errorCode = prismaError.code;
+    if (!errorCode && errorMessage) {
+      // Check if message contains error code pattern like "P2002"
+      const codeMatch = errorMessage.match(/\bP\d{4}\b/);
+      if (codeMatch) {
+        errorCode = codeMatch[0];
+      }
+    }
+
+    // Try to extract field names from error message if meta is not available
+    // Access meta.target directly and create a copy to avoid reference issues
+    let fields: string[] = [];
+    if (prismaError.meta?.target && Array.isArray(prismaError.meta.target)) {
+      fields = [...prismaError.meta.target];
+    }
+
+    if (fields.length === 0 && errorMessage) {
+      // Extract field names from error message like "Unique constraint failed on the fields: (`username`)"
+      const fieldMatch = errorMessage.match(/fields:\s*\(`(\w+)`\)/);
+      if (fieldMatch) {
+        fields = [fieldMatch[1]];
+      }
+    }
+
+    switch (errorCode) {
       case 'P2002': // Unique constraint violation
-        const fields = prismaError.meta?.target?.join(', ') || 'field';
+        // Create user-friendly field names
+        const fieldNames = fields.map((field) => {
+          // Convert snake_case or camelCase to readable format
+          return field
+            .replace(/_/g, ' ')
+            .replace(/([A-Z])/g, ' $1')
+            .toLowerCase()
+            .replace(/^\w/, (c) => c.toUpperCase());
+        });
+
+        // Create a more specific message
+        let message = 'A record with this value already exists';
+        if (fieldNames.length === 1) {
+          message = `${fieldNames[0]} already exists`;
+        } else if (fieldNames.length > 1) {
+          message = `${fieldNames.join(', ')} already exist`;
+        }
+
         return {
           statusCode: 409,
           code: 'DUPLICATE_ERROR',
-          message: `A record with this ${fields} already exists`,
+          message,
         };
       case 'P2003': // Foreign key constraint failed
         return {
@@ -207,10 +255,39 @@ export const createErrorResponse = (error: Error | AppError): APIGatewayProxyRes
       statusCode = prismaError.statusCode;
       code = prismaError.code;
       message = prismaError.message;
-      logger.warn('Prisma error', { code, message, originalError: error.name });
+      // Log Prisma errors with sanitized information (avoid logging minified messages)
+      const prismaErrorObj = error as Error & {
+        code?: string;
+        meta?: {
+          modelName?: string;
+          target?: string[];
+        };
+      };
+
+      // Safely extract meta information
+      let metaInfo: { modelName?: string; target?: string[] } | undefined;
+      if (prismaErrorObj.meta) {
+        metaInfo = {
+          modelName: prismaErrorObj.meta.modelName,
+          target: prismaErrorObj.meta.target ? [...prismaErrorObj.meta.target] : undefined,
+        };
+      }
+
+      logger.warn('Prisma error', {
+        code: prismaError.code,
+        message: prismaError.message,
+        prismaCode: prismaErrorObj.code,
+        meta: metaInfo,
+        errorName: error.name,
+      });
     } else {
-      // Only log unexpected errors with full details
-      logger.error('Unhandled error', error);
+      // Only log unexpected errors with sanitized details (avoid logging huge minified messages)
+      const errorSummary = {
+        name: error.name,
+        message: error.message?.substring(0, 500) || 'No message', // Limit message length
+        stack: error.stack?.split('\n').slice(0, 5).join('\n') || undefined, // Limit stack trace
+      };
+      logger.error('Unhandled error', errorSummary);
     }
   }
 

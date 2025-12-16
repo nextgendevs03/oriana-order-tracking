@@ -29,7 +29,15 @@ export class AuthController implements IAuthController {
     }
 
     try {
+      // Call auth service to validate credentials and generate tokens
       const result: LoginResponse = await this.authService.login(data);
+
+      // Verify tokens are present in response
+      if (!result.accessToken || !result.refreshToken) {
+        throw new Error('Tokens were not generated during login');
+      }
+
+      // Return success response with login data including tokens
       return createSuccessResponse(result, 200);
     } catch (error) {
       return createErrorResponse(error as Error);

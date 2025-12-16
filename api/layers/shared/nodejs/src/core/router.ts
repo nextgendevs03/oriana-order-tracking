@@ -92,7 +92,27 @@ export class Router {
       // Otherwise, wrap in success response
       return createSuccessResponse(result);
     } catch (error) {
-      logger.error('Error handling request', error);
+      // Log error with sanitized information to avoid logging huge minified Prisma errors
+      const errorObj = error as Error & { code?: string; meta?: unknown };
+      const isPrismaError = errorObj.name?.startsWith('PrismaClient');
+
+      if (isPrismaError) {
+        // For Prisma errors, log only essential information
+        logger.error('Error handling request', {
+          type: errorObj.name,
+          code: errorObj.code,
+          meta: errorObj.meta,
+          message: errorObj.message?.substring(0, 200) || 'No message',
+        });
+      } else {
+        // For other errors, log with limited message length
+        logger.error('Error handling request', {
+          name: errorObj.name,
+          message: errorObj.message?.substring(0, 500) || 'No message',
+          stack: errorObj.stack?.split('\n').slice(0, 10).join('\n') || undefined,
+        });
+      }
+
       return createErrorResponse(error as Error);
     }
   }
