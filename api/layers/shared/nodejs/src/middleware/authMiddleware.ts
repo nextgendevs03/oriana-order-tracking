@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessToken, JWTPayload } from '../utils/webtoken';
-import { createErrorResponse } from './errorHandler';
+import { createErrorResponse, AppError } from './errorHandler';
 
 /**
  * Extended event with user information
@@ -9,40 +9,46 @@ export interface AuthenticatedEvent extends APIGatewayProxyEvent {
   user?: JWTPayload;
 }
 
-/*
+/**
  * JWT Authentication Middleware
  * Extracts and verifies JWT token from Authorization header
  *
- * Usage in controller:
+ * Returns an error response (401) if:
+ * - Authorization header is missing
+ * - Token format is invalid
+ * - Token verification fails
  *
- * @Get('/protected')
- * @UseAuth() // Add this decorator
- * async protectedRoute(@Request() event: AuthenticatedEvent) {
- *   const userId = event.user?.userId;
- *   // ...
- * }
- *  */
+ * Returns authenticated event with user info if token is valid
+ */
 export const authMiddleware = async (
   event: APIGatewayProxyEvent
 ): Promise<AuthenticatedEvent | APIGatewayProxyResult> => {
   try {
-    // Extract token from Authorization header
-    const authHeader = event.headers?.Authorization || event.headers?.authorization;
+    // Extract token from Authorization header (case-insensitive)
+    const authHeader =
+      event.headers?.Authorization ||
+      event.headers?.authorization ||
+      event.headers?.['Authorization'] ||
+      event.headers?.['authorization'];
 
     if (!authHeader) {
-      return createErrorResponse(new Error('Authorization header is missing'));
+      return createErrorResponse(
+        new AppError('Authorization header is missing', 401, 'UNAUTHORIZED')
+      );
     }
 
     // Check if it's a Bearer token
-    if (!authHeader.startsWith('Bearer ')) {
-      return createErrorResponse(new Error('Authorization header must start with "Bearer "'));
+    if (!authHeader.startsWith('Bearer ') && !authHeader.startsWith('bearer ')) {
+      return createErrorResponse(
+        new AppError('Authorization header must start with "Bearer "', 401, 'UNAUTHORIZED')
+      );
     }
 
-    // Extract token
-    const token = authHeader.substring(7); // Remove "Bearer " prefix
+    // Extract token (case-insensitive Bearer prefix)
+    const token = authHeader.substring(authHeader.indexOf(' ') + 1).trim();
 
     if (!token) {
-      return createErrorResponse(new Error('Token is missing'));
+      return createErrorResponse(new AppError('Token is missing', 401, 'UNAUTHORIZED'));
     }
 
     // Verify token
@@ -56,8 +62,19 @@ export const authMiddleware = async (
 
     return authenticatedEvent;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Invalid token';
-    return createErrorResponse(new Error(errorMessage));
+    // Handle specific JWT errors
+    let errorMessage = 'Invalid or expired token';
+    if (error instanceof Error) {
+      if (error.message.includes('expired')) {
+        errorMessage = 'Access token has expired';
+      } else if (error.message.includes('Invalid')) {
+        errorMessage = 'Invalid access token';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
+    return createErrorResponse(new AppError(errorMessage, 401, 'UNAUTHORIZED'));
   }
 };
 

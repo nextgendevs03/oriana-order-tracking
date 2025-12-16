@@ -10,6 +10,7 @@ import {
   handleOptions,
   ValidationError,
 } from '../middleware/errorHandler';
+import { authMiddleware, AuthenticatedEvent } from '../middleware/authMiddleware';
 import { logger } from '../utils/logger';
 
 interface MatchedRoute {
@@ -18,6 +19,14 @@ interface MatchedRoute {
   pathParams: Record<string, string>;
   basePath: string;
 }
+
+/**
+ * Public routes that don't require authentication
+ * Format: { method: 'POST', path: '/api/login' }
+ */
+const PUBLIC_ROUTES: Array<{ method: HttpMethod; path: string }> = [
+  { method: 'POST', path: '/api/login' },
+];
 
 /**
  * Router class for matching and dispatching requests to controllers
@@ -29,6 +38,13 @@ export class Router {
   constructor(container: Container, lambdaName: string) {
     this.container = container;
     this.lambdaName = lambdaName;
+  }
+
+  /**
+   * Check if a route is public (doesn't require authentication)
+   */
+  private isPublicRoute(method: HttpMethod, path: string): boolean {
+    return PUBLIC_ROUTES.some((route) => route.method === method && route.path === path);
   }
 
   /**
@@ -59,14 +75,39 @@ export class Router {
         controller: match.controller.name,
         method: match.route.methodName,
         pathParams: match.pathParams,
+        path,
       });
+
+      // Apply authentication middleware for protected routes
+      let authenticatedEvent: AuthenticatedEvent | APIGatewayProxyEvent = event;
+      if (!this.isPublicRoute(method, path)) {
+        logger.debug('Route requires authentication', { method, path });
+
+        const authResult = await authMiddleware(event);
+
+        // If authMiddleware returns an error response, return it immediately
+        if ('statusCode' in authResult && 'body' in authResult) {
+          logger.warn('Authentication failed', { method, path, statusCode: authResult.statusCode });
+          return authResult;
+        }
+
+        // Otherwise, use the authenticated event
+        authenticatedEvent = authResult as AuthenticatedEvent;
+        logger.debug('Authentication successful', {
+          username: (authenticatedEvent as AuthenticatedEvent).user?.username,
+          method,
+          path,
+        });
+      } else {
+        logger.debug('Public route - skipping authentication', { method, path });
+      }
 
       // Get controller instance from DI container
       const controllerInstance = this.container.get(match.controller) as object;
 
-      // Build request context
+      // Build request context with authenticated event
       const requestContext: RequestContext = {
-        event,
+        event: authenticatedEvent,
         context,
         pathParams: match.pathParams,
       };

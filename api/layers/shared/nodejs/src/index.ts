@@ -18,6 +18,8 @@ export type { DatabaseConfig } from './utils/secrets';
 
 // Middleware exports
 export * from './middleware/errorHandler';
+export { authMiddleware, getAuthenticatedUser } from './middleware/authMiddleware';
+export type { AuthenticatedEvent } from './middleware/authMiddleware';
 
 // Decorator exports
 export * from './decorators';
