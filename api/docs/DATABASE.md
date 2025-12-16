@@ -618,28 +618,134 @@ Configure in `cdk/config/rds.config.ts`:
 
 ### Running Migrations on RDS
 
+#### First Time (After RDS Deployment)
+
 ```bash
-# After deploying RDS, run migrations
+# Step 1: Deploy the stack (creates RDS instance)
+cd cdk
+npm run deploy:prod
+
+# Step 2: Run migrations to create all tables
+cd ../api
 npm run db:migrate:prod
 ```
 
-This script:
-1. Fetches credentials from Secrets Manager
-2. Connects to RDS securely
-3. Applies pending Prisma migrations
+#### When Schema Changes
 
-### Troubleshooting RDS
+```bash
+# Step 1: Edit the schema file
+# api/layers/shared/nodejs/prisma/schema.prisma
+
+# Step 2: Create migration locally (against dev database)
+cd api
+npm run db:migrate
+# Enter migration name when prompted: add_new_feature
+
+# Step 3: Test locally to ensure migration works
+
+# Step 4: Commit migration files to git
+git add layers/shared/nodejs/prisma/migrations/
+git commit -m "Add migration: add_new_feature"
+
+# Step 5: Deploy code changes
+cd ../cdk
+npm run deploy:prod
+
+# Step 6: Apply migration to production RDS
+cd ../api
+npm run db:migrate:prod
+```
+
+#### What the Migration Script Does
+
+1. **Fetches RDS endpoint** from CloudFormation stack outputs
+2. **Fetches credentials** (username/password) from Secrets Manager
+3. **Constructs DATABASE_URL** for Prisma
+4. **Runs `prisma migrate deploy`** to apply pending migrations
+
+#### Environment Variables (Optional)
+
+You can override auto-detection with environment variables:
+
+```bash
+# Custom configuration
+DB_HOST=oriana-db-prod.xxx.rds.amazonaws.com \
+DB_SECRET_ID=/oriana/prod/db \
+DB_NAME=oriana \
+AWS_REGION=ap-south-1 \
+npm run db:migrate:prod
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AWS_REGION` | `ap-south-1` | AWS region |
+| `DB_SECRET_ID` | `/oriana/prod/db` | Secrets Manager secret ID |
+| `DB_HOST` | Auto-detected | RDS endpoint (from CloudFormation) |
+| `DB_PORT` | `5432` | Database port |
+| `DB_NAME` | `oriana` | Database name |
+| `DB_SSL` | `true` | Enable SSL connection |
+| `STACK_NAME` | `ApiStack-prod` | CloudFormation stack name |
+
+### Migration Best Practices
+
+1. **Never run `db:migrate` in production** - Use `db:migrate:prod` which runs `prisma migrate deploy`
+2. **Test migrations locally first** - Always run against dev database before production
+3. **Migration files are immutable** - Never edit existing migrations after they're applied
+4. **Use descriptive names** - e.g., `add_dispatch_tracking`, `update_po_status_enum`
+5. **Backup before major changes** - RDS has automated backups, but manual snapshot is recommended
+
+### Troubleshooting RDS Migrations
+
+**"Could not find RDS endpoint in CloudFormation outputs":**
+```bash
+# RDS is not deployed yet. Deploy the stack first:
+cd cdk
+npm run deploy:prod
+```
+
+**"ResourceNotFoundException" (Secret not found):**
+```bash
+# Check if secret exists
+aws secretsmanager describe-secret --secret-id /oriana/prod/db
+
+# If not found, RDS stack hasn't been deployed yet
+cd cdk
+npm run deploy:prod
+```
 
 **Connection timeout:**
 - Check security group allows your IP (if connecting from local)
 - Verify RDS is publicly accessible (for dev/qa) or use VPN/bastion for private
+- Check if RDS instance is in "Available" state in AWS Console
 
 **"Password authentication failed":**
 ```bash
 # Verify credentials in Secrets Manager
-aws secretsmanager get-secret-value --secret-id /oriana/prod/db
+aws secretsmanager get-secret-value --secret-id /oriana/prod/db --query SecretString --output text
+
+# Should return: {"username":"oriana_admin","password":"..."}
+```
+
+**"Permission denied" (AccessDeniedException):**
+```bash
+# Ensure your AWS credentials have these permissions:
+# - secretsmanager:GetSecretValue
+# - cloudformation:DescribeStacks
+
+# Check current identity
+aws sts get-caller-identity
+```
+
+**Migration stuck or failed midway:**
+```bash
+# Check migration status
+cd layers/shared/nodejs
+npx prisma migrate status
+
+# If needed, mark migration as applied (use with caution!)
+npx prisma migrate resolve --applied <migration_name>
 ```
 
 ---
 
-*Last updated: 15 December 2025*
+*Last updated: 16 December 2025*

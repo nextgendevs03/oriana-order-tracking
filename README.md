@@ -249,6 +249,36 @@ npm run deploy:api:prod
 - **RDS Database**: `RemovalPolicy.SNAPSHOT` - Creates final snapshot before deletion
 - **Deletion Protection**: Enabled for RDS to prevent accidental deletion
 
+## 🤖 CI/CD with GitHub Actions
+
+The project includes GitHub Actions workflows for automated deployment.
+
+### Available Workflows
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| 🔍 CI | Push/PR | Lint, test, build validation |
+| 🚀 Deploy | Manual | Deploy to dev/qa/prod |
+| 🗄️ DB Migration | Manual | Run Prisma migrations |
+
+### Quick Deployment via GitHub Actions
+
+1. Go to **Actions** tab in GitHub
+2. Select **🚀 Deploy** workflow
+3. Click **Run workflow**
+4. Choose environment (dev/qa/prod) and deploy type
+5. Click **Run workflow**
+
+### Database Migration via GitHub Actions
+
+1. Go to **Actions** tab
+2. Select **🗄️ Database Migration**
+3. Choose environment and action (deploy/status)
+4. For production: Type `MIGRATE-PROD` to confirm
+5. Run workflow
+
+See **[.github/WORKFLOWS.md](.github/WORKFLOWS.md)** for detailed setup instructions.
+
 ## 🔄 Adding New Features
 
 ### Adding New Routes
