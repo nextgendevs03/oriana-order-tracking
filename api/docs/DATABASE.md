@@ -70,6 +70,33 @@ For production deployments:
 - Set `DB_SECRET_ID` environment variable to the secret ARN/name
 - Set `DB_SSL=true` for secure connections
 
+### AWS RDS (Production)
+
+Production uses AWS RDS PostgreSQL, automatically provisioned via CDK:
+
+```bash
+# RDS is created when deploying with features.rds: true
+cd cdk
+npm run deploy:prod
+```
+
+**RDS Configuration** (`cdk/config/rds.config.ts`):
+- Instance: `db.t4g.micro` (~$12/month) - configurable
+- Storage: 20GB gp3, auto-scales to 100GB
+- Backups: 7 days retention
+- Deletion Protection: Enabled
+
+**Retrieve RDS credentials:**
+```bash
+aws secretsmanager get-secret-value --secret-id /oriana/prod/db --query SecretString --output text
+```
+
+**Connect to RDS:**
+```bash
+# Get endpoint from CDK outputs or AWS Console
+psql "host=oriana-db-prod.xxx.rds.amazonaws.com port=5432 dbname=oriana user=oriana_admin sslmode=require"
+```
+
 ---
 
 ## Commands Reference
@@ -561,4 +588,164 @@ npx prisma migrate reset
 
 ---
 
-*Last updated: 7 December 2025*
+---
+
+## Production Database (AWS RDS)
+
+### Environment Setup
+
+| Environment | Database | Managed By |
+|-------------|----------|------------|
+| dev | Neon/Supabase | Manual (external) |
+| qa | Neon/Supabase | Manual (external) |
+| prod | AWS RDS PostgreSQL | CDK (automatic) |
+
+### RDS Instance Sizing
+
+Configure in `cdk/config/rds.config.ts`:
+
+| Instance | vCPU | RAM | Cost (Single-AZ) |
+|----------|------|-----|------------------|
+| db.t4g.micro | 2 | 1 GB | ~$12/month |
+| db.t4g.small | 2 | 2 GB | ~$24/month |
+| db.t4g.medium | 2 | 4 GB | ~$48/month |
+
+### Data Protection
+
+- **Deletion Protection**: Enabled - prevents accidental deletion
+- **RemovalPolicy.SNAPSHOT**: Creates final snapshot if stack is deleted
+- **Automated Backups**: 7 days retention (configurable)
+
+### Running Migrations on RDS
+
+#### First Time (After RDS Deployment)
+
+```bash
+# Step 1: Deploy the stack (creates RDS instance)
+cd cdk
+npm run deploy:prod
+
+# Step 2: Run migrations to create all tables
+cd ../api
+npm run db:migrate:prod
+```
+
+#### When Schema Changes
+
+```bash
+# Step 1: Edit the schema file
+# api/layers/shared/nodejs/prisma/schema.prisma
+
+# Step 2: Create migration locally (against dev database)
+cd api
+npm run db:migrate
+# Enter migration name when prompted: add_new_feature
+
+# Step 3: Test locally to ensure migration works
+
+# Step 4: Commit migration files to git
+git add layers/shared/nodejs/prisma/migrations/
+git commit -m "Add migration: add_new_feature"
+
+# Step 5: Deploy code changes
+cd ../cdk
+npm run deploy:prod
+
+# Step 6: Apply migration to production RDS
+cd ../api
+npm run db:migrate:prod
+```
+
+#### What the Migration Script Does
+
+1. **Fetches RDS endpoint** from CloudFormation stack outputs
+2. **Fetches credentials** (username/password) from Secrets Manager
+3. **Constructs DATABASE_URL** for Prisma
+4. **Runs `prisma migrate deploy`** to apply pending migrations
+
+#### Environment Variables (Optional)
+
+You can override auto-detection with environment variables:
+
+```bash
+# Custom configuration
+DB_HOST=oriana-db-prod.xxx.rds.amazonaws.com \
+DB_SECRET_ID=/oriana/prod/db \
+DB_NAME=oriana \
+AWS_REGION=ap-south-1 \
+npm run db:migrate:prod
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AWS_REGION` | `ap-south-1` | AWS region |
+| `DB_SECRET_ID` | `/oriana/prod/db` | Secrets Manager secret ID |
+| `DB_HOST` | Auto-detected | RDS endpoint (from CloudFormation) |
+| `DB_PORT` | `5432` | Database port |
+| `DB_NAME` | `oriana` | Database name |
+| `DB_SSL` | `true` | Enable SSL connection |
+| `STACK_NAME` | `ApiStack-prod` | CloudFormation stack name |
+
+### Migration Best Practices
+
+1. **Never run `db:migrate` in production** - Use `db:migrate:prod` which runs `prisma migrate deploy`
+2. **Test migrations locally first** - Always run against dev database before production
+3. **Migration files are immutable** - Never edit existing migrations after they're applied
+4. **Use descriptive names** - e.g., `add_dispatch_tracking`, `update_po_status_enum`
+5. **Backup before major changes** - RDS has automated backups, but manual snapshot is recommended
+
+### Troubleshooting RDS Migrations
+
+**"Could not find RDS endpoint in CloudFormation outputs":**
+```bash
+# RDS is not deployed yet. Deploy the stack first:
+cd cdk
+npm run deploy:prod
+```
+
+**"ResourceNotFoundException" (Secret not found):**
+```bash
+# Check if secret exists
+aws secretsmanager describe-secret --secret-id /oriana/prod/db
+
+# If not found, RDS stack hasn't been deployed yet
+cd cdk
+npm run deploy:prod
+```
+
+**Connection timeout:**
+- Check security group allows your IP (if connecting from local)
+- Verify RDS is publicly accessible (for dev/qa) or use VPN/bastion for private
+- Check if RDS instance is in "Available" state in AWS Console
+
+**"Password authentication failed":**
+```bash
+# Verify credentials in Secrets Manager
+aws secretsmanager get-secret-value --secret-id /oriana/prod/db --query SecretString --output text
+
+# Should return: {"username":"oriana_admin","password":"..."}
+```
+
+**"Permission denied" (AccessDeniedException):**
+```bash
+# Ensure your AWS credentials have these permissions:
+# - secretsmanager:GetSecretValue
+# - cloudformation:DescribeStacks
+
+# Check current identity
+aws sts get-caller-identity
+```
+
+**Migration stuck or failed midway:**
+```bash
+# Check migration status
+cd layers/shared/nodejs
+npx prisma migrate status
+
+# If needed, mark migration as applied (use with caution!)
+npx prisma migrate resolve --applied <migration_name>
+```
+
+---
+
+*Last updated: 16 December 2025*

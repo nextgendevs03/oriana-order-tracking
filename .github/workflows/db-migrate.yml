@@ -1,0 +1,165 @@
+# Database Migration Workflow for Oriana Order Tracking
+#
+# This workflow runs Prisma migrations against the selected environment's database.
+# For production, it fetches RDS credentials from Secrets Manager and applies migrations.
+#
+# Trigger: Manual dispatch with environment selection
+#
+# Required GitHub Secrets:
+#   - AWS_ACCESS_KEY_ID: AWS access key with deployment permissions
+#   - AWS_SECRET_ACCESS_KEY: AWS secret access key
+#   - AWS_REGION: AWS region (e.g., ap-south-1)
+#
+# For dev/qa with external DB (Neon/Supabase), also set:
+#   - DATABASE_URL_DEV: Full Prisma connection string for dev
+#   - DATABASE_URL_QA: Full Prisma connection string for qa
+
+name: 🗄️ Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to migrate'
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+      migration_action:
+        description: 'Migration action'
+        required: true
+        type: choice
+        options:
+          - deploy     # Apply pending migrations (safe)
+          - status     # Check migration status (dry-run)
+      confirm_prod:
+        description: 'Type "MIGRATE-PROD" to confirm production migration'
+        required: false
+        type: string
+        default: ''
+
+# Prevent concurrent migrations to the same environment
+concurrency:
+  group: migrate-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
+
+jobs:
+  # Validate production confirmation
+  validate-prod:
+    name: Validate Production Confirmation
+    if: github.event.inputs.environment == 'prod' && github.event.inputs.migration_action == 'deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⚠️ Validate Production Confirmation
+        if: github.event.inputs.confirm_prod != 'MIGRATE-PROD'
+        run: |
+          echo "❌ Production migration requires confirmation!"
+          echo "Please type 'MIGRATE-PROD' in the confirmation field."
+          exit 1
+
+      - name: ✅ Production Confirmed
+        if: github.event.inputs.confirm_prod == 'MIGRATE-PROD'
+        run: echo "✅ Production migration confirmed by @${{ github.actor }}"
+
+  migrate:
+    name: Migrate ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    needs: [validate-prod]
+    if: always() && (needs.validate-prod.result == 'success' || needs.validate-prod.result == 'skipped')
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: api/package-lock.json
+
+      - name: 🔑 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 📦 Install API dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: 📦 Install Prisma layer dependencies
+        working-directory: api/layers/shared/nodejs
+        run: npm ci
+
+      # ===== DEV ENVIRONMENT =====
+      - name: 🗄️ Check Migration Status (Dev)
+        if: github.event.inputs.environment == 'dev' && github.event.inputs.migration_action == 'status'
+        working-directory: api/layers/shared/nodejs
+        run: npx prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
+
+      - name: 🗄️ Run Migration (Dev)
+        if: github.event.inputs.environment == 'dev' && github.event.inputs.migration_action == 'deploy'
+        working-directory: api/layers/shared/nodejs
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
+
+      # ===== QA ENVIRONMENT =====
+      - name: 🗄️ Check Migration Status (QA)
+        if: github.event.inputs.environment == 'qa' && github.event.inputs.migration_action == 'status'
+        working-directory: api/layers/shared/nodejs
+        run: npx prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_QA }}
+
+      - name: 🗄️ Run Migration (QA)
+        if: github.event.inputs.environment == 'qa' && github.event.inputs.migration_action == 'deploy'
+        working-directory: api/layers/shared/nodejs
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_QA }}
+
+      # ===== PRODUCTION ENVIRONMENT (AWS RDS) =====
+      - name: 🗄️ Check Migration Status (Prod)
+        if: github.event.inputs.environment == 'prod' && github.event.inputs.migration_action == 'status'
+        working-directory: api
+        run: |
+          echo "📊 Checking production migration status..."
+          node scripts/db-migrate-prod.js --status
+        env:
+          DB_SECRET_ID: /oriana/prod/db
+          STACK_NAME: ApiStack-prod
+          MIGRATION_ACTION: status
+
+      - name: 🗄️ Run Migration (Prod)
+        if: github.event.inputs.environment == 'prod' && github.event.inputs.migration_action == 'deploy'
+        working-directory: api
+        run: |
+          echo "🚀 Running production migration..."
+          npm run db:migrate:prod
+        env:
+          DB_SECRET_ID: /oriana/prod/db
+          STACK_NAME: ApiStack-prod
+
+      - name: 📋 Migration Summary
+        run: |
+          echo "## 🗄️ Migration Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | \`${{ github.event.inputs.environment }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Action | \`${{ github.event.inputs.migration_action }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u) |" >> $GITHUB_STEP_SUMMARY
+

@@ -33,15 +33,27 @@ export interface LambdaConstructProps {
   config: EnvironmentConfig;
   sharedLayer: lambda.LayerVersion;
   manifest: AppManifest;
+  /** Optional database host override (e.g., from RDS construct) */
+  dbHost?: string;
 }
 
 export class LambdaConstruct extends Construct {
   public readonly functions: Record<string, lambda.Function> = {};
 
+  /** Database host (from RDS or config) */
+  private readonly dbHost: string;
+
   constructor(scope: Construct, id: string, props: LambdaConstructProps) {
     super(scope, id);
 
-    const { config, sharedLayer, manifest } = props;
+    const { config, sharedLayer, manifest, dbHost } = props;
+
+    // Use provided dbHost (from RDS) or fall back to config
+    this.dbHost = dbHost || config.database.host;
+
+    if (dbHost) {
+      console.log(`   📡 Using database host from RDS: ${dbHost}`);
+    }
 
     // Create Lambda functions from manifest
     for (const [lambdaName, lambdaConfig] of Object.entries(manifest.lambdas)) {
@@ -114,6 +126,13 @@ export class LambdaConstruct extends Construct {
       timeout: Duration.seconds(config.lambdaTimeout),
       environment: {
         ENVIRONMENT: config.environment,
+        // Database connection settings (non-sensitive)
+        // DB_HOST comes from RDS construct (if enabled) or config.database.host
+        DB_HOST: this.dbHost,
+        DB_PORT: config.database.port.toString(),
+        DB_NAME: config.database.name,
+        DB_SSL: config.database.ssl.toString(),
+        // Secrets Manager secret ID for credentials (username/password only)
         DB_SECRET_ID: config.dbSecretId,
         LOG_LEVEL: config.environment === "prod" ? "INFO" : "DEBUG",
         NODE_OPTIONS: "--enable-source-maps",

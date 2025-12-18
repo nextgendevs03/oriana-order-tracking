@@ -6,6 +6,8 @@ import { EnvironmentConfig } from "../config/environment";
 import { LambdaConstruct } from "../constructs/core/lambda-construct";
 import { ApiGatewayConstruct } from "../constructs/core/api-gateway-construct";
 import { S3Construct } from "../constructs/storage/s3-construct";
+import { StaticSiteConstruct } from "../constructs/hosting/static-site-construct";
+import { RDSConstruct } from "../constructs/database/rds-construct";
 import {
   LambdaPermissions,
   IPermissionProvider,
@@ -35,6 +37,33 @@ export class ApiStack extends Stack {
     // Read app manifest
     const manifest = readManifest();
 
+    // Collect permission providers from enabled constructs
+    const permissionProviders: IPermissionProvider[] = [];
+
+    // ==========================================
+    // DATABASE CONSTRUCTS (CREATE FIRST!)
+    // ==========================================
+    // RDS must be created before Lambda so we can pass the dynamic DB_HOST
+
+    let rdsConstruct: RDSConstruct | undefined;
+
+    if (config.features.rds) {
+      console.log("\n🗄️  Creating RDS PostgreSQL instance...");
+      rdsConstruct = new RDSConstruct(this, "RDSConstruct", {
+        config,
+      });
+      permissionProviders.push(rdsConstruct);
+    }
+
+    // Determine database host (from RDS if enabled, otherwise from config)
+    const dbHost = rdsConstruct
+      ? rdsConstruct.instance.instanceEndpoint.hostname
+      : undefined;
+
+    // ==========================================
+    // LAMBDA LAYER & FUNCTIONS
+    // ==========================================
+
     // Create Shared Lambda Layer (using bundled output to avoid Windows long path issues)
     console.log("\n📦 Creating shared Lambda layer...");
     const sharedLayer = new lambda.LayerVersion(this, "SharedLayer", {
@@ -55,15 +84,14 @@ export class ApiStack extends Stack {
     });
 
     // Create Lambda Functions from manifest
+    // If RDS is enabled, dbHost will be the dynamic RDS endpoint
     console.log("\n⚡ Creating Lambda functions...");
     const lambdaConstruct = new LambdaConstruct(this, "LambdaConstruct", {
       config,
       sharedLayer,
       manifest,
+      dbHost, // Pass RDS host (or undefined to use config.database.host)
     });
-
-    // Collect permission providers from enabled constructs
-    const permissionProviders: IPermissionProvider[] = [];
 
     // ==========================================
     // STORAGE CONSTRUCTS
@@ -159,6 +187,20 @@ export class ApiStack extends Stack {
       lambdaFunctions: lambdaConstruct.functions,
       manifest,
     });
+
+    // ==========================================
+    // STATIC SITE HOSTING (UI)
+    // ==========================================
+
+    // Static Site Construct (enabled via features.staticSite)
+    // IMPORTANT: Uses RemovalPolicy.RETAIN for prod to preserve hosted files!
+    if (config.features.staticSite) {
+      console.log("\n🌐 Creating static site hosting (S3 + CloudFront)...");
+      new StaticSiteConstruct(this, "StaticSiteConstruct", {
+        config,
+        uiBuildPath: path.join(__dirname, "../../../ui/build"),
+      });
+    }
 
     console.log(`\n✅ Stack ${config.stackName} ready\n`);
   }

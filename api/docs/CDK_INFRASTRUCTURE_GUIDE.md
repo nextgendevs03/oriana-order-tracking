@@ -42,7 +42,7 @@ The CDK infrastructure follows a **modular, config-driven architecture** where:
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     cdk/lib/config/environment.ts                        │
 │  - Environment configs (dev, qa, prod)                                   │
-│  - Feature flags (s3, sqs, dynamodb, ses, vpc, cognito, kms)            │
+│  - Feature flags (s3, sqs, dynamodb, ses, vpc, cognito, kms, rds, staticSite) │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -81,6 +81,7 @@ cdk/
 ├── config/                                 # Service-specific configurations
 │   ├── index.ts                            # Exports all configs
 │   ├── s3.config.ts                        # S3 bucket configurations
+│   ├── rds.config.ts                       # RDS database configurations
 │   ├── sqs.config.ts                       # [Future] SQS queue configurations
 │   ├── dynamodb.config.ts                  # [Future] DynamoDB table configurations
 │   ├── cognito.config.ts                   # [Future] Cognito pool configurations
@@ -97,6 +98,10 @@ cdk/
 │   │   ├── storage/                        # Storage services
 │   │   │   ├── s3-construct.ts             # S3 bucket creation
 │   │   │   └── dynamodb-construct.ts       # [Future] DynamoDB tables
+│   │   ├── database/                       # Database services
+│   │   │   └── rds-construct.ts            # RDS PostgreSQL (prod)
+│   │   ├── hosting/                        # Hosting services
+│   │   │   └── static-site-construct.ts    # UI hosting (S3 + CloudFront)
 │   │   ├── messaging/                      # Messaging services
 │   │   │   ├── sqs-construct.ts            # [Future] SQS queues
 │   │   │   └── ses-construct.ts            # [Future] SES email
@@ -138,13 +143,15 @@ Feature flags control which AWS services are created per environment:
 
 ```typescript
 export interface FeatureFlags {
-  s3: boolean;        // S3 buckets
-  sqs: boolean;       // SQS queues
-  dynamodb: boolean;  // DynamoDB tables
-  ses: boolean;       // SES email
-  vpc: boolean;       // VPC networking
-  cognito: boolean;   // Cognito auth
-  kms: boolean;       // KMS encryption
+  s3: boolean;         // S3 buckets
+  sqs: boolean;        // SQS queues
+  dynamodb: boolean;   // DynamoDB tables
+  ses: boolean;        // SES email
+  vpc: boolean;        // VPC networking
+  cognito: boolean;    // Cognito auth
+  kms: boolean;        // KMS encryption
+  staticSite: boolean; // UI hosting (S3 + CloudFront)
+  rds: boolean;        // RDS PostgreSQL database
 }
 ```
 
@@ -213,6 +220,45 @@ Creates S3 buckets based on configuration.
 - Per-environment bucket configurations
 - Versioning, CORS, encryption settings
 - Auto-generates Lambda permissions for bucket access
+
+### RDS Construct (`database/rds-construct.ts`)
+
+Creates RDS PostgreSQL database for production.
+
+**Configuration file:** `cdk/config/rds.config.ts`
+
+**Key Features:**
+- PostgreSQL 16.4 on ARM64 (cost-effective)
+- Automatic VPC creation with proper subnets
+- Secrets Manager integration for credentials
+- `RemovalPolicy.SNAPSHOT` for production (creates snapshot on delete)
+- Deletion protection enabled for production
+- Configurable instance sizes (db.t4g.micro to db.t4g.large)
+
+**Cost Reference:**
+| Instance | Single-AZ | Multi-AZ |
+|----------|-----------|----------|
+| db.t4g.micro | ~$12/mo | ~$24/mo |
+| db.t4g.small | ~$24/mo | ~$48/mo |
+| db.t4g.medium | ~$48/mo | ~$96/mo |
+
+### Static Site Construct (`hosting/static-site-construct.ts`)
+
+Creates S3 + CloudFront for UI hosting.
+
+**Key Features:**
+- S3 bucket for static file storage
+- CloudFront CDN for global distribution
+- Origin Access Control (OAC) for secure S3 access
+- SPA routing (404/403 → index.html)
+- Automatic cache invalidation on deploy
+- `RemovalPolicy.RETAIN` for production (preserves files)
+- HTTPS enabled by default
+
+**Outputs after deploy:**
+- `WebsiteURL` - CloudFront URL (e.g., https://d123.cloudfront.net)
+- `WebsiteBucketName` - S3 bucket name
+- `DistributionId` - CloudFront distribution ID
 
 ### Lambda Permissions (`permissions/lambda-permissions.ts`)
 
@@ -1062,5 +1108,5 @@ If Lambda can't access a resource:
 
 ---
 
-*Last updated: December 2024*
+*Last updated: December 2025*
 
