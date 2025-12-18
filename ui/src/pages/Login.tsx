@@ -23,7 +23,12 @@ const Login: React.FC = () => {
         username: values.username,
         password: values.password,
       };
-      await login(loginPayload).unwrap();
+      const response = await login(loginPayload).unwrap();
+      
+      // Store the access token in sessionStorage
+      if (response.accessToken) {
+        sessionStorage.setItem('authToken', response.accessToken);
+      }
       
       dispatch(addAuth({ username: values.username }));
       dispatch(setIsLoggedIn(true));
