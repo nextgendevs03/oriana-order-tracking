@@ -33,7 +33,7 @@ export const authMiddleware = async (
       return createErrorResponse(new AppError('Token is missing', 401, 'UNAUTHORIZED'));
     }
 
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
 
     const authenticatedEvent: AuthenticatedEvent = {
       ...event,

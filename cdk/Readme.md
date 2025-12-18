@@ -117,11 +117,18 @@ npm run bootstrap
 
 ### Step 1: Configure Environment Variables
 
-Edit `cdk/env.local.json` with your Supabase credentials:
+Copy `env.template.json` to `env.local.json` and fill in your values:
+
+```bash
+cd cdk
+cp env.template.json env.local.json
+```
+
+Edit `cdk/env.local.json` with your database and JWT credentials:
 
 ```json
 {
-  "poFunction": {
+  "oriana-po-dev": {
     "ENVIRONMENT": "dev",
     "IS_LOCAL": "true",
     "DB_HOST": "db.xxxxxxxxxxxx.supabase.co",
@@ -129,10 +136,17 @@ Edit `cdk/env.local.json` with your Supabase credentials:
     "DB_NAME": "postgres",
     "DB_USERNAME": "postgres",
     "DB_PASSWORD": "your-supabase-password",
-    "LOG_LEVEL": "DEBUG"
+    "DB_SSL": "true",
+    "LOG_LEVEL": "DEBUG",
+    "JWT_SECRET": "your-local-dev-jwt-secret-at-least-32-chars",
+    "JWT_REFRESH_SECRET": "your-local-dev-refresh-secret-at-least-32-chars",
+    "JWT_EXPIRES_IN": "15m",
+    "JWT_REFRESH_EXPIRES_IN": "1d"
   }
 }
 ```
+
+**Note:** `env.local.json` is gitignored and should never be committed.
 
 ### Step 2: Start Development Server
 
@@ -288,11 +302,19 @@ Routes are automatically added to API Gateway!
 
 ## Environment-Specific Configuration
 
-| Environment | Stack Name | Database | Memory | UI Hosting | RDS |
-|-------------|------------|----------|--------|------------|-----|
-| dev | ApiStack-dev | Neon/Supabase | 256 MB | ✅ CloudFront | ❌ |
-| qa | ApiStack-qa | Neon/Supabase | 512 MB | ✅ CloudFront | ❌ |
-| prod | ApiStack-prod | AWS RDS | 1024 MB | ✅ CloudFront | ✅ |
+| Environment | Stack Name | Database | Memory | UI Hosting | RDS | JWT Expiry |
+|-------------|------------|----------|--------|------------|-----|------------|
+| dev | ApiStack-dev | Neon/Supabase | 256 MB | ✅ CloudFront | ❌ | 15m / 1d |
+| qa | ApiStack-qa | Neon/Supabase | 512 MB | ✅ CloudFront | ❌ | 15m / 7d |
+| prod | ApiStack-prod | AWS RDS | 1024 MB | ✅ CloudFront | ✅ | 30m / 30d |
+
+### Secrets Configuration
+
+| Secret Type | Local Dev | QA/Prod |
+|-------------|-----------|---------|
+| Database credentials | `env.local.json` | AWS Secrets Manager (`/oriana/{env}/db`) |
+| JWT secrets | `env.local.json` | AWS Secrets Manager (`/oriana/{env}/jwt`) |
+| JWT expiry times | `env.local.json` | CDK environment config (Lambda env vars) |
 
 ### Feature Flags
 
@@ -418,11 +440,56 @@ aws secretsmanager get-secret-value --secret-id /oriana/prod/db
 
 ## Secrets Manager Setup
 
+### Database Secrets
+
 ```bash
-# Create secrets for each environment
+# Create database secrets for each environment
 aws secretsmanager create-secret \
   --name /oriana/dev/db \
-  --secret-string '{"host":"xxx","port":5432,"dbname":"postgres","username":"xxx","password":"xxx"}'
+  --secret-string '{"username":"postgres","password":"your-db-password"}'
+
+aws secretsmanager create-secret \
+  --name /oriana/qa/db \
+  --secret-string '{"username":"postgres","password":"your-qa-db-password"}'
+
+aws secretsmanager create-secret \
+  --name /oriana/prod/db \
+  --secret-string '{"username":"postgres","password":"your-prod-db-password"}'
+```
+
+### JWT Secrets
+
+JWT secrets (`JWT_SECRET` and `JWT_REFRESH_SECRET`) are stored separately in Secrets Manager for QA and production environments. For local development, these are read from `env.local.json`.
+
+```bash
+# Generate strong secrets (run this to generate random secrets)
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+# Create JWT secrets for QA
+aws secretsmanager create-secret \
+  --name /oriana/qa/jwt \
+  --secret-string '{"JWT_SECRET":"<your-64-char-random-secret>","JWT_REFRESH_SECRET":"<another-64-char-random-secret>"}'
+
+# Create JWT secrets for Production
+aws secretsmanager create-secret \
+  --name /oriana/prod/jwt \
+  --secret-string '{"JWT_SECRET":"<your-64-char-random-secret>","JWT_REFRESH_SECRET":"<another-64-char-random-secret>"}'
+```
+
+**Important Notes:**
+- Use different secrets for each environment (QA and Prod)
+- JWT secrets should be at least 64 characters of random data
+- Never commit secrets to source control
+- For local development, add JWT secrets to `env.local.json` (see `env.template.json`)
+
+### Retrieve Secrets
+
+```bash
+# Retrieve database credentials
+aws secretsmanager get-secret-value --secret-id /oriana/prod/db
+
+# Retrieve JWT secrets
+aws secretsmanager get-secret-value --secret-id /oriana/prod/jwt
 ```
 
 ## Troubleshooting

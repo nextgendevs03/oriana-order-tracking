@@ -34,5 +34,10 @@ export {
   generateRefreshToken,
   verifyRefreshToken,
   generateTokens,
+  initializeJwtSecrets,
 } from './utils/webtoken';
 export type { JWTPayload, TokenResult } from './utils/webtoken';
+
+// JWT secrets exports
+export { getJwtSecrets, clearJwtSecretsCache, isJwtSecretsCached } from './utils/jwt-secrets';
+export type { JwtSecrets } from './utils/jwt-secrets';

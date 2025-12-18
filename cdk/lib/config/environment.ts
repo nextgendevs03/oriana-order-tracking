@@ -45,6 +45,20 @@ export interface DatabaseConfig {
   ssl: boolean;
 }
 
+/**
+ * JWT configuration.
+ * Secrets (JWT_SECRET, JWT_REFRESH_SECRET) are stored in AWS Secrets Manager.
+ * Non-sensitive settings (expiry times) are passed as Lambda environment variables.
+ */
+export interface JwtConfig {
+  /** Secrets Manager secret ID for JWT secrets */
+  secretId: string;
+  /** Access token expiry time (e.g., "15m", "30m", "1h") */
+  expiresIn: string;
+  /** Refresh token expiry time (e.g., "1d", "7d", "30d") */
+  refreshExpiresIn: string;
+}
+
 export interface EnvironmentConfig {
   environment: Environment;
   stackName: string;
@@ -61,6 +75,8 @@ export interface EnvironmentConfig {
   features: FeatureFlags;
   /** Database connection settings (non-sensitive) */
   database: DatabaseConfig;
+  /** JWT configuration (secrets in Secrets Manager, expiry in env vars) */
+  jwt: JwtConfig;
 }
 
 const baseConfig = {
@@ -99,6 +115,11 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       name: "postgres",
       ssl: true,
     },
+    jwt: {
+      secretId: "/oriana/dev/jwt",
+      expiresIn: "15m", // Short for dev testing
+      refreshExpiresIn: "1d", // 1 day for dev
+    },
   },
   qa: {
     ...baseConfig,
@@ -127,6 +148,11 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       name: "postgres",
       ssl: true,
     },
+    jwt: {
+      secretId: "/oriana/qa/jwt",
+      expiresIn: "15m",
+      refreshExpiresIn: "7d", // 7 days for QA
+    },
   },
   prod: {
     ...baseConfig,
@@ -154,6 +180,11 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       port: 5432,
       name: "oriana",
       ssl: true,
+    },
+    jwt: {
+      secretId: "/oriana/prod/jwt",
+      expiresIn: "30m", // Longer for production
+      refreshExpiresIn: "30d", // 30 days for production
     },
   },
 };

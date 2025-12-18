@@ -2203,19 +2203,48 @@ const CORS_HEADERS = {
 
 ### 7.6 Environment Variables
 
-**Store these securely (AWS Secrets Manager recommended):**
+**Configuration by Environment:**
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `JWT_SECRET` | Secret key for signing JWTs | 64+ character random string |
-| `JWT_ACCESS_EXPIRY` | Access token lifetime | "15m" |
-| `JWT_REFRESH_EXPIRY` | Refresh token lifetime | "7d" |
-| `COOKIE_DOMAIN` | Domain for cookies | ".example.com" |
-| `ALLOWED_ORIGIN` | CORS allowed origin | "https://app.example.com" |
+| Variable | Local Dev | QA/Prod | Description |
+|----------|-----------|---------|-------------|
+| `JWT_SECRET` | `env.local.json` | AWS Secrets Manager | Secret for signing access tokens |
+| `JWT_REFRESH_SECRET` | `env.local.json` | AWS Secrets Manager | Secret for signing refresh tokens |
+| `JWT_EXPIRES_IN` | `env.local.json` | Lambda env vars (CDK) | Access token lifetime |
+| `JWT_REFRESH_EXPIRES_IN` | `env.local.json` | Lambda env vars (CDK) | Refresh token lifetime |
+| `COOKIE_DOMAIN` | - | Lambda env vars | Domain for cookies |
+| `ALLOWED_ORIGIN` | - | Lambda env vars | CORS allowed origin |
+
+**JWT Secrets in AWS Secrets Manager:**
+
+For QA and production environments, JWT secrets are stored in AWS Secrets Manager and fetched at runtime:
+
+```
+/oriana/qa/jwt    → { "JWT_SECRET": "...", "JWT_REFRESH_SECRET": "..." }
+/oriana/prod/jwt  → { "JWT_SECRET": "...", "JWT_REFRESH_SECRET": "..." }
+```
+
+**How secrets are loaded:**
+1. On Lambda cold start, `getJwtSecrets()` is called
+2. For local dev (`IS_LOCAL=true`), reads from environment variables
+3. For deployed environments, fetches from Secrets Manager
+4. Secrets are cached for 5 minutes to minimize API calls
+5. Production enforces that secrets must exist (throws error if missing)
 
 **Generating a secure JWT secret:**
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+**Creating secrets in AWS:**
+```bash
+# Generate secrets first
+JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+JWT_REFRESH_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+
+# Create secret in Secrets Manager
+aws secretsmanager create-secret \
+  --name /oriana/prod/jwt \
+  --secret-string "{\"JWT_SECRET\":\"$JWT_SECRET\",\"JWT_REFRESH_SECRET\":\"$JWT_REFRESH_SECRET\"}"
 ```
 
 ---
@@ -2278,7 +2307,9 @@ console.log('Is expired:', Date.now() > decoded.exp * 1000);
 │  Backend Security                                                            │
 │  ─────────────────                                                           │
 │  □ JWT_SECRET is stored in AWS Secrets Manager (not in code)                 │
-│  □ JWT_SECRET is at least 64 characters of random data                       │
+│  □ JWT_REFRESH_SECRET is stored in AWS Secrets Manager (not in code)         │
+│  □ JWT secrets are at least 64 characters of random data                     │
+│  □ Secrets Manager paths configured: /oriana/qa/jwt, /oriana/prod/jwt        │
 │  □ All protected endpoints have @Authenticated decorator                     │
 │  □ Passwords are hashed with bcrypt (cost factor ≥ 10)                       │
 │  □ No sensitive data logged (passwords, tokens)                              │
@@ -2323,7 +2354,9 @@ Run through this periodically:
 
 1. **Check for exposed secrets**
    - Search codebase for hardcoded credentials
-   - Verify secrets are in Secrets Manager
+   - Verify database secrets are in Secrets Manager (`/oriana/{env}/db`)
+   - Verify JWT secrets are in Secrets Manager (`/oriana/{env}/jwt`)
+   - Confirm `env.local.json` is in `.gitignore`
 
 2. **Verify authentication coverage**
    - List all API endpoints

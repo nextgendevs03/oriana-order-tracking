@@ -134,10 +134,15 @@ export class LambdaConstruct extends Construct {
         DB_SSL: config.database.ssl.toString(),
         // Secrets Manager secret ID for credentials (username/password only)
         DB_SECRET_ID: config.dbSecretId,
+        // JWT configuration
+        // Secrets (JWT_SECRET, JWT_REFRESH_SECRET) are fetched from Secrets Manager at runtime
+        JWT_SECRET_ID: config.jwt.secretId,
+        JWT_EXPIRES_IN: config.jwt.expiresIn,
+        JWT_REFRESH_EXPIRES_IN: config.jwt.refreshExpiresIn,
         LOG_LEVEL: config.environment === "prod" ? "INFO" : "DEBUG",
         NODE_OPTIONS: "--enable-source-maps",
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
-        // Include local DB env vars for SAM Local development (dev environment only)
+        // Include local env vars for SAM Local development (dev environment only)
         ...(config.environment === "dev" ? loadLocalEnvVars() : {}),
       },
       layers: [sharedLayer],
@@ -149,12 +154,15 @@ export class LambdaConstruct extends Construct {
         config.environment === "prod" ? 100 : undefined,
     });
 
-    // Grant Secrets Manager access
+    // Grant Secrets Manager access for DB and JWT secrets
     fn.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ["secretsmanager:GetSecretValue"],
-        resources: [`arn:aws:secretsmanager:*:*:secret:${config.dbSecretId}*`],
+        resources: [
+          `arn:aws:secretsmanager:*:*:secret:${config.dbSecretId}*`,
+          `arn:aws:secretsmanager:*:*:secret:${config.jwt.secretId}*`,
+        ],
       }),
     );
 

@@ -1,4 +1,5 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { getJwtSecrets, initializeJwtSecrets as initSecrets } from './jwt-secrets';
 
 export interface JWTPayload {
   username: string;
@@ -13,38 +14,34 @@ export interface TokenResult {
   expiresIn: number;
   refreshExpiresIn: number;
 }
-const getJWTSecret = (): string => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    if (process.env.ENVIRONMENT === 'prod' || process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET must be set in production environment');
-    }
-    console.warn('  JWT_SECRET not set, using default secret (ONLY FOR LOCAL DEV)');
-    return 'your-super-secret-jwt-key-change-in-production';
-  }
-  return secret;
-};
 
-const getJWTRefreshSecret = (): string => {
-  const secret = process.env.JWT_REFRESH_SECRET;
-  if (!secret) {
-    if (process.env.ENVIRONMENT === 'prod' || process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_REFRESH_SECRET must be set in production environment');
-    }
-    console.warn('JWT_REFRESH_SECRET not set, using default secret (ONLY FOR LOCAL DEV)');
-    return 'your-super-secret-refresh-key-change-in-production';
-  }
-  return secret;
-};
+/**
+ * Initialize JWT secrets cache.
+ * Call this during Lambda cold start to pre-warm the cache.
+ * This ensures secrets are loaded before processing requests.
+ */
+export const initializeJwtSecrets = initSecrets;
 
+/**
+ * Get access token expiry from environment variable.
+ * Defaults to 15m if not set.
+ */
 const getAccessTokenExpiry = (): string => {
   return process.env.JWT_EXPIRES_IN || '15m';
 };
 
+/**
+ * Get refresh token expiry from environment variable.
+ * Defaults to 7d if not set.
+ */
 const getRefreshTokenExpiry = (): string => {
   return process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 };
 
+/**
+ * Parse expiry string to seconds.
+ * Supports formats: "15m", "1h", "7d", or raw seconds "900"
+ */
 const parseExpiryToSeconds = (expiry: string): number => {
   const numValue = parseInt(expiry, 10);
   if (!isNaN(numValue) && expiry === numValue.toString()) {
@@ -73,8 +70,12 @@ const parseExpiryToSeconds = (expiry: string): number => {
   }
 };
 
-export const generateAccessToken = (payload: JWTPayload): string => {
-  const secret = getJWTSecret();
+/**
+ * Generate an access token for the given payload.
+ * Fetches JWT secret from Secrets Manager (with caching).
+ */
+export const generateAccessToken = async (payload: JWTPayload): Promise<string> => {
+  const secrets = await getJwtSecrets();
   const expiresIn = getAccessTokenExpiry();
 
   const options: SignOptions = {
@@ -82,16 +83,20 @@ export const generateAccessToken = (payload: JWTPayload): string => {
     issuer: 'oriana-api',
     audience: 'oriana-client',
   };
-  const token = jwt.sign(payload, secret, options);
+  const token = jwt.sign(payload, secrets.JWT_SECRET, options);
 
   return token;
 };
 
-export const verifyAccessToken = (token: string): JWTPayload => {
-  const secret = getJWTSecret();
+/**
+ * Verify and decode an access token.
+ * Fetches JWT secret from Secrets Manager (with caching).
+ */
+export const verifyAccessToken = async (token: string): Promise<JWTPayload> => {
+  const secrets = await getJwtSecrets();
 
   try {
-    const decoded = jwt.verify(token, secret, {
+    const decoded = jwt.verify(token, secrets.JWT_SECRET, {
       issuer: 'oriana-api',
       audience: 'oriana-client',
     }) as JWTPayload;
@@ -108,8 +113,12 @@ export const verifyAccessToken = (token: string): JWTPayload => {
   }
 };
 
-export const generateRefreshToken = (payload: JWTPayload): string => {
-  const secret = getJWTRefreshSecret();
+/**
+ * Generate a refresh token for the given payload.
+ * Fetches JWT refresh secret from Secrets Manager (with caching).
+ */
+export const generateRefreshToken = async (payload: JWTPayload): Promise<string> => {
+  const secrets = await getJwtSecrets();
   const expiresIn = getRefreshTokenExpiry();
 
   const options: SignOptions = {
@@ -118,16 +127,20 @@ export const generateRefreshToken = (payload: JWTPayload): string => {
     audience: 'oriana-client',
   };
 
-  const token = jwt.sign(payload as object, secret, options);
+  const token = jwt.sign(payload as object, secrets.JWT_REFRESH_SECRET, options);
 
   return token;
 };
 
-export const verifyRefreshToken = (token: string): JWTPayload => {
-  const secret = getJWTRefreshSecret();
+/**
+ * Verify and decode a refresh token.
+ * Fetches JWT refresh secret from Secrets Manager (with caching).
+ */
+export const verifyRefreshToken = async (token: string): Promise<JWTPayload> => {
+  const secrets = await getJwtSecrets();
 
   try {
-    const decoded = jwt.verify(token, secret, {
+    const decoded = jwt.verify(token, secrets.JWT_REFRESH_SECRET, {
       issuer: 'oriana-api',
       audience: 'oriana-client',
     }) as JWTPayload;
@@ -144,9 +157,13 @@ export const verifyRefreshToken = (token: string): JWTPayload => {
   }
 };
 
-export const generateTokens = (payload: JWTPayload): TokenResult => {
-  const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
+/**
+ * Generate both access and refresh tokens for the given payload.
+ * Fetches JWT secrets from Secrets Manager (with caching).
+ */
+export const generateTokens = async (payload: JWTPayload): Promise<TokenResult> => {
+  const accessToken = await generateAccessToken(payload);
+  const refreshToken = await generateRefreshToken(payload);
 
   const accessExpiresIn = parseExpiryToSeconds(getAccessTokenExpiry());
   const refreshExpiresIn = parseExpiryToSeconds(getRefreshTokenExpiry());

@@ -38,7 +38,7 @@ export class AuthService implements IAuthService {
     };
 
     // Generate both access and refresh tokens
-    const tokens = generateTokens(tokenPayload);
+    const tokens = await generateTokens(tokenPayload);
 
     // Verify tokens were generated successfully
     if (!tokens.accessToken || !tokens.refreshToken) {

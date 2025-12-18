@@ -6,12 +6,16 @@ This guide explains how to run the Oriana Order Tracking API locally using AWS S
 
 ## Configuration Architecture
 
-| Environment | Non-Sensitive Config | Secrets |
-|-------------|---------------------|---------|
-| **Local (SAM)** | `env.local.json` | `env.local.json` |
-| **AWS (dev/qa/prod)** | Lambda env vars (CDK) | AWS Secrets Manager |
+| Config Type | Local (SAM) | AWS (dev/qa/prod) |
+|-------------|-------------|-------------------|
+| Database connection (host, port, name) | `env.local.json` | Lambda env vars (CDK) |
+| Database credentials (user, password) | `env.local.json` | AWS Secrets Manager (`/oriana/{env}/db`) |
+| JWT secrets | `env.local.json` | AWS Secrets Manager (`/oriana/{env}/jwt`) |
+| JWT expiry times | `env.local.json` | Lambda env vars (CDK) |
 
-**Note**: `env.local.json` is **only for local SAM testing**. In AWS, Lambda environment variables are set via CDK and secrets are fetched from Secrets Manager.
+**Note**: `env.local.json` is **only for local SAM testing**. In AWS:
+- Non-sensitive config (expiry times, host, port) → Lambda environment variables via CDK
+- Sensitive secrets (passwords, JWT secrets) → Fetched at runtime from AWS Secrets Manager with 5-minute caching
 
 ## Prerequisites
 
@@ -29,11 +33,11 @@ cd cdk
 cp env.template.json env.local.json
 ```
 
-Edit `env.local.json` with your database credentials:
+Edit `env.local.json` with your database and JWT credentials:
 
 ```json
 {
-  "LambdaConstructpoFunction7E547944": {
+  "oriana-po-dev": {
     "ENVIRONMENT": "dev",
     "IS_LOCAL": "true",
     "DB_HOST": "db.xxxxxxxxxxxx.supabase.co",
@@ -42,10 +46,25 @@ Edit `env.local.json` with your database credentials:
     "DB_USERNAME": "postgres",
     "DB_PASSWORD": "your-supabase-password",
     "DB_SSL": "true",
-    "LOG_LEVEL": "DEBUG"
+    "LOG_LEVEL": "DEBUG",
+    "JWT_SECRET": "your-local-dev-jwt-secret-at-least-32-chars",
+    "JWT_REFRESH_SECRET": "your-local-dev-refresh-secret-at-least-32-chars",
+    "JWT_EXPIRES_IN": "15m",
+    "JWT_REFRESH_EXPIRES_IN": "1d"
   }
 }
 ```
+
+### JWT Configuration
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `JWT_SECRET` | Secret for signing access tokens | Random 32+ character string |
+| `JWT_REFRESH_SECRET` | Secret for signing refresh tokens | Random 32+ character string |
+| `JWT_EXPIRES_IN` | Access token expiry | `15m`, `30m`, `1h` |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh token expiry | `1d`, `7d`, `30d` |
+
+For local development, you can use simple strings. For production, use strong random secrets (64+ characters).
 
 ### 2. Build the Project
 
@@ -94,5 +113,9 @@ The key must match SAM's logical ID. Find it in `cdk.out/ApiStack-dev.template.j
 ## Security
 
 - **Never commit** `env.local.json` to Git (it's in `.gitignore`)
-- Only `env.template.json` is committed
-- AWS deployments use Secrets Manager for credentials
+- Only `env.template.json` is committed (contains placeholder values)
+- AWS deployments use Secrets Manager for sensitive credentials:
+  - `/oriana/{env}/db` - Database username and password
+  - `/oriana/{env}/jwt` - JWT_SECRET and JWT_REFRESH_SECRET
+- Secrets are fetched at runtime with 5-minute caching to minimize API calls
+- Production enforces that secrets must be present (throws error if missing)
