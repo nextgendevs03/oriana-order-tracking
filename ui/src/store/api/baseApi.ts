@@ -11,16 +11,15 @@
  * to add their endpoints.
  */
 
-import { createApi } from '@reduxjs/toolkit/query/react';
-import {fetchBaseQuery} from '@reduxjs/toolkit/query';
-//import type { RootState } from '../index';
-
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { fetchBaseQuery } from "@reduxjs/toolkit/query";
 // API base URL - configure based on environment
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:4000/api";
 
 export const baseApi = createApi({
   // Unique key in Redux store - all API data stored under this path
-  reducerPath: 'api',
+  reducerPath: "api",
 
   // Base query configuration
   baseQuery: fetchBaseQuery({
@@ -28,14 +27,13 @@ export const baseApi = createApi({
 
     // Prepare headers for every request
     prepareHeaders: (headers, { getState }) => {
-  
-      const token = sessionStorage.getItem('authToken');
+      const token = sessionStorage.getItem("authToken");
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
 
       // Set content type for JSON requests
-      headers.set('Content-Type', 'application/json');
+      headers.set("Content-Type", "application/json");
 
       return headers;
     },
@@ -61,15 +59,15 @@ export const baseApi = createApi({
 });
 
 // If user is authenticated, add JWT token
-      // Note: Adjust the path if you store token differently
-      // Currently using currentUser object - add 'token' field to User interface if needed
-      //const currentUser = state.auth.currentUser;
+// Note: Adjust the path if you store token differently
+// Currently using currentUser object - add 'token' field to User interface if needed
+//const currentUser = state.auth.currentUser;
 
-      // Example: If you add a token field to your User interface
-      // const token = currentUser?.token;
-      // if (token) {
-      //   headers.set('Authorization', `Bearer ${token}`);
-      // }
+// Example: If you add a token field to your User interface
+// const token = currentUser?.token;
+// if (token) {
+//   headers.set('Authorization', `Bearer ${token}`);
+// }
 
-      // For now, using a placeholder - update when JWT is implemented
-      // You can also use sessionStorage/localStorage for token storage
+// For now, using a placeholder - update when JWT is implemented
+// You can also use sessionStorage/localStorage for token storage
