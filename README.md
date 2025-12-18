@@ -39,9 +39,14 @@ oriana-order-tracking/
 │   ├── migrations/             # Database migrations
 │   └── ARCHITECTURE.md         # Detailed backend documentation
 ├── cdk/                        # AWS CDK Infrastructure
+│   ├── config/                 # Service configs (S3, RDS)
 │   └── lib/
 │       ├── stacks/             # CDK stacks
 │       └── constructs/         # Reusable constructs
+│           ├── core/           # Lambda, API Gateway
+│           ├── storage/        # S3 buckets
+│           ├── database/       # RDS PostgreSQL
+│           └── hosting/        # Static site (CloudFront)
 ├── ui/                         # React Frontend
 └── .husky/                     # Git hooks
 ```
@@ -158,8 +163,10 @@ npm run migrate
 | `npm run dev` | Build + Synth + Start local API |
 | `npm run dev:quick` | Quick start (skip build) |
 | `npm run synth:dev` | Synthesize dev stack |
-| `npm run deploy:dev` | Deploy to dev |
-| `npm run deploy:prod` | Deploy to production |
+| `npm run build:all` | Build both API + UI |
+| `npm run deploy:dev` | Build API + UI + Deploy to dev |
+| `npm run deploy:api:dev` | Build API only + Deploy (faster) |
+| `npm run deploy:prod` | Build API + UI + Deploy to production |
 
 ### Root
 
@@ -207,19 +214,70 @@ cd cdk
 # First time - bootstrap CDK
 npm run bootstrap
 
-# Deploy to environment
+# Deploy to environment (builds API + UI)
 npm run deploy:dev    # Development
 npm run deploy:qa     # QA
 npm run deploy:prod   # Production
+
+# Deploy API only (faster, skips UI build)
+npm run deploy:api:dev
+npm run deploy:api:qa
+npm run deploy:api:prod
 ```
+
+### What Gets Deployed
+
+| Resource | Dev | QA | Prod |
+|----------|-----|-----|------|
+| Lambda Functions | ✅ | ✅ | ✅ |
+| API Gateway | ✅ | ✅ | ✅ |
+| S3 Buckets (uploads, documents) | ✅ | ✅ | ✅ |
+| UI Hosting (S3 + CloudFront) | ✅ | ✅ | ✅ |
+| RDS PostgreSQL | ❌ | ❌ | ✅ |
 
 ### Environment Configuration
 
-| Environment | Stack | Database | Memory |
-|-------------|-------|----------|--------|
-| dev | ApiStack-dev | Supabase | 256 MB |
-| qa | ApiStack-qa | RDS | 512 MB |
-| prod | ApiStack-prod | RDS | 1024 MB |
+| Environment | Stack | Database | Memory | UI URL |
+|-------------|-------|----------|--------|--------|
+| dev | ApiStack-dev | Neon/Supabase | 256 MB | CloudFront |
+| qa | ApiStack-qa | Neon/Supabase | 512 MB | CloudFront |
+| prod | ApiStack-prod | AWS RDS | 1024 MB | CloudFront |
+
+### Data Protection (Production)
+
+- **S3 Buckets**: `RemovalPolicy.RETAIN` - Won't be deleted on stack updates
+- **RDS Database**: `RemovalPolicy.SNAPSHOT` - Creates final snapshot before deletion
+- **Deletion Protection**: Enabled for RDS to prevent accidental deletion
+
+## 🤖 CI/CD with GitHub Actions
+
+The project includes GitHub Actions workflows for automated deployment.
+
+### Available Workflows
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| 🔍 CI | Push/PR | Lint, test, build validation |
+| 🚀 Deploy | Manual | Deploy to dev/qa/prod |
+| 🗄️ DB Migration | Manual | Run Prisma migrations |
+
+### Quick Deployment via GitHub Actions
+
+1. Go to **Actions** tab in GitHub
+2. Select **🚀 Deploy** workflow
+3. Click **Run workflow**
+4. Choose environment (dev/qa/prod) and deploy type
+5. Click **Run workflow**
+
+### Database Migration via GitHub Actions
+
+1. Go to **Actions** tab
+2. Select **🗄️ Database Migration**
+3. Choose environment and action (deploy/status)
+4. For production: Type `MIGRATE-PROD` to confirm
+5. Run workflow
+
+See **[.github/WORKFLOWS.md](.github/WORKFLOWS.md)** for detailed setup instructions.
 
 ## 🔄 Adding New Features
 

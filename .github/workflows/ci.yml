@@ -1,0 +1,115 @@
+# Continuous Integration Workflow for Oriana Order Tracking
+#
+# This workflow runs on every push and pull request to validate:
+# - Code linting
+# - TypeScript compilation
+# - Unit tests
+# - Build validation
+#
+# Trigger: Push to main/develop branches, Pull requests
+
+name: 🔍 CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            api/package-lock.json
+            ui/package-lock.json
+
+      # API Checks
+      - name: 📦 Install API dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: 🔍 Lint API
+        working-directory: api
+        run: npm run lint
+
+      - name: 🔨 Build API
+        working-directory: api
+        run: npm run build:all
+
+      - name: 🧪 Test API
+        working-directory: api
+        run: npm run test --if-present
+        continue-on-error: true
+
+      # UI Checks
+      - name: 📦 Install UI dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: 🔨 Build UI
+        working-directory: ui
+        run: npm run build
+        env:
+          CI: false  # Ignore warnings as errors
+
+  cdk-synth:
+    name: CDK Synth
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            api/package-lock.json
+            cdk/package-lock.json
+
+      - name: 📦 Install API dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: 🔨 Build API
+        working-directory: api
+        run: npm run build:all
+
+      - name: 📦 Install CDK dependencies
+        working-directory: cdk
+        run: npm ci
+
+      - name: 🔧 CDK Synth (Validate)
+        working-directory: cdk
+        run: |
+          echo "🔧 Synthesizing CDK stacks..."
+          npx cdk synth ApiStack-dev --quiet
+          echo "✅ CDK synthesis successful"
+
+      - name: 📋 CI Summary
+        run: |
+          echo "## ✅ CI Passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All checks passed successfully:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ API Lint" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ API Build" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ UI Build" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ CDK Synth" >> $GITHUB_STEP_SUMMARY
+

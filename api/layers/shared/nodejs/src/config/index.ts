@@ -7,11 +7,24 @@ export interface DatabaseConfig {
   ssl: boolean;
 }
 
+/**
+ * Database connection settings (non-sensitive).
+ * These come from Lambda environment variables.
+ */
+export interface DatabaseConnectionConfig {
+  host: string;
+  port: number;
+  database: string;
+  ssl: boolean;
+}
+
 export interface AppConfig {
   environment: string;
   isLocal: boolean;
   secretsManagerSecretId: string;
   region: string;
+  /** Database connection settings from env vars (non-sensitive) */
+  database: DatabaseConnectionConfig;
 }
 
 export const getAppConfig = (): AppConfig => {
@@ -23,6 +36,13 @@ export const getAppConfig = (): AppConfig => {
     isLocal,
     secretsManagerSecretId: process.env.DB_SECRET_ID || `/oriana/${environment}/db`,
     region: process.env.AWS_REGION || 'ap-south-1',
+    // Database connection settings from Lambda env vars
+    database: {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      database: process.env.DB_NAME || 'postgres',
+      ssl: process.env.DB_SSL === 'true',
+    },
   };
 };
 

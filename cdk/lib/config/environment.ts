@@ -12,6 +12,10 @@ export interface FeatureFlags {
   vpc: boolean;
   cognito: boolean;
   kms: boolean;
+  /** Enable static site hosting (S3 + CloudFront) for UI */
+  staticSite: boolean;
+  /** Enable RDS PostgreSQL database (recommended for prod only) */
+  rds: boolean;
 }
 
 /**
@@ -26,12 +30,26 @@ const defaultFeatures: FeatureFlags = {
   vpc: false,
   cognito: false,
   kms: false,
+  staticSite: false,
+  rds: false,
 };
+
+/**
+ * Database connection configuration (non-sensitive).
+ * Credentials (username/password) are stored in AWS Secrets Manager.
+ */
+export interface DatabaseConfig {
+  host: string;
+  port: number;
+  name: string;
+  ssl: boolean;
+}
 
 export interface EnvironmentConfig {
   environment: Environment;
   stackName: string;
   description: string;
+  /** Secrets Manager secret ID for database credentials (username/password only) */
   dbSecretId: string;
   logRetentionDays: number;
   lambdaMemorySize: number;
@@ -41,6 +59,8 @@ export interface EnvironmentConfig {
   tags: Record<string, string>;
   /** Feature flags to enable/disable AWS services */
   features: FeatureFlags;
+  /** Database connection settings (non-sensitive) */
+  database: DatabaseConfig;
 }
 
 const baseConfig = {
@@ -70,6 +90,14 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     features: {
       ...defaultFeatures,
       s3: true, // Enable S3 for dev
+      staticSite: true, // Enable UI hosting for dev
+      rds: false, // Dev uses external DB (Neon/Supabase)
+    },
+    database: {
+      host: "db.xxxxxxxxxxxx.supabase.co", // TODO: Replace with your Supabase host
+      port: 5432,
+      name: "postgres",
+      ssl: true,
     },
   },
   qa: {
@@ -90,6 +118,14 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     features: {
       ...defaultFeatures,
       s3: true, // Enable S3 for qa
+      staticSite: true, // Enable UI hosting for qa
+      rds: false, // QA uses external DB (Neon/Supabase)
+    },
+    database: {
+      host: "db.xxxxxxxxxxxx.supabase.co", // TODO: Replace with your QA Supabase host
+      port: 5432,
+      name: "postgres",
+      ssl: true,
     },
   },
   prod: {
@@ -110,6 +146,14 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
     features: {
       ...defaultFeatures,
       s3: true, // Enable S3 for prod
+      staticSite: true, // Enable UI hosting for prod
+      rds: true, // Enable AWS RDS for production
+    },
+    database: {
+      host: "", // Will be set from RDS construct output
+      port: 5432,
+      name: "oriana",
+      ssl: true,
     },
   },
 };

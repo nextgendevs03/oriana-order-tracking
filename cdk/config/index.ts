@@ -9,6 +9,9 @@
 export * from "./s3.config";
 // export * from './dynamodb.config';  // Uncomment when adding DynamoDB
 
+// Database configs
+export * from "./rds.config";
+
 // Messaging configs
 // export * from './sqs.config';       // Uncomment when adding SQS
 // export * from './ses.config';       // Uncomment when adding SES
