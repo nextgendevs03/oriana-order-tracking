@@ -1,7 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 
 export interface JWTPayload {
-  // userId: string;
   username: string;
   email?: string;
   role?: string;
@@ -11,8 +10,8 @@ export interface JWTPayload {
 export interface TokenResult {
   accessToken: string;
   refreshToken: string;
-  expiresIn: number; // seconds
-  refreshExpiresIn: number; // seconds
+  expiresIn: number;
+  refreshExpiresIn: number;
 }
 const getJWTSecret = (): string => {
   const secret = process.env.JWT_SECRET;
@@ -74,13 +73,6 @@ const parseExpiryToSeconds = (expiry: string): number => {
   }
 };
 
-/**
- * Generate Access Token
- * Short-lived token for API authentication (default: 15 minutes)
- *
- * @param payload - User data to encode in the token
- * @returns Access token string
- */
 export const generateAccessToken = (payload: JWTPayload): string => {
   const secret = getJWTSecret();
   const expiresIn = getAccessTokenExpiry();
@@ -152,18 +144,10 @@ export const verifyRefreshToken = (token: string): JWTPayload => {
   }
 };
 
-/**
- * Generate Both Tokens
- * Convenience function to generate both access and refresh tokens at once
- *
- * @param payload - User data to encode in the tokens
- * @returns Object containing both tokens and expiration info
- */
 export const generateTokens = (payload: JWTPayload): TokenResult => {
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
-  // Parse expiration times to seconds
   const accessExpiresIn = parseExpiryToSeconds(getAccessTokenExpiry());
   const refreshExpiresIn = parseExpiryToSeconds(getRefreshTokenExpiry());
 
