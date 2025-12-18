@@ -18,6 +18,7 @@ import ProductManagement from "./Components/ProductManagment/ProductManagment";
 import CategoryManagement from "./Components/ProductManagment/Categories/CategoryManagment";
 import OEMManagement from "Components/ProductManagment/Oems/OEMManagment";
 import ProductsManagmentProduct from "Components/ProductManagment/Products/ProductsManagmentProduct";
+import SummaryDashboard from "pages/SummaryDashboard";
 
 const App: React.FC = () => {
   return (
@@ -29,6 +30,9 @@ const App: React.FC = () => {
         {/* Protected Routes with Layout */}
         <Route path="/dashboard" element={<LayoutPage />}>
           <Route index element={<Dashboard />} />
+        </Route>
+        <Route path="/summary-dashboard" element={<LayoutPage />}>
+          <Route index element={<SummaryDashboard />} />
         </Route>
         <Route path="/settings" element={<LayoutPage />}>
           <Route index element={<Settings />} />
