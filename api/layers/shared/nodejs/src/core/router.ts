@@ -10,6 +10,7 @@ import {
   handleOptions,
   ValidationError,
 } from '../middleware/errorHandler';
+import { authMiddleware, AuthenticatedEvent } from '../middleware/authMiddleware';
 import { logger } from '../utils/logger';
 
 interface MatchedRoute {
@@ -18,10 +19,10 @@ interface MatchedRoute {
   pathParams: Record<string, string>;
   basePath: string;
 }
-
-/**
- * Router class for matching and dispatching requests to controllers
- */
+const PUBLIC_ROUTES: Array<{ method: HttpMethod; path: string }> = [
+  { method: 'POST', path: '/api/login' },
+  { method: 'POST', path: '/api/register' },
+];
 export class Router {
   private container: Container;
   private lambdaName: string;
@@ -31,9 +32,9 @@ export class Router {
     this.lambdaName = lambdaName;
   }
 
-  /**
-   * Handle an incoming API Gateway request
-   */
+  private isPublicRoute(method: HttpMethod, path: string): boolean {
+    return PUBLIC_ROUTES.some((route) => route.method === method && route.path === path);
+  }
   async handleRequest(
     event: APIGatewayProxyEvent,
     context: LambdaContext
@@ -41,13 +42,11 @@ export class Router {
     const method = event.httpMethod.toUpperCase() as HttpMethod;
     const path = event.path;
 
-    // Handle CORS preflight
     if (method === 'OPTIONS') {
       return handleOptions();
     }
 
     try {
-      // Find matching route
       const match = this.matchRoute(method, path);
 
       if (!match) {
@@ -59,47 +58,75 @@ export class Router {
         controller: match.controller.name,
         method: match.route.methodName,
         pathParams: match.pathParams,
+        path,
       });
+      let authenticatedEvent: AuthenticatedEvent | APIGatewayProxyEvent = event;
+      if (!this.isPublicRoute(method, path)) {
+        logger.debug('Route requires authentication', { method, path });
 
-      // Get controller instance from DI container
+        const authResult = await authMiddleware(event);
+        if ('statusCode' in authResult && 'body' in authResult) {
+          logger.warn('Authentication failed', { method, path, statusCode: authResult.statusCode });
+          return authResult;
+        }
+
+        authenticatedEvent = authResult as AuthenticatedEvent;
+        logger.debug('Authentication successful', {
+          username: (authenticatedEvent as AuthenticatedEvent).user?.username,
+          method,
+          path,
+        });
+      } else {
+        logger.debug('Public route - skipping authentication', { method, path });
+      }
+
       const controllerInstance = this.container.get(match.controller) as object;
 
-      // Build request context
       const requestContext: RequestContext = {
-        event,
+        event: authenticatedEvent,
         context,
         pathParams: match.pathParams,
       };
 
-      // Resolve parameters
       const args = parameterResolver.resolveParameters(
         controllerInstance,
         match.route.propertyKey,
         requestContext
       );
 
-      // Invoke the controller method
       const methodFn = (controllerInstance as Record<string | symbol, Function>)[
         match.route.propertyKey
       ];
       const result = await methodFn.apply(controllerInstance, args);
 
-      // If result is already an API Gateway response, return it directly
       if (this.isApiGatewayResponse(result)) {
         return result;
       }
 
-      // Otherwise, wrap in success response
       return createSuccessResponse(result);
     } catch (error) {
-      logger.error('Error handling request', error);
+      const errorObj = error as Error & { code?: string; meta?: unknown };
+      const isPrismaError = errorObj.name?.startsWith('PrismaClient');
+
+      if (isPrismaError) {
+        logger.error('Error handling request', {
+          type: errorObj.name,
+          code: errorObj.code,
+          meta: errorObj.meta,
+          message: errorObj.message?.substring(0, 200) || 'No message',
+        });
+      } else {
+        logger.error('Error handling request', {
+          name: errorObj.name,
+          message: errorObj.message?.substring(0, 500) || 'No message',
+          stack: errorObj.stack?.split('\n').slice(0, 10).join('\n') || undefined,
+        });
+      }
+
       return createErrorResponse(error as Error);
     }
   }
 
-  /**
-   * Match a request to a registered route
-   */
   private matchRoute(method: HttpMethod, path: string): MatchedRoute | null {
     const controllerData = routeRegistry.getRoutesForLambda(this.lambdaName);
 
@@ -120,13 +147,7 @@ export class Router {
 
     return null;
   }
-
-  /**
-   * Match a route pattern against actual path and extract parameters
-   * Pattern uses {paramName} syntax (AWS API Gateway style)
-   */
   private matchPath(pattern: string, actualPath: string): Record<string, string> | null {
-    // Normalize paths
     const patternParts = pattern.split('/').filter(Boolean);
     const actualParts = actualPath.split('/').filter(Boolean);
 
@@ -139,15 +160,11 @@ export class Router {
     for (let i = 0; i < patternParts.length; i++) {
       const patternPart = patternParts[i];
       const actualPart = actualParts[i];
-
-      // Check if this is a path parameter {paramName}
       const paramMatch = patternPart.match(/^\{(\w+)\}$/);
 
       if (paramMatch) {
-        // Extract parameter value
         params[paramMatch[1]] = decodeURIComponent(actualPart);
       } else if (patternPart !== actualPart) {
-        // Static path segment doesn't match
         return null;
       }
     }
@@ -155,18 +172,12 @@ export class Router {
     return params;
   }
 
-  /**
-   * Join path segments correctly
-   */
   private joinPaths(basePath: string, routePath: string): string {
     const base = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
     const route = routePath.startsWith('/') ? routePath : `/${routePath}`;
     return route === '/' ? base || '/' : `${base}${route}`;
   }
 
-  /**
-   * Check if result is already an API Gateway response
-   */
   private isApiGatewayResponse(result: unknown): result is APIGatewayProxyResult {
     return (
       typeof result === 'object' && result !== null && 'statusCode' in result && 'body' in result
@@ -174,9 +185,6 @@ export class Router {
   }
 }
 
-/**
- * Create a router instance for a specific lambda
- */
 export function createRouter(container: Container, lambdaName: string): Router {
   return new Router(container, lambdaName);
 }

@@ -8,8 +8,9 @@ import {
   UserAddOutlined,
   SafetyCertificateOutlined,
   KeyOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { MenuProps } from "antd";
 
 interface SidebarMenuProps {
@@ -18,12 +19,15 @@ interface SidebarMenuProps {
 
 const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-
+  
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     switch (e.key) {
       case "1":
         navigate("/dashboard");
+        break;
+
+      case "1-1":
+        navigate("/summary-dashboard");
         break;
 
       // Admin
@@ -39,12 +43,15 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
       case "2-4":
         navigate("/product-management");
         break;
+
       case "3":
         navigate("/profile");
         break;
+
       case "4":
         navigate("/");
         break;
+
       default:
         break;
     }
@@ -57,6 +64,11 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
       label: "Dashboard",
     },
     {
+      key: "1-1",
+      icon: <BarChartOutlined />,
+      label: "Summary Dashboard",
+    },
+    {
       key: "2",
       icon: <SettingOutlined />,
       label: "Admin",
@@ -67,7 +79,6 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
         { key: "2-4", label: "Product Management", icon: <AppstoreOutlined /> },
       ],
     },
-
     {
       key: "3",
       icon: <UserOutlined />,
