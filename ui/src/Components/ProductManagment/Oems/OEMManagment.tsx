@@ -16,6 +16,7 @@ const OEMManagement: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOEM, setEditingOEM] = useState<OEMResponse | null>(null);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   const handleEdit = (record: OEMResponse) => {
     setEditingOEM(record);
@@ -67,27 +68,88 @@ const OEMManagement: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <Breadcrumb>
+    <div style={{ padding: "1rem" }}>
+      <Breadcrumb style={{ marginBottom: "1rem" }}>
         <Breadcrumb.Item>Home</Breadcrumb.Item>
         <Breadcrumb.Item>Product Management</Breadcrumb.Item>
         <Breadcrumb.Item>OEM Management</Breadcrumb.Item>
       </Breadcrumb>
 
+      {/* Page Header - Pill Badge Style with Wave Pattern */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginTop: 16,
+          alignItems: "center",
+          marginBottom: "1.5rem",
+          padding: "1.25rem 1.5rem",
+          background: "#ecfdf5",
+          borderRadius: 16,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <h2>OEM Management</h2>
+        {/* Wave decoration */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 40,
+            background: "linear-gradient(180deg, transparent, rgba(16, 185, 129, 0.1))",
+            pointerEvents: "none",
+          }}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1 }}>
+          <div
+            style={{
+              padding: "10px 20px",
+              borderRadius: 30,
+              background: "linear-gradient(135deg, #059669, #10b981)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              boxShadow: "0 4px 12px rgba(16, 185, 129, 0.35)",
+            }}
+          >
+            <span style={{ fontSize: 20 }}>🏭</span>
+            <span style={{ color: "#fff", fontWeight: 600, fontSize: "0.9rem" }}>OEM</span>
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.35rem", color: "#047857" }}>
+              OEM Management
+            </h2>
+            <p style={{ margin: "0.15rem 0 0 0", fontSize: "0.85rem", color: "#059669" }}>
+              Manage Original Equipment Manufacturers
+            </p>
+          </div>
+        </div>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={() => {
             setEditingOEM(null);
             setIsModalOpen(true);
+          }}
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => setIsButtonHovered(false)}
+          style={{
+            background: isButtonHovered
+              ? "linear-gradient(135deg, #047857, #059669)"
+              : "linear-gradient(135deg, #059669, #10b981)",
+            border: "none",
+            borderRadius: 20,
+            fontWeight: 600,
+            height: 40,
+            padding: "0 24px",
+            position: "relative",
+            zIndex: 1,
+            boxShadow: isButtonHovered
+              ? "0 6px 20px rgba(16, 185, 129, 0.5)"
+              : "0 2px 8px rgba(16, 185, 129, 0.3)",
+            transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
+            transition: "all 0.3s ease",
           }}
         >
           Add OEM

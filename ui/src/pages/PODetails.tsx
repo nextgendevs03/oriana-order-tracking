@@ -1178,25 +1178,73 @@ const PODetails: React.FC = () => {
         minHeight: "100%",
       }}
     >
+      {/* Page Header - Split Card with Badge Style */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "stretch",
           marginBottom: "1.5rem",
+          borderRadius: 14,
+          overflow: "hidden",
+          boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Title level={3} style={{ margin: 0 }}>
-            PO Details - {selectedPO.id}
-          </Title>
-          <Tag
-            color={isPOClosed ? "red" : "green"}
-            style={{ fontSize: "14px", padding: "4px 12px" }}
-          >
-            {isPOClosed ? "Closed" : "Active PO"}
-          </Tag>
+        {/* Left colored section */}
+        <div
+          style={{
+            background: "linear-gradient(180deg, #ea580c, #f97316)",
+            padding: "1.25rem 1.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: 80,
+          }}
+        >
+          <FileTextOutlined style={{ fontSize: 32, color: "#fff" }} />
         </div>
+        {/* Right content section */}
+        <div
+          style={{
+            flex: 1,
+            background: "#fff",
+            padding: "1rem 1.5rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderTop: "1px solid #f3f4f6",
+            borderRight: "1px solid #f3f4f6",
+            borderBottom: "1px solid #f3f4f6",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.35rem", color: "#1f2937" }}>
+                Order Tracking
+              </h2>
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #ea580c, #f97316)",
+                  color: "#fff",
+                  padding: "4px 12px",
+                  borderRadius: 20,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                }}
+              >
+                {selectedPO.id}
+              </span>
+              <Tag
+                color={isPOClosed ? "red" : "green"}
+                style={{ fontSize: "12px", padding: "2px 10px", fontWeight: 500, borderRadius: 12 }}
+              >
+                {isPOClosed ? "Closed" : "Active"}
+              </Tag>
+            </div>
+            <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
+              View and manage order details, dispatches & commissioning
+            </p>
+          </div>
         <Popconfirm
           title="Close PO"
           description="Are you sure you want to close this PO? This action cannot be undone."
@@ -1214,6 +1262,8 @@ const PODetails: React.FC = () => {
             style={{
               borderRadius: 8,
               fontWeight: 600,
+              height: 38,
+              padding: "0 18px",
             }}
             title={
               isPOClosed
@@ -1226,6 +1276,7 @@ const PODetails: React.FC = () => {
             {isPOClosed ? "PO Closed" : "Close PO"}
           </Button>
         </Popconfirm>
+        </div>
       </div>
 
       <Collapse defaultActiveKey={["1"]} accordion={false}>

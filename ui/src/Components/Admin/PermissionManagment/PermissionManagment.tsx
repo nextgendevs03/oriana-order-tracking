@@ -29,6 +29,7 @@ const PermissionsManagement: React.FC = () => {
   const [filterModule, setFilterModule] = useState<string>();
   const [openModal, setOpenModal] = useState(false);
   const [permissionToEdit, setPermissionToEdit] = useState<any>();
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   const handleDelete = async (id: string) => {
     try {
@@ -83,41 +84,108 @@ const PermissionsManagement: React.FC = () => {
   ];
 
   return (
-    <div>
-      <Title level={3}>Permission Management</Title>
-
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <Space>
-          <Input
-            placeholder="Search..."
-            style={{ width: 260 }}
-            allowClear
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-
-          <Select
-            placeholder="Filter by module"
-            style={{ width: 180 }}
-            allowClear
-            onChange={(value) => setFilterModule(value)}
-            options={[
-              { label: "users", value: "users" },
-              { label: "roles", value: "roles" },
-              { label: "permissions", value: "permissions" },
-            ]}
-          />
-        </Space>
-
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            setPermissionToEdit(undefined);
-            setOpenModal(true);
+    <div style={{ padding: "1rem" }}>
+      {/* Page Header - Two-Tone Split Design */}
+      <div
+        style={{
+          display: "flex",
+          marginBottom: "1.5rem",
+          borderRadius: 14,
+          overflow: "hidden",
+          boxShadow: "0 4px 20px rgba(8, 145, 178, 0.15)",
+        }}
+      >
+        <div
+          style={{
+            background: "linear-gradient(180deg, #0891b2, #06b6d4)",
+            padding: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          Add Permission
-        </Button>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.2)",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span style={{ fontSize: 28 }}>🔐</span>
+          </div>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            background: "linear-gradient(90deg, #ecfeff, #fff)",
+            padding: "1.25rem 1.5rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: "#0e7490" }}>
+              Permission Management
+            </h2>
+            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: "#64748b" }}>
+              Configure and manage system permissions
+            </p>
+          </div>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setPermissionToEdit(undefined);
+              setOpenModal(true);
+            }}
+            onMouseEnter={() => setIsButtonHovered(true)}
+            onMouseLeave={() => setIsButtonHovered(false)}
+            style={{
+              background: isButtonHovered
+                ? "linear-gradient(135deg, #0e7490, #0891b2)"
+                : "linear-gradient(135deg, #0891b2, #06b6d4)",
+              border: "none",
+              borderRadius: 8,
+              fontWeight: 600,
+              height: 40,
+              padding: "0 20px",
+              boxShadow: isButtonHovered
+                ? "0 6px 20px rgba(8, 145, 178, 0.45)"
+                : "0 2px 8px rgba(8, 145, 178, 0.25)",
+              transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
+              transition: "all 0.3s ease",
+            }}
+          >
+            Add Permission
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: "flex", gap: 12, marginBottom: "1rem" }}>
+        <Input
+          placeholder="Search permissions..."
+          style={{ width: 280, borderRadius: 8 }}
+          allowClear
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <Select
+          placeholder="Filter by module"
+          style={{ width: 200 }}
+          allowClear
+          onChange={(value) => setFilterModule(value)}
+          options={[
+            { label: "Users", value: "users" },
+            { label: "Roles", value: "roles" },
+            { label: "Permissions", value: "permissions" },
+          ]}
+        />
       </div>
 
       <Table

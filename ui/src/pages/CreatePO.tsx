@@ -250,9 +250,54 @@ const CreatePO: FC = () => {
         minHeight: "100%",
       }}
     >
-      <Title level={3} style={{ marginBottom: "1.5rem" }}>
-        Order Punching
-      </Title>
+      {/* Page Header - Minimal Left Accent Style */}
+      <div
+        style={{
+          marginBottom: "1.5rem",
+          padding: "1.25rem 1.5rem",
+          background: "#fafafa",
+          borderRadius: 12,
+          borderLeft: "4px solid #0d9488",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: 200,
+            height: "100%",
+            background: "linear-gradient(90deg, transparent, rgba(13, 148, 136, 0.05))",
+            pointerEvents: "none",
+          }}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 16, position: "relative", zIndex: 1 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              background: "linear-gradient(135deg, #0d9488, #14b8a6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 3px 10px rgba(13, 148, 136, 0.3)",
+            }}
+          >
+            <span style={{ fontSize: 22, color: "#fff" }}>+</span>
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: "#0d9488" }}>
+              Order Punching
+            </h2>
+            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
+              Create and submit new purchase orders
+            </p>
+          </div>
+        </div>
+      </div>
 
       <Form
         form={form}

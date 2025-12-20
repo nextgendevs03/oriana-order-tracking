@@ -15,6 +15,7 @@ import moment from "moment";
 
 const SummaryDashboard: React.FC = () => {
   const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [isRefreshHovered, setIsRefreshHovered] = useState(false);
 
   /* ---------- Side Panels ---------- */
   const [showFilter, setShowFilter] = useState(false);
@@ -80,23 +81,96 @@ const SummaryDashboard: React.FC = () => {
 
   return (
     <div style={{ padding: 24, background: "#f5f7fb", minHeight: "100vh" }}>
-      {/* ---------- Header ---------- */}
+      {/* ---------- Header - Glassmorphism Style ---------- */}
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 20,
+          position: "relative",
+          marginBottom: 24,
+          padding: "1.5rem 2rem",
+          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)",
+          borderRadius: 16,
+          border: "1px solid rgba(99, 102, 241, 0.2)",
+          backdropFilter: "blur(10px)",
+          overflow: "hidden",
         }}
       >
-        <div>
-          <h2>Summary Dashboard</h2>
-          <span style={{ color: "#6b7280" }}>
-            Track all purchase orders at a glance
-          </span>
+        {/* Decorative circles */}
+        <div
+          style={{
+            position: "absolute",
+            top: -30,
+            right: -30,
+            width: 120,
+            height: 120,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.1))",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: -20,
+            right: 80,
+            width: 60,
+            height: 60,
+            borderRadius: "50%",
+            background: "rgba(139, 92, 246, 0.15)",
+            pointerEvents: "none",
+          }}
+        />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative", zIndex: 1 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.4)",
+                }}
+              >
+                <FileTextOutlined style={{ fontSize: 24, color: "#fff" }} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.5rem", color: "#1e1b4b" }}>
+                  Summary Dashboard
+                </h2>
+                <p style={{ margin: 0, fontSize: "0.875rem", color: "#6b7280" }}>
+                  Track all purchase orders at a glance
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            onMouseEnter={() => setIsRefreshHovered(true)}
+            onMouseLeave={() => setIsRefreshHovered(false)}
+            style={{
+              background: isRefreshHovered
+                ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
+                : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontWeight: 600,
+              height: 42,
+              padding: "0 24px",
+              boxShadow: isRefreshHovered
+                ? "0 6px 20px rgba(99, 102, 241, 0.5)"
+                : "0 4px 12px rgba(99, 102, 241, 0.35)",
+              transform: isRefreshHovered ? "translateY(-2px)" : "translateY(0)",
+              transition: "all 0.3s ease",
+            }}
+          >
+            Refresh
+          </Button>
         </div>
-        <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-          Refresh
-        </Button>
       </div>
 
       {/* ---------- Cards ---------- */}

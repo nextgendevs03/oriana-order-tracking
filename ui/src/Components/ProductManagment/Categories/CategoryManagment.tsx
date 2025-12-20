@@ -17,6 +17,7 @@ const CategoryManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] =
     useState<CategoryResponse | null>(null);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   const handleEdit = (record: CategoryResponse) => {
     setEditingCategory(record);
@@ -55,25 +56,75 @@ const CategoryManagement: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <Breadcrumb>
+    <div style={{ padding: "1rem" }}>
+      <Breadcrumb style={{ marginBottom: "1rem" }}>
         <Breadcrumb.Item>Home</Breadcrumb.Item>
         <Breadcrumb.Item>Product Management</Breadcrumb.Item>
         <Breadcrumb.Item>Category Management</Breadcrumb.Item>
       </Breadcrumb>
 
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h2>Category Management</h2>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            setEditingCategory(null);
-            setIsModalOpen(true);
-          }}
-        >
-          Add Category
-        </Button>
+      {/* Page Header - Bottom Accent Bar Style */}
+      <div
+        style={{
+          marginBottom: "1.5rem",
+          padding: "1.25rem 1.5rem",
+          background: "#fff",
+          borderRadius: 12,
+          boxShadow: "0 2px 12px rgba(37, 99, 235, 0.1)",
+          borderBottom: "4px solid #3b82f6",
+          position: "relative",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 10,
+                background: "#eff6ff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span style={{ fontSize: 24 }}>📂</span>
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.35rem", color: "#1e40af" }}>
+                Category Management
+              </h2>
+              <p style={{ margin: "0.15rem 0 0 0", fontSize: "0.85rem", color: "#64748b" }}>
+                Organize and manage product categories
+              </p>
+            </div>
+          </div>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingCategory(null);
+              setIsModalOpen(true);
+            }}
+            onMouseEnter={() => setIsButtonHovered(true)}
+            onMouseLeave={() => setIsButtonHovered(false)}
+            style={{
+              background: isButtonHovered ? "#2563eb" : "#3b82f6",
+              border: "none",
+              borderRadius: 8,
+              fontWeight: 600,
+              height: 40,
+              padding: "0 20px",
+              boxShadow: isButtonHovered
+                ? "0 6px 20px rgba(59, 130, 246, 0.45)"
+                : "0 2px 8px rgba(59, 130, 246, 0.25)",
+              transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
+              transition: "all 0.3s ease",
+            }}
+          >
+            Add Category
+          </Button>
+        </div>
       </div>
 
       <Table

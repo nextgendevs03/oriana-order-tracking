@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Table, Button, Tag } from "antd";
 import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +24,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const poList = useAppSelector(selectPOList);
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
   // Check if user is authenticated
   useEffect(() => {
     if (!isLoggedIn) {
@@ -166,22 +167,61 @@ const Dashboard: React.FC = () => {
         minHeight: "100%",
       }}
     >
-      {/* Header with Create PO button */}
+      {/* Header with title and Create PO button */}
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "1rem",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+          padding: "1.25rem 1.5rem",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          borderRadius: 12,
+          boxShadow: "0 4px 15px rgba(102, 126, 234, 0.3)",
         }}
       >
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontWeight: 700,
+              fontSize: "1.5rem",
+              color: "#ffffff",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Order Punch Dashboard
+          </h2>
+          <p
+            style={{
+              margin: "0.35rem 0 0 0",
+              fontSize: "0.875rem",
+              color: "rgba(255, 255, 255, 0.85)",
+              fontWeight: 400,
+            }}
+          >
+            Track and manage all purchase orders in one place
+          </p>
+        </div>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleCreatePO}
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => setIsButtonHovered(false)}
           style={{
-            backgroundColor: "#4b6cb7",
+            backgroundColor: isButtonHovered ? "#667eea" : "#ffffff",
+            color: isButtonHovered ? "#ffffff" : "#667eea",
+            border: "none",
             borderRadius: 8,
             fontWeight: 600,
+            height: 40,
+            padding: "0 20px",
+            boxShadow: isButtonHovered
+              ? "0 4px 15px rgba(102, 126, 234, 0.4)"
+              : "0 2px 8px rgba(0, 0, 0, 0.15)",
+            transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
+            transition: "all 0.3s ease",
           }}
         >
           Create PO
