@@ -8,6 +8,7 @@ import { ApiGatewayConstruct } from "../constructs/core/api-gateway-construct";
 import { S3Construct } from "../constructs/storage/s3-construct";
 import { StaticSiteConstruct } from "../constructs/hosting/static-site-construct";
 import { RDSConstruct } from "../constructs/database/rds-construct";
+import { JwtSecretsConstruct } from "../constructs/security/jwt-secrets-construct";
 import {
   LambdaPermissions,
   IPermissionProvider,
@@ -137,6 +138,17 @@ export class ApiStack extends Stack {
     // ==========================================
     // SECURITY CONSTRUCTS
     // ==========================================
+
+    // JWT Secrets Construct - Auto-generates JWT_SECRET and JWT_REFRESH_SECRET
+    console.log("\n🔐 Creating JWT secrets...");
+    const jwtSecretsConstruct = new JwtSecretsConstruct(
+      this,
+      "JwtSecretsConstruct",
+      {
+        config,
+      },
+    );
+    permissionProviders.push(jwtSecretsConstruct);
 
     // Cognito Construct (enabled via features.cognito)
     // Uncomment when Cognito construct is implemented

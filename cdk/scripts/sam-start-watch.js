@@ -21,7 +21,6 @@ const fs = require('fs');
 const port = process.env.API_PORT || '4000';
 const template = 'cdk.out/ApiStack-dev.template.json';
 const envVars = 'env.local.json';
-const warmContainers = process.env.SAM_WARM_CONTAINERS || 'LAZY';
 
 // Path to restart signal file (written by esbuild on rebuild)
 const restartSignalPath = path.join(__dirname, '../../api/dist/.restart');
@@ -35,7 +34,7 @@ function startSAM() {
     '-p', port,
     '-t', template,
     '--env-vars', envVars,
-    '--warm-containers', warmContainers,
+    '--warm-containers', 'LAZY',
     '--skip-pull-image'
   ];
 

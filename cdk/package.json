@@ -28,7 +28,6 @@
     "dev:port": "npm run synth:dev && npm run sam:start:port",
     "dev:watch": "npm run synth:dev && node scripts/sam-start-watch.js",
     "dev:all": "npm run synth:dev && concurrently -n \"API,SAM\" -c \"cyan,magenta\" \"cd ../api && npm run watch\" \"node scripts/sam-start-watch.js\"",
-    "dev:eager": "npm run synth:dev && sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers EAGER --skip-pull-image",
     "dev:fresh": "npm run clean && npm run dev",
     "dev:debug": "npm run synth:dev && sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers LAZY --skip-pull-image --debug",
     "dev:quick": "cdk synth ApiStack-dev && npm run sam:start",

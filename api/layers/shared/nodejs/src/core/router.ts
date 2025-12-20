@@ -21,7 +21,7 @@ interface MatchedRoute {
 }
 const PUBLIC_ROUTES: Array<{ method: HttpMethod; path: string }> = [
   { method: 'POST', path: '/api/login' },
-  { method: 'POST', path: '/api/register' },
+  { method: 'POST', path: '/api/user' },
 ];
 export class Router {
   private container: Container;
