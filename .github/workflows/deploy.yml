@@ -104,24 +104,34 @@ jobs:
         run: |
           STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
           
-          # Try to get from CDK outputs file first
+          echo "📄 Looking for API URL in stack outputs..."
+          
+          # Try to get from CDK outputs file first (CDK prefixes with construct ID)
           if [ -f cdk-outputs.json ]; then
-            API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiUrl // empty" cdk-outputs.json)
+            echo "Found cdk-outputs.json:"
+            cat cdk-outputs.json
+            
+            # Look for any key containing "ApiUrl" (CDK adds construct prefix)
+            API_URL=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"ApiUrl\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
           fi
           
           # Fallback to CloudFormation if not found
           if [ -z "$API_URL" ]; then
+            echo "Fetching from CloudFormation..."
+            # Look for any output key containing "ApiUrl"
             API_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
-              --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text 2>/dev/null || echo "")
+              --query "Stacks[0].Outputs[?contains(OutputKey, 'ApiUrl')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
           fi
           
-          if [ -n "$API_URL" ] && [ "$API_URL" != "None" ]; then
-            # Remove trailing slash if present, then add /api
+          if [ -n "$API_URL" ] && [ "$API_URL" != "None" ] && [ "$API_URL" != "" ]; then
+            # Remove trailing slash if present
             API_URL="${API_URL%/}"
             echo "api_url=${API_URL}" >> $GITHUB_OUTPUT
             echo "✅ API URL for UI build: ${API_URL}"
           else
             echo "❌ Could not retrieve API URL from stack outputs"
+            echo "Available outputs:"
+            aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[*].[OutputKey,OutputValue]" --output table || true
             exit 1
           fi
 
@@ -153,25 +163,25 @@ jobs:
         run: |
           STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
           
-          # Get from CDK outputs file
+          # Get from CDK outputs file (CDK prefixes with construct ID)
           if [ -f cdk-outputs.json ]; then
-            BUCKET_NAME=$(jq -r ".[\"$STACK_NAME\"].WebsiteBucketName // empty" cdk-outputs.json)
-            DISTRIBUTION_ID=$(jq -r ".[\"$STACK_NAME\"].DistributionId // empty" cdk-outputs.json)
-            WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"].WebsiteURL // empty" cdk-outputs.json)
+            BUCKET_NAME=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"BucketName\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
+            DISTRIBUTION_ID=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"DistributionId\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
+            WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"WebsiteURL\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
           fi
           
           # Fallback to CloudFormation
-          if [ -z "$BUCKET_NAME" ]; then
+          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" == "null" ]; then
             BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
-              --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucketName'].OutputValue" --output text 2>/dev/null || echo "")
+              --query "Stacks[0].Outputs[?contains(OutputKey, 'BucketName')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
           fi
-          if [ -z "$DISTRIBUTION_ID" ]; then
+          if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" == "null" ]; then
             DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
-              --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" --output text 2>/dev/null || echo "")
+              --query "Stacks[0].Outputs[?contains(OutputKey, 'DistributionId')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
           fi
-          if [ -z "$WEBSITE_URL" ]; then
+          if [ -z "$WEBSITE_URL" ] || [ "$WEBSITE_URL" == "null" ]; then
             WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
-              --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text 2>/dev/null || echo "")
+              --query "Stacks[0].Outputs[?contains(OutputKey, 'WebsiteURL')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
           fi
           
           echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
@@ -236,30 +246,32 @@ jobs:
         run: |
           STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
           
-          # Extract URLs from CDK outputs file
+          # Extract URLs from CDK outputs file (CDK prefixes with construct ID)
           if [ -f cdk-outputs.json ]; then
             echo "📄 CDK Outputs:"
             cat cdk-outputs.json
             
-            # Extract API URL
-            API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiUrl // empty" cdk-outputs.json)
-            if [ -n "$API_URL" ]; then
+            # Extract API URL (look for key containing "ApiUrl")
+            API_URL=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"ApiUrl\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
+            if [ -n "$API_URL" ] && [ "$API_URL" != "null" ]; then
               echo "api_url=$API_URL" >> $GITHUB_OUTPUT
               echo "✅ API URL: $API_URL"
             fi
             
-            # Extract CloudFront URL (Website URL)
-            WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"].WebsiteURL // empty" cdk-outputs.json)
-            if [ -n "$WEBSITE_URL" ]; then
+            # Extract CloudFront URL (look for key containing "WebsiteURL")
+            WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"WebsiteURL\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
+            if [ -n "$WEBSITE_URL" ] && [ "$WEBSITE_URL" != "null" ]; then
               echo "website_url=$WEBSITE_URL" >> $GITHUB_OUTPUT
               echo "✅ Website URL: $WEBSITE_URL"
             fi
           else
             echo "⚠️ CDK outputs file not found, fetching from CloudFormation..."
             
-            # Fallback: Get from CloudFormation directly
-            API_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text 2>/dev/null || echo "")
-            WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text 2>/dev/null || echo "")
+            # Fallback: Get from CloudFormation directly (look for keys containing the patterns)
+            API_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+              --query "Stacks[0].Outputs[?contains(OutputKey, 'ApiUrl')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
+            WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+              --query "Stacks[0].Outputs[?contains(OutputKey, 'WebsiteURL')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
             
             if [ -n "$API_URL" ] && [ "$API_URL" != "None" ]; then
               echo "api_url=$API_URL" >> $GITHUB_OUTPUT
