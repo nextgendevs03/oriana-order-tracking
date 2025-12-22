@@ -1,7 +1,10 @@
 # Deployment Workflow for Oriana Order Tracking
 #
 # This workflow deploys the application to AWS based on the selected environment.
-# It builds the API, UI, and deploys via CDK.
+# For full deployments, it uses a two-phase approach:
+#   1. Deploy API first to get the API URL
+#   2. Build UI with the correct API URL
+#   3. Upload UI to S3 and invalidate CloudFront cache
 #
 # Trigger: Manual dispatch with environment selection
 #
@@ -28,7 +31,7 @@ on:
         required: true
         type: choice
         options:
-          - full        # API + UI
+          - full        # API + UI (two-phase deployment)
           - api-only    # API only (faster)
       skip_ui_build:
         description: 'Skip UI build (use existing)'
@@ -84,35 +87,214 @@ jobs:
         working-directory: api
         run: npm run build:all
 
+      # ============================================
+      # PHASE 1: Deploy API (for full deployment)
+      # ============================================
+      - name: 🚀 Phase 1 - Deploy API Infrastructure
+        if: github.event.inputs.deploy_type == 'full'
+        working-directory: cdk
+        run: |
+          echo "🚀 Phase 1: Deploying API infrastructure to ${{ github.event.inputs.environment }}..."
+          npx cdk deploy ApiStack-${{ github.event.inputs.environment }} --require-approval never --outputs-file cdk-outputs.json
+
+      - name: 🔗 Get API URL from Stack Outputs
+        if: github.event.inputs.deploy_type == 'full'
+        id: get_api_url
+        working-directory: cdk
+        run: |
+          STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
+          
+          # Try to get from CDK outputs file first
+          if [ -f cdk-outputs.json ]; then
+            API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiUrl // empty" cdk-outputs.json)
+          fi
+          
+          # Fallback to CloudFormation if not found
+          if [ -z "$API_URL" ]; then
+            API_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+              --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text 2>/dev/null || echo "")
+          fi
+          
+          if [ -n "$API_URL" ] && [ "$API_URL" != "None" ]; then
+            # Remove trailing slash if present, then add /api
+            API_URL="${API_URL%/}"
+            echo "api_url=${API_URL}" >> $GITHUB_OUTPUT
+            echo "✅ API URL for UI build: ${API_URL}"
+          else
+            echo "❌ Could not retrieve API URL from stack outputs"
+            exit 1
+          fi
+
+      # ============================================
+      # PHASE 2: Build UI with correct API URL
+      # ============================================
       - name: 📦 Install UI dependencies
         if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
         working-directory: ui
         run: npm ci
 
-      - name: 🔨 Build UI
+      - name: 🔨 Phase 2 - Build UI with API URL
         if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
         working-directory: ui
-        run: npm run build
+        run: |
+          echo "🔨 Building UI with API URL: ${{ steps.get_api_url.outputs.api_url }}"
+          npm run build
         env:
           CI: false  # Ignore warnings as errors
+          REACT_APP_API_URL: ${{ steps.get_api_url.outputs.api_url }}
 
-      - name: 🚀 Deploy to AWS (Full)
-        if: github.event.inputs.deploy_type == 'full'
+      # ============================================
+      # PHASE 3: Upload UI to S3 & Invalidate Cache
+      # ============================================
+      - name: 🔗 Get S3 Bucket and CloudFront Info
+        if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
+        id: get_ui_info
         working-directory: cdk
         run: |
-          echo "🚀 Deploying API + UI to ${{ github.event.inputs.environment }}..."
-          npx cdk deploy ApiStack-${{ github.event.inputs.environment }} --require-approval never
+          STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
+          
+          # Get from CDK outputs file
+          if [ -f cdk-outputs.json ]; then
+            BUCKET_NAME=$(jq -r ".[\"$STACK_NAME\"].WebsiteBucketName // empty" cdk-outputs.json)
+            DISTRIBUTION_ID=$(jq -r ".[\"$STACK_NAME\"].DistributionId // empty" cdk-outputs.json)
+            WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"].WebsiteURL // empty" cdk-outputs.json)
+          fi
+          
+          # Fallback to CloudFormation
+          if [ -z "$BUCKET_NAME" ]; then
+            BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+              --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucketName'].OutputValue" --output text 2>/dev/null || echo "")
+          fi
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+              --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" --output text 2>/dev/null || echo "")
+          fi
+          if [ -z "$WEBSITE_URL" ]; then
+            WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
+              --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text 2>/dev/null || echo "")
+          fi
+          
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+          echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+          echo "website_url=$WEBSITE_URL" >> $GITHUB_OUTPUT
+          
+          echo "📦 S3 Bucket: $BUCKET_NAME"
+          echo "🌐 CloudFront Distribution: $DISTRIBUTION_ID"
+          echo "🔗 Website URL: $WEBSITE_URL"
 
+      - name: 📤 Phase 3 - Upload UI to S3
+        if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
+        run: |
+          echo "📤 Uploading UI build to S3..."
+          aws s3 sync ui/build/ s3://${{ steps.get_ui_info.outputs.bucket_name }}/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "*.json"
+          
+          # Upload index.html and JSON files with no-cache
+          aws s3 cp ui/build/index.html s3://${{ steps.get_ui_info.outputs.bucket_name }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+          
+          # Upload other JSON files if they exist
+          if ls ui/build/*.json 1> /dev/null 2>&1; then
+            for file in ui/build/*.json; do
+              aws s3 cp "$file" s3://${{ steps.get_ui_info.outputs.bucket_name }}/$(basename "$file") \
+                --cache-control "no-cache, no-store, must-revalidate"
+            done
+          fi
+          
+          echo "✅ UI uploaded successfully!"
+
+      - name: 🔄 Invalidate CloudFront Cache
+        if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
+        run: |
+          echo "🔄 Invalidating CloudFront cache..."
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.get_ui_info.outputs.distribution_id }} \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+          echo "✅ Cache invalidation started: $INVALIDATION_ID"
+
+      # ============================================
+      # API-ONLY DEPLOYMENT (simpler flow)
+      # ============================================
       - name: 🚀 Deploy to AWS (API Only)
         if: github.event.inputs.deploy_type == 'api-only'
         working-directory: cdk
         run: |
           echo "🚀 Deploying API only to ${{ github.event.inputs.environment }}..."
-          npx cdk deploy ApiStack-${{ github.event.inputs.environment }} --require-approval never
+          npx cdk deploy ApiStack-${{ github.event.inputs.environment }} --require-approval never --outputs-file cdk-outputs.json
+
+      # ============================================
+      # EXTRACT FINAL URLs FOR SUMMARY
+      # ============================================
+      - name: 🔗 Extract Deployment URLs
+        id: urls
+        working-directory: cdk
+        run: |
+          STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
+          
+          # Extract URLs from CDK outputs file
+          if [ -f cdk-outputs.json ]; then
+            echo "📄 CDK Outputs:"
+            cat cdk-outputs.json
+            
+            # Extract API URL
+            API_URL=$(jq -r ".[\"$STACK_NAME\"].ApiUrl // empty" cdk-outputs.json)
+            if [ -n "$API_URL" ]; then
+              echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+              echo "✅ API URL: $API_URL"
+            fi
+            
+            # Extract CloudFront URL (Website URL)
+            WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"].WebsiteURL // empty" cdk-outputs.json)
+            if [ -n "$WEBSITE_URL" ]; then
+              echo "website_url=$WEBSITE_URL" >> $GITHUB_OUTPUT
+              echo "✅ Website URL: $WEBSITE_URL"
+            fi
+          else
+            echo "⚠️ CDK outputs file not found, fetching from CloudFormation..."
+            
+            # Fallback: Get from CloudFormation directly
+            API_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text 2>/dev/null || echo "")
+            WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text 2>/dev/null || echo "")
+            
+            if [ -n "$API_URL" ] && [ "$API_URL" != "None" ]; then
+              echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+            fi
+            if [ -n "$WEBSITE_URL" ] && [ "$WEBSITE_URL" != "None" ]; then
+              echo "website_url=$WEBSITE_URL" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: 📋 Deployment Summary
         run: |
           echo "## 🎉 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Deployment URLs section
+          echo "### 🔗 Deployment URLs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          API_URL="${{ steps.urls.outputs.api_url }}"
+          WEBSITE_URL="${{ steps.urls.outputs.website_url }}"
+          
+          if [ -n "$API_URL" ]; then
+            echo "| 🚀 **API URL** | [$API_URL]($API_URL) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -n "$WEBSITE_URL" ]; then
+            echo "| 🌐 **Website URL** | [$WEBSITE_URL]($WEBSITE_URL) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -z "$API_URL" ] && [ -z "$WEBSITE_URL" ]; then
+            echo "> ⚠️ URLs not found in stack outputs. Check CloudFormation console." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Deployment Details" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
@@ -121,6 +303,18 @@ jobs:
           echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Triggered by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | \`${{ env.AWS_REGION }}\` |" >> $GITHUB_STEP_SUMMARY
+          
+          # Add quick test commands
+          if [ -n "$API_URL" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🧪 Quick Test" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "# Test API health" >> $GITHUB_STEP_SUMMARY
+            echo "curl ${API_URL}api/health" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
 
   # Production deployment requires approval
   prod-approval:
@@ -133,4 +327,3 @@ jobs:
         run: |
           echo "⚠️ This is a PRODUCTION deployment!"
           echo "Please review the changes carefully before approving."
-

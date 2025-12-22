@@ -58,6 +58,17 @@ AWS_REGION            - AWS region (default: ap-south-1)
 
 Production deployments require an additional approval step. Set up a GitHub Environment called `production-approval` with required reviewers.
 
+### Deployment Summary:
+
+After deployment completes, the workflow generates a summary with:
+
+- **🔗 API URL** - Direct link to your API Gateway endpoint
+- **🌐 Website URL** - CloudFront distribution URL (if UI was deployed)
+- **📋 Deployment Details** - Environment, branch, commit, triggering user
+- **🧪 Quick Test** - Ready-to-use curl command to test the API
+
+The summary is visible in the **Actions** tab → Select the workflow run → Scroll down to see the summary.
+
 ---
 
 ## 🗄️ Database Migration Workflow (`db-migrate.yml`)
@@ -139,11 +150,13 @@ The AWS credentials need these permissions:
         "apigateway:*",
         "iam:*",
         "logs:*",
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:DescribeSecret",
+        "secretsmanager:*",
         "rds:*",
         "ec2:*",
-        "cloudfront:*"
+        "cloudfront:*",
+        "ecr:*",
+        "ssm:*",
+        "sts:AssumeRole"
       ],
       "Resource": "*"
     }
