@@ -124,8 +124,8 @@ jobs:
           fi
           
           if [ -n "$API_URL" ] && [ "$API_URL" != "None" ] && [ "$API_URL" != "" ]; then
-            # Remove trailing slash if present
-            API_URL="${API_URL%/}"
+            # Remove trailing slash if present, then append /api for UI base URL
+            API_URL="${API_URL%/}/api"
             echo "api_url=${API_URL}" >> $GITHUB_OUTPUT
             echo "✅ API URL for UI build: ${API_URL}"
           else
