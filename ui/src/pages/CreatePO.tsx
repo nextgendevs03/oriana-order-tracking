@@ -311,50 +311,53 @@ const CreatePO: FC = () => {
         minHeight: "100%",
       }}
     >
-      {/* Page Header - Clean & Elegant */}
+      {/* Page Header - Vibrant & Modern */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         style={{
-          background: colors.white,
-          borderRadius: 12,
+          background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
+          borderRadius: 16,
           border: `1px solid ${colors.gray200}`,
           boxShadow: shadows.card,
-          padding: "20px 24px",
+          padding: "24px 28px",
           marginBottom: 24,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           <div
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              background: colors.primaryMuted,
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              boxShadow: "0 8px 24px rgba(67, 233, 123, 0.35)",
             }}
           >
-            <span style={{ fontSize: 24, color: colors.primary, fontWeight: 300 }}>+</span>
+            <span style={{ fontSize: 28, color: "#fff", fontWeight: 300 }}>+</span>
           </div>
           <div>
             <h2
               style={{
                 margin: 0,
-                fontSize: "1.25rem",
-                fontWeight: 600,
-                color: colors.gray900,
-                letterSpacing: "-0.01em",
+                fontSize: "1.5rem",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                letterSpacing: "-0.02em",
               }}
             >
               Create New Order
             </h2>
             <p
               style={{
-                margin: "2px 0 0 0",
-                fontSize: "0.875rem",
+                margin: "4px 0 0 0",
+                fontSize: "0.9rem",
                 color: colors.gray500,
               }}
             >

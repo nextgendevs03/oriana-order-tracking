@@ -54,39 +54,39 @@ const SummaryDashboard: React.FC = () => {
     setStatus("active");
   };
 
-  /* ---------- Stats Cards Data ---------- */
+  /* ---------- Vibrant Glass Cards ---------- */
   const stats = [
     {
       title: "Total Orders",
       value: 0,
       subtitle: "All orders",
-      icon: <FileTextOutlined />,
-      color: colors.primary,
-      bgColor: colors.primaryMuted,
+      icon: <FileTextOutlined style={{ fontSize: 24 }} />,
+      gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      shadowColor: "rgba(102, 126, 234, 0.4)",
     },
     {
       title: "In Progress",
       value: 0,
       subtitle: "Processing",
-      icon: <SyncOutlined />,
-      color: colors.accent,
-      bgColor: colors.accentMuted,
+      icon: <SyncOutlined style={{ fontSize: 24 }} />,
+      gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      shadowColor: "rgba(245, 87, 108, 0.4)",
     },
     {
       title: "Pending",
       value: 0,
       subtitle: "Awaiting action",
-      icon: <ClockCircleOutlined />,
-      color: "#f59e0b",
-      bgColor: "rgba(245, 158, 11, 0.08)",
+      icon: <ClockCircleOutlined style={{ fontSize: 24 }} />,
+      gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+      shadowColor: "rgba(79, 172, 254, 0.4)",
     },
     {
       title: "Completed",
       value: 0,
       subtitle: "Closed",
-      icon: <CheckCircleOutlined />,
-      color: "#22c55e",
-      bgColor: "rgba(34, 197, 94, 0.08)",
+      icon: <CheckCircleOutlined style={{ fontSize: 24 }} />,
+      gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+      shadowColor: "rgba(67, 233, 123, 0.4)",
     },
   ];
 
@@ -109,49 +109,51 @@ const SummaryDashboard: React.FC = () => {
           bordered={false}
           style={{
             marginBottom: 24,
-            borderRadius: 12,
+            borderRadius: 16,
             boxShadow: shadows.card,
             border: `1px solid ${colors.gray200}`,
+            background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
           }}
           bodyStyle={{
-            padding: "20px 24px",
+            padding: "24px 28px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <div
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: colors.primaryMuted,
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 8px 24px rgba(102, 126, 234, 0.35)",
               }}
             >
-              <BarChartOutlined
-                style={{ fontSize: 22, color: colors.primary }}
-              />
+              <BarChartOutlined style={{ fontSize: 26, color: "#fff" }} />
             </div>
             <div>
               <h2
                 style={{
                   margin: 0,
-                  fontSize: "1.25rem",
-                  fontWeight: 600,
-                  color: colors.gray900,
-                  letterSpacing: "-0.01em",
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  letterSpacing: "-0.02em",
                 }}
               >
                 Summary Dashboard
               </h2>
               <p
                 style={{
-                  margin: "2px 0 0 0",
-                  fontSize: "0.875rem",
+                  margin: "4px 0 0 0",
+                  fontSize: "0.9rem",
                   color: colors.gray500,
                 }}
               >
@@ -160,22 +162,22 @@ const SummaryDashboard: React.FC = () => {
             </div>
           </div>
           <motion.div
-            whileHover={{ y: -1 }}
+            whileHover={{ y: -2, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.2 }}
           >
             <Button
               icon={<ReloadOutlined />}
               onClick={handleRefresh}
               style={{
-                background: colors.primary,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 color: colors.white,
                 border: "none",
-                borderRadius: 8,
-                fontWeight: 500,
-                height: 40,
-                padding: "0 20px",
-                boxShadow: shadows.primary,
+                borderRadius: 10,
+                fontWeight: 600,
+                height: 44,
+                padding: "0 24px",
+                boxShadow: "0 4px 16px rgba(102, 126, 234, 0.35)",
               }}
             >
               Refresh
@@ -184,91 +186,134 @@ const SummaryDashboard: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* ---------- Stat Cards ---------- */}
+      {/* ---------- Vibrant Glass Stat Cards ---------- */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, delay: 0.05, ease: [0.4, 0, 0.2, 1] }}
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: 16,
-          marginBottom: 24,
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 20,
+          marginBottom: 28,
         }}
       >
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
-              duration: 0.25,
-              delay: 0.05 + index * 0.05,
+              duration: 0.35,
+              delay: 0.1 + index * 0.08,
               ease: [0.4, 0, 0.2, 1],
             }}
+            whileHover={{ 
+              y: -6, 
+              scale: 1.02,
+              transition: { duration: 0.2 }
+            }}
           >
-            <Card
-              bordered={false}
+            <div
               style={{
-                borderRadius: 12,
-                border: `1px solid ${colors.gray200}`,
-                boxShadow: shadows.card,
-                transition: "all 0.2s ease",
+                background: stat.gradient,
+                borderRadius: 20,
+                padding: "24px 22px",
+                color: "#fff",
+                position: "relative",
+                overflow: "hidden",
+                boxShadow: `0 10px 30px ${stat.shadowColor}`,
+                cursor: "pointer",
               }}
-              bodyStyle={{ padding: 20 }}
-              hoverable
             >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    background: stat.bgColor,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 20,
-                    color: stat.color,
-                    flexShrink: 0,
-                  }}
-                >
-                  {stat.icon}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p
+              {/* Glass overlay */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%)",
+                  borderRadius: 20,
+                }}
+              />
+              {/* Decorative circle */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: -30,
+                  right: -30,
+                  width: 100,
+                  height: 100,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.15)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: -20,
+                  right: 40,
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.1)",
+                }}
+              />
+              
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                  <div>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 13,
+                        fontWeight: 500,
+                        opacity: 0.9,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      {stat.title}
+                    </p>
+                    <p
+                      style={{
+                        margin: "8px 0 0 0",
+                        fontSize: 36,
+                        fontWeight: 700,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {stat.value}
+                    </p>
+                    <p
+                      style={{
+                        margin: "6px 0 0 0",
+                        fontSize: 13,
+                        opacity: 0.8,
+                      }}
+                    >
+                      {stat.subtitle}
+                    </p>
+                  </div>
+                  <div
                     style={{
-                      margin: 0,
-                      fontSize: 13,
-                      color: colors.gray500,
-                      fontWeight: 500,
+                      width: 50,
+                      height: 50,
+                      borderRadius: 14,
+                      background: "rgba(255,255,255,0.2)",
+                      backdropFilter: "blur(10px)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    {stat.title}
-                  </p>
-                  <p
-                    style={{
-                      margin: "4px 0 0 0",
-                      fontSize: 28,
-                      fontWeight: 700,
-                      color: colors.gray900,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p
-                    style={{
-                      margin: "4px 0 0 0",
-                      fontSize: 12,
-                      color: colors.gray400,
-                    }}
-                  >
-                    {stat.subtitle}
-                  </p>
+                    {stat.icon}
+                  </div>
                 </div>
               </div>
-            </Card>
+            </div>
           </motion.div>
         ))}
       </motion.div>
@@ -277,12 +322,12 @@ const SummaryDashboard: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, delay: 0.15, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ duration: 0.25, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
       >
         <Card
           bordered={false}
           style={{
-            borderRadius: 12,
+            borderRadius: 16,
             border: `1px solid ${colors.gray200}`,
             boxShadow: shadows.card,
           }}
@@ -293,9 +338,11 @@ const SummaryDashboard: React.FC = () => {
             style={{
               display: "flex",
               gap: 12,
-              padding: "16px 20px",
+              padding: "18px 22px",
               borderBottom: `1px solid ${colors.gray200}`,
               flexWrap: "wrap",
+              background: colors.gray50,
+              borderRadius: "16px 16px 0 0",
             }}
           >
             <Select
@@ -314,7 +361,7 @@ const SummaryDashboard: React.FC = () => {
                           width: 8,
                           height: 8,
                           borderRadius: "50%",
-                          background: colors.primary,
+                          background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
                         }}
                       />
                       Active Orders
@@ -344,16 +391,17 @@ const SummaryDashboard: React.FC = () => {
 
             <Input.Search
               placeholder="Search orders..."
-              style={{ width: 240 }}
+              style={{ width: 260 }}
             />
 
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
               <Button
                 icon={<FilterOutlined />}
                 onClick={() => setShowFilter(true)}
                 style={{
-                  borderRadius: 8,
+                  borderRadius: 10,
                   borderColor: colors.gray300,
+                  height: 40,
                 }}
               >
                 Filters
@@ -363,8 +411,9 @@ const SummaryDashboard: React.FC = () => {
                 icon={<SettingOutlined />}
                 onClick={() => setShowColumns(true)}
                 style={{
-                  borderRadius: 8,
+                  borderRadius: 10,
                   borderColor: colors.gray300,
+                  height: 40,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
@@ -373,12 +422,12 @@ const SummaryDashboard: React.FC = () => {
                 Columns
                 <span
                   style={{
-                    background: colors.gray100,
-                    borderRadius: 4,
-                    padding: "0 6px",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    borderRadius: 6,
+                    padding: "2px 8px",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: colors.gray600,
+                    color: "#fff",
                   }}
                 >
                   {selectedColumns.length}
@@ -393,21 +442,43 @@ const SummaryDashboard: React.FC = () => {
             dataSource={[]}
             locale={{
               emptyText: (
-                <div style={{ textAlign: "center", padding: 48 }}>
-                  <FileSearchOutlined
-                    style={{ fontSize: 48, color: colors.gray300 }}
-                  />
+                <div style={{ textAlign: "center", padding: 56 }}>
+                  <div
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 20,
+                      background: "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 16px auto",
+                    }}
+                  >
+                    <FileSearchOutlined
+                      style={{ fontSize: 36, color: "#667eea" }}
+                    />
+                  </div>
                   <p
                     style={{
-                      marginTop: 12,
-                      marginBottom: 0,
-                      color: colors.gray500,
-                      fontSize: 14,
+                      marginBottom: 4,
+                      color: colors.gray700,
+                      fontSize: 16,
+                      fontWeight: 600,
                     }}
                   >
                     {status === "active"
                       ? "No active orders found"
                       : "No inactive orders found"}
+                  </p>
+                  <p
+                    style={{
+                      margin: 0,
+                      color: colors.gray400,
+                      fontSize: 14,
+                    }}
+                  >
+                    Orders will appear here once created
                   </p>
                 </div>
               ),
@@ -424,13 +495,13 @@ const SummaryDashboard: React.FC = () => {
             onClose={() => setShowFilter(false)}
             content={
               <>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 18 }}>
                   <label
                     style={{
                       display: "block",
-                      marginBottom: 6,
+                      marginBottom: 8,
                       fontSize: 13,
-                      fontWeight: 500,
+                      fontWeight: 600,
                       color: colors.gray700,
                     }}
                   >
@@ -440,15 +511,16 @@ const SummaryDashboard: React.FC = () => {
                     placeholder="Enter PO ID"
                     value={poId}
                     onChange={(e) => setPoId(e.target.value)}
+                    style={{ borderRadius: 10, height: 42 }}
                   />
                 </div>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 18 }}>
                   <label
                     style={{
                       display: "block",
-                      marginBottom: 6,
+                      marginBottom: 8,
                       fontSize: 13,
-                      fontWeight: 500,
+                      fontWeight: 600,
                       color: colors.gray700,
                     }}
                   >
@@ -458,15 +530,16 @@ const SummaryDashboard: React.FC = () => {
                     placeholder="Enter client name"
                     value={client}
                     onChange={(e) => setClient(e.target.value)}
+                    style={{ borderRadius: 10, height: 42 }}
                   />
                 </div>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 18 }}>
                   <label
                     style={{
                       display: "block",
-                      marginBottom: 6,
+                      marginBottom: 8,
                       fontSize: 13,
-                      fontWeight: 500,
+                      fontWeight: 600,
                       color: colors.gray700,
                     }}
                   >
@@ -474,7 +547,7 @@ const SummaryDashboard: React.FC = () => {
                   </label>
                   <Select
                     placeholder="Select status"
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", height: 42 }}
                     value={orderStatus}
                     onChange={(v) => setOrderStatus(v)}
                     options={[
@@ -483,13 +556,13 @@ const SummaryDashboard: React.FC = () => {
                     ]}
                   />
                 </div>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 18 }}>
                   <label
                     style={{
                       display: "block",
-                      marginBottom: 6,
+                      marginBottom: 8,
                       fontSize: 13,
-                      fontWeight: 500,
+                      fontWeight: 600,
                       color: colors.gray700,
                     }}
                   >
@@ -497,13 +570,13 @@ const SummaryDashboard: React.FC = () => {
                   </label>
                   <DatePicker
                     placeholder="Start Date"
-                    style={{ width: "100%", marginBottom: 8 }}
+                    style={{ width: "100%", marginBottom: 10, borderRadius: 10, height: 42 }}
                     value={startDate}
                     onChange={(date) => setStartDate(date)}
                   />
                   <DatePicker
                     placeholder="End Date"
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", borderRadius: 10, height: 42 }}
                     value={endDate}
                     onChange={(date) => setEndDate(date)}
                   />
@@ -523,9 +596,13 @@ const SummaryDashboard: React.FC = () => {
                     setShowFilter(false);
                   }}
                   style={{
-                    marginTop: 8,
-                    borderRadius: 8,
-                    height: 40,
+                    marginTop: 12,
+                    borderRadius: 10,
+                    height: 44,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    border: "none",
+                    fontWeight: 600,
+                    boxShadow: "0 4px 16px rgba(102, 126, 234, 0.3)",
                   }}
                 >
                   Apply Filters
@@ -547,9 +624,9 @@ const SummaryDashboard: React.FC = () => {
                 <div
                   style={{
                     display: "flex",
-                    gap: 8,
-                    marginBottom: 16,
-                    paddingBottom: 16,
+                    gap: 10,
+                    marginBottom: 18,
+                    paddingBottom: 18,
                     borderBottom: `1px solid ${colors.gray200}`,
                   }}
                 >
@@ -558,14 +635,14 @@ const SummaryDashboard: React.FC = () => {
                     onClick={() =>
                       setSelectedColumns(allColumns.map((c) => c.key))
                     }
-                    style={{ borderRadius: 6 }}
+                    style={{ borderRadius: 8, height: 34 }}
                   >
                     Select All
                   </Button>
                   <Button
                     size="small"
                     onClick={() => setSelectedColumns([])}
-                    style={{ borderRadius: 6 }}
+                    style={{ borderRadius: 8, height: 34 }}
                   >
                     Clear All
                   </Button>
@@ -585,7 +662,7 @@ const SummaryDashboard: React.FC = () => {
                       }
                       style={{
                         display: "flex",
-                        padding: "10px 0",
+                        padding: "12px 0",
                         borderBottom: `1px solid ${colors.gray100}`,
                       }}
                     >
@@ -623,26 +700,28 @@ const SidePanel: React.FC<SidePanelProps> = ({ title, onClose, content }) => (
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0, 0, 0, 0.3)",
+        background: "rgba(0, 0, 0, 0.4)",
+        backdropFilter: "blur(4px)",
         zIndex: 999,
       }}
     />
     {/* Panel */}
     <motion.div
-      initial={{ x: 340, opacity: 0 }}
+      initial={{ x: 360, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 340, opacity: 0 }}
-      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+      exit={{ x: 360, opacity: 0 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       style={{
         position: "fixed",
         top: 0,
         right: 0,
-        width: 340,
+        width: 360,
         height: "100vh",
         background: colors.white,
-        padding: 24,
+        padding: 28,
         boxShadow: shadows.xl,
         zIndex: 1000,
+        borderRadius: "20px 0 0 20px",
       }}
     >
       <div
@@ -650,17 +729,19 @@ const SidePanel: React.FC<SidePanelProps> = ({ title, onClose, content }) => (
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 20,
-          paddingBottom: 16,
+          marginBottom: 24,
+          paddingBottom: 18,
           borderBottom: `1px solid ${colors.gray200}`,
         }}
       >
         <h3
           style={{
             margin: 0,
-            fontSize: 16,
-            fontWeight: 600,
-            color: colors.gray900,
+            fontSize: 18,
+            fontWeight: 700,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
         >
           {title}
@@ -671,7 +752,9 @@ const SidePanel: React.FC<SidePanelProps> = ({ title, onClose, content }) => (
           onClick={onClose}
           style={{
             color: colors.gray500,
-            borderRadius: 6,
+            borderRadius: 8,
+            width: 36,
+            height: 36,
           }}
         />
       </div>

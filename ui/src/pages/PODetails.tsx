@@ -1180,57 +1180,60 @@ const PODetails: React.FC = () => {
         minHeight: "100%",
       }}
     >
-      {/* Page Header - Clean & Elegant */}
+      {/* Page Header - Vibrant & Modern */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         style={{
-          background: colors.white,
-          borderRadius: 12,
+          background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
+          borderRadius: 16,
           border: `1px solid ${colors.gray200}`,
           boxShadow: shadows.card,
-          padding: "20px 24px",
+          padding: "24px 28px",
           marginBottom: 24,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           <div
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              background: colors.primaryMuted,
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              boxShadow: "0 8px 24px rgba(102, 126, 234, 0.35)",
             }}
           >
-            <FileTextOutlined style={{ fontSize: 22, color: colors.primary }} />
+            <FileTextOutlined style={{ fontSize: 26, color: "#fff" }} />
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <h2
                 style={{
                   margin: 0,
-                  fontSize: "1.25rem",
-                  fontWeight: 600,
-                  color: colors.gray900,
-                  letterSpacing: "-0.01em",
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  letterSpacing: "-0.02em",
                 }}
               >
                 Order Tracking
               </h2>
               <span
                 style={{
-                  background: colors.primary,
-                  color: colors.white,
-                  padding: "3px 10px",
-                  borderRadius: 6,
-                  fontSize: "0.75rem",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "#fff",
+                  padding: "4px 12px",
+                  borderRadius: 8,
+                  fontSize: "0.8rem",
                   fontWeight: 600,
                 }}
               >
@@ -1240,9 +1243,9 @@ const PODetails: React.FC = () => {
                 color={isPOClosed ? "error" : "success"}
                 style={{
                   fontSize: 12,
-                  padding: "2px 8px",
+                  padding: "3px 10px",
                   fontWeight: 500,
-                  borderRadius: 4,
+                  borderRadius: 6,
                   border: "none",
                 }}
               >
@@ -1251,8 +1254,8 @@ const PODetails: React.FC = () => {
             </div>
             <p
               style={{
-                margin: "4px 0 0 0",
-                fontSize: "0.875rem",
+                margin: "6px 0 0 0",
+                fontSize: "0.9rem",
                 color: colors.gray500,
               }}
             >

@@ -21,7 +21,7 @@ const LayoutPage: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      {/* Sidebar - Dark & Elegant */}
+      {/* Sidebar - Vibrant Gradient */}
       <Sider
         trigger={null}
         collapsible={true}
@@ -31,7 +31,7 @@ const LayoutPage: React.FC = () => {
         className="osg-sidebar"
         style={{
           background: colors.sidebarBg,
-          boxShadow: "1px 0 0 0 rgba(255, 255, 255, 0.06)",
+          boxShadow: "4px 0 24px rgba(102, 126, 234, 0.25)",
           position: "fixed",
           height: "100vh",
           left: 0,

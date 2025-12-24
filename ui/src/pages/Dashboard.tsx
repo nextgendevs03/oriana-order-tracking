@@ -184,7 +184,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={{ minHeight: "100%" }}>
-      {/* Page Header - Clean & Elegant */}
+      {/* Page Header - Vibrant & Modern */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -194,49 +194,53 @@ const Dashboard: React.FC = () => {
           bordered={false}
           style={{
             marginBottom: 24,
-            borderRadius: 12,
+            borderRadius: 16,
             boxShadow: shadows.card,
             border: `1px solid ${colors.gray200}`,
+            background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
           }}
           bodyStyle={{
-            padding: "20px 24px",
+            padding: "24px 28px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <div
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: colors.primaryMuted,
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 8px 24px rgba(102, 126, 234, 0.35)",
               }}
             >
               <FileTextOutlined
-                style={{ fontSize: 22, color: colors.primary }}
+                style={{ fontSize: 26, color: "#fff" }}
               />
             </div>
             <div>
               <h2
                 style={{
                   margin: 0,
-                  fontSize: "1.25rem",
-                  fontWeight: 600,
-                  color: colors.gray900,
-                  letterSpacing: "-0.01em",
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  letterSpacing: "-0.02em",
                 }}
               >
                 Order Punch Dashboard
               </h2>
               <p
                 style={{
-                  margin: "2px 0 0 0",
-                  fontSize: "0.875rem",
+                  margin: "4px 0 0 0",
+                  fontSize: "0.9rem",
                   color: colors.gray500,
                 }}
               >
@@ -245,22 +249,22 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <motion.div
-            whileHover={{ y: -1 }}
+            whileHover={{ y: -2, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.2 }}
           >
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleCreatePO}
               style={{
-                background: colors.primary,
-                borderColor: colors.primary,
-                borderRadius: 8,
-                fontWeight: 500,
-                height: 40,
-                padding: "0 20px",
-                boxShadow: shadows.primary,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                border: "none",
+                borderRadius: 10,
+                fontWeight: 600,
+                height: 44,
+                padding: "0 24px",
+                boxShadow: "0 4px 16px rgba(102, 126, 234, 0.35)",
               }}
             >
               Create PO
