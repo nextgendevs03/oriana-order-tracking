@@ -1,6 +1,10 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
-import { IPORepository, PurchaseOrderWithItems } from '../repositories/PORepository';
+import {
+  IPORepository,
+  PurchaseOrderWithRelations,
+  POItemWithRelations,
+} from '../repositories/PORepository';
 import {
   CreatePORequest,
   UpdatePORequest,
@@ -12,31 +16,42 @@ import {
 
 export interface IPOService {
   createPO(data: CreatePORequest): Promise<POResponse>;
-  getPOById(id: string): Promise<POResponse | null>;
+  getPOById(poId: string): Promise<POResponse | null>;
   getAllPOs(params: ListPORequest): Promise<POListResponse>;
-  updatePO(id: string, data: UpdatePORequest): Promise<POResponse | null>;
-  deletePO(id: string): Promise<boolean>;
+  updatePO(poId: string, data: UpdatePORequest): Promise<POResponse | null>;
+  deletePO(poId: string): Promise<boolean>;
 }
 
 @injectable()
 export class POService implements IPOService {
   constructor(@inject(TYPES.PORepository) private poRepository: IPORepository) {}
 
-  private mapToResponse(po: PurchaseOrderWithItems): POResponse {
-    const poItems: POItemResponse[] = (po.poItems || []).map((item) => ({
+  private mapItemToResponse(item: POItemWithRelations): POItemResponse {
+    return {
       id: item.id,
-      category: item.category,
-      oemName: item.oemName,
-      product: item.product,
+      categoryId: item.categoryId,
+      categoryName: item.category?.categoryName,
+      oemId: item.oemId,
+      oemName: item.oem?.oemName,
+      productId: item.productId,
+      productName: item.product?.productName,
       quantity: item.quantity,
       spareQuantity: item.spareQuantity,
       totalQuantity: item.totalQuantity,
       pricePerUnit: Number(item.pricePerUnit),
       totalPrice: Number(item.totalPrice),
+      gstPercent: Number(item.gstPercent),
+      finalPrice: Number(item.finalPrice),
       warranty: item.warranty,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
-    }));
+    };
+  }
+
+  private mapToResponse(po: PurchaseOrderWithRelations): POResponse {
+    const poItems: POItemResponse[] = (po.poItems || []).map((item) =>
+      this.mapItemToResponse(item)
+    );
 
     // Format date fields - Prisma returns Date objects
     const formatDate = (date: Date): string => {
@@ -44,15 +59,18 @@ export class POService implements IPOService {
     };
 
     return {
-      id: po.id,
-      date: formatDate(po.date),
-      clientName: po.clientName,
+      poId: po.poId,
+      poReceivedDate: formatDate(po.poReceivedDate),
+      clientId: po.clientId,
+      clientName: po.client?.clientName,
       osgPiNo: po.osgPiNo,
       osgPiDate: formatDate(po.osgPiDate),
       clientPoNo: po.clientPoNo,
       clientPoDate: formatDate(po.clientPoDate),
       poStatus: po.poStatus,
       noOfDispatch: po.noOfDispatch,
+      assignDispatchTo: po.assignDispatchTo,
+      assignedUserName: po.assignedUser?.username || null,
       clientAddress: po.clientAddress,
       clientContact: po.clientContact,
       poItems,
@@ -72,8 +90,8 @@ export class POService implements IPOService {
     return this.mapToResponse(po);
   }
 
-  async getPOById(id: string): Promise<POResponse | null> {
-    const po = await this.poRepository.findById(id);
+  async getPOById(poId: string): Promise<POResponse | null> {
+    const po = await this.poRepository.findById(poId);
     return po ? this.mapToResponse(po) : null;
   }
 
@@ -92,12 +110,12 @@ export class POService implements IPOService {
     };
   }
 
-  async updatePO(id: string, data: UpdatePORequest): Promise<POResponse | null> {
-    const po = await this.poRepository.update(id, data);
+  async updatePO(poId: string, data: UpdatePORequest): Promise<POResponse | null> {
+    const po = await this.poRepository.update(poId, data);
     return po ? this.mapToResponse(po) : null;
   }
 
-  async deletePO(id: string): Promise<boolean> {
-    return this.poRepository.delete(id);
+  async deletePO(poId: string): Promise<boolean> {
+    return this.poRepository.delete(poId);
   }
 }

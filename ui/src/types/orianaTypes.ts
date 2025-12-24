@@ -14,3 +14,5 @@ export * from "../../../api/src/schemas/request/ProductRequest";
 export * from "../../../api/src/schemas/response/ProductResponse";
 export * from "../../../api/src/schemas/request/ClientRequest";
 export * from "../../../api/src/schemas/response/ClientResponse";
+export * from "../../../api/src/schemas/request/PORequest";
+export * from "../../../api/src/schemas/response/POResponse";

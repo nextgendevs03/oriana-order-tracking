@@ -20,7 +20,9 @@ import {
   EyeOutlined,
   LockOutlined,
 } from "@ant-design/icons";
+import { motion } from "framer-motion";
 import { useParams } from "react-router-dom";
+import { colors, gradients } from "../styles/theme";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import {
   deleteDispatchDetail,
@@ -1179,7 +1181,10 @@ const PODetails: React.FC = () => {
       }}
     >
       {/* Page Header - Split Card with Badge Style */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -1193,7 +1198,7 @@ const PODetails: React.FC = () => {
         {/* Left colored section */}
         <div
           style={{
-            background: "linear-gradient(180deg, #ea580c, #f97316)",
+            background: gradients.header,
             padding: "1.25rem 1.5rem",
             display: "flex",
             alignItems: "center",
@@ -1212,19 +1217,19 @@ const PODetails: React.FC = () => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderTop: "1px solid #f3f4f6",
-            borderRight: "1px solid #f3f4f6",
-            borderBottom: "1px solid #f3f4f6",
+            borderTop: `1px solid ${colors.gray200}`,
+            borderRight: `1px solid ${colors.gray200}`,
+            borderBottom: `1px solid ${colors.gray200}`,
           }}
         >
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.35rem", color: "#1f2937" }}>
+              <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.35rem", color: colors.gray800 }}>
                 Order Tracking
               </h2>
               <span
                 style={{
-                  background: "linear-gradient(135deg, #ea580c, #f97316)",
+                  background: gradients.header,
                   color: "#fff",
                   padding: "4px 12px",
                   borderRadius: 20,
@@ -1241,7 +1246,7 @@ const PODetails: React.FC = () => {
                 {isPOClosed ? "Closed" : "Active"}
               </Tag>
             </div>
-            <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
+            <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.85rem", color: colors.gray500 }}>
               View and manage order details, dispatches & commissioning
             </p>
           </div>
@@ -1277,7 +1282,7 @@ const PODetails: React.FC = () => {
           </Button>
         </Popconfirm>
         </div>
-      </div>
+      </motion.div>
 
       <Collapse defaultActiveKey={["1"]} accordion={false}>
         {/* PO Information Accordion */}
@@ -1392,9 +1397,10 @@ const PODetails: React.FC = () => {
               icon={<PlusOutlined />}
               onClick={handleAddDispatch}
               style={{
-                backgroundColor: "#4b6cb7",
+                background: gradients.button,
                 borderRadius: 8,
                 fontWeight: 600,
+                border: "none",
               }}
             >
               Add Dispatch
@@ -1440,9 +1446,10 @@ const PODetails: React.FC = () => {
               icon={<FileTextOutlined />}
               onClick={handleAddDocument}
               style={{
-                backgroundColor: "#4b6cb7",
+                background: gradients.button,
                 borderRadius: 8,
                 fontWeight: 600,
+                border: "none",
               }}
             >
               Update Document Details
@@ -1492,9 +1499,10 @@ const PODetails: React.FC = () => {
               onClick={handleAddDeliveryConfirmation}
               disabled={dispatchesForDeliveryConfirmation.length === 0}
               style={{
-                backgroundColor: "#4b6cb7",
+                background: gradients.button,
                 borderRadius: 8,
                 fontWeight: 600,
+                border: "none",
               }}
             >
               Update Delivery Information
@@ -1552,9 +1560,10 @@ const PODetails: React.FC = () => {
               onClick={handleAddPreCommissioning}
               disabled={dispatchesForPreCommissioning.length === 0}
               style={{
-                backgroundColor: "#4b6cb7",
+                background: gradients.button,
                 borderRadius: 8,
                 fontWeight: 600,
+                border: "none",
               }}
             >
               Update Pre-Commissioning Details
@@ -1610,9 +1619,10 @@ const PODetails: React.FC = () => {
               onClick={handleAddCommissioning}
               disabled={preCommissioningForCommissioning.length === 0}
               style={{
-                backgroundColor: "#4b6cb7",
+                background: gradients.button,
                 borderRadius: 8,
                 fontWeight: 600,
+                border: "none",
               }}
             >
               Update Commissioning Details
@@ -1668,9 +1678,10 @@ const PODetails: React.FC = () => {
               onClick={handleAddWarranty}
               disabled={commissioningForWarranty.length === 0}
               style={{
-                backgroundColor: "#4b6cb7",
+                background: gradients.button,
                 borderRadius: 8,
                 fontWeight: 600,
+                border: "none",
               }}
             >
               Update Warranty Details

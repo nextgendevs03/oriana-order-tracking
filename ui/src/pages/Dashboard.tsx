@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Table, Button, Tag } from "antd";
 import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { POData } from "../store/poSlice";
 import { selectPOList } from "../store/poSelectors";
 import type { ColumnsType } from "antd/es/table";
 import { getPaymentStatusColor, getPoStatusColor, formatLabel } from "../utils";
+import { colors, gradients } from "../styles/theme";
 
 interface PORecord {
   key: string;
@@ -24,15 +26,13 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const poList = useAppSelector(selectPOList);
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
-  // Check if user is authenticated
+
   useEffect(() => {
     if (!isLoggedIn) {
       navigate("/");
     }
   }, [isLoggedIn, navigate]);
 
-  // Transform Redux data to table format
   const dataSource: PORecord[] = poList.map((po: POData) => ({
     key: po.id,
     poOrderId: po.id,
@@ -46,7 +46,6 @@ const Dashboard: React.FC = () => {
   }));
 
   const handleView = (record: PORecord) => {
-    // Navigate to PO details page with poId in route
     navigate(`/po-details/${record.poOrderId}`);
   };
 
@@ -54,7 +53,6 @@ const Dashboard: React.FC = () => {
     navigate("/create-po");
   };
 
-  // Generate unique filter options from data
   const clientNameFilters = useMemo(() => {
     const uniqueNames = Array.from(
       new Set(dataSource.map((item) => item.clientName))
@@ -154,30 +152,29 @@ const Dashboard: React.FC = () => {
           type="link"
           icon={<EyeOutlined />}
           onClick={() => handleView(record)}
+          style={{ color: colors.primary }}
         />
       ),
     },
   ];
 
   return (
-    <div
-      style={{
-        padding: "1rem",
-        background: "#fff",
-        minHeight: "100%",
-      }}
-    >
-      {/* Header with title and Create PO button */}
-      <div
+    <div style={{ padding: "0.5rem", background: "#fff", minHeight: "100%" }}>
+      {/* Header with OSG gradient */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="osg-page-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "1.5rem",
-          padding: "1.25rem 1.5rem",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          padding: "20px 24px",
+          background: gradients.header,
           borderRadius: 12,
-          boxShadow: "0 4px 15px rgba(102, 126, 234, 0.3)",
+          boxShadow: "0 4px 15px rgba(236, 108, 37, 0.25)",
+          marginBottom: "1.5rem",
         }}
       >
         <div>
@@ -196,55 +193,64 @@ const Dashboard: React.FC = () => {
             style={{
               margin: "0.35rem 0 0 0",
               fontSize: "0.875rem",
-              color: "rgba(255, 255, 255, 0.85)",
+              color: "rgba(255, 255, 255, 0.9)",
               fontWeight: 400,
             }}
           >
             Track and manage all purchase orders in one place
           </p>
         </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleCreatePO}
-          onMouseEnter={() => setIsButtonHovered(true)}
-          onMouseLeave={() => setIsButtonHovered(false)}
-          style={{
-            backgroundColor: isButtonHovered ? "#667eea" : "#ffffff",
-            color: isButtonHovered ? "#ffffff" : "#667eea",
-            border: "none",
-            borderRadius: 8,
-            fontWeight: 600,
-            height: 40,
-            padding: "0 20px",
-            boxShadow: isButtonHovered
-              ? "0 4px 15px rgba(102, 126, 234, 0.4)"
-              : "0 2px 8px rgba(0, 0, 0, 0.15)",
-            transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
-            transition: "all 0.3s ease",
-          }}
+        <motion.div
+          whileHover={{ scale: 1.03, y: -2 }}
+          whileTap={{ scale: 0.97 }}
         >
-          Create PO
-        </Button>
-      </div>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreatePO}
+            style={{
+              backgroundColor: colors.white,
+              color: colors.primary,
+              border: "none",
+              borderRadius: 8,
+              fontWeight: 600,
+              height: 42,
+              padding: "0 24px",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+            }}
+          >
+            Create PO
+          </Button>
+        </motion.div>
+      </motion.div>
 
-      {/* PO Table */}
-      <Table<PORecord>
-        columns={columns}
-        dataSource={dataSource}
-        scroll={{ x: 1200 }}
-        pagination={{
-          defaultPageSize: 10,
-          showSizeChanger: true,
-          pageSizeOptions: ["10", "20", "50", "100"],
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} of ${total} items`,
-        }}
-        locale={{
-          emptyText: "No PO available",
-        }}
-        bordered
-      />
+      {/* PO Table with entrance animation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+      >
+        <Table<PORecord>
+          columns={columns}
+          dataSource={dataSource}
+          scroll={{ x: 1200 }}
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50", "100"],
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} items`,
+          }}
+          locale={{
+            emptyText: "No PO available",
+          }}
+          bordered
+          style={{
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        />
+      </motion.div>
     </div>
   );
 };

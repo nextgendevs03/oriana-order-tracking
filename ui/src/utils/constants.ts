@@ -59,31 +59,6 @@ export const paymentStatusOptions = [
 ];
 
 /**
- * Category Options
- */
-export const categoryOptions = [
-  { value: "module", label: "Module" },
-  { value: "invertor", label: "Invertor" },
-];
-
-/**
- * OEM Name Options
- */
-export const oemNameOptions = [
-  { value: "solis", label: "Solis" },
-  { value: "jio", label: "Jio" },
-  { value: "dummy1", label: "Dummy1" },
-];
-
-/**
- * Product Options
- */
-export const productOptions = [
-  { value: "product1", label: "Product1" },
-  { value: "product2", label: "Product2" },
-];
-
-/**
  * Warranty Options
  */
 export const warrantyOptions = [

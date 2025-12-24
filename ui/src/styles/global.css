@@ -1,0 +1,356 @@
+/* ========================================
+   OSG Global Styles
+   Brand Colors: Orange #ec6c25, Green #71a241
+   ======================================== */
+
+/* Google Font Import - Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ========================================
+   CSS Variables
+   ======================================== */
+:root {
+  /* Primary Colors (Green) */
+  --osg-primary: #71a241;
+  --osg-primary-light: #8fc05a;
+  --osg-primary-dark: #5a8234;
+
+  /* Accent Colors (Orange) */
+  --osg-accent: #ec6c25;
+  --osg-accent-light: #f5924d;
+  --osg-accent-dark: #d45a1a;
+
+  /* Gradients */
+  --osg-gradient-header: linear-gradient(135deg, #ec6c25 0%, #71a241 100%);
+  --osg-gradient-sidebar: linear-gradient(180deg, #ec6c25 0%, #d45a1a 30%, #5a8234 70%, #71a241 100%);
+  --osg-gradient-button: linear-gradient(135deg, #71a241 0%, #5a8234 100%);
+
+  /* Neutrals */
+  --osg-white: #ffffff;
+  --osg-black: #000000;
+  --osg-gray-50: #fafafa;
+  --osg-gray-100: #f5f5f5;
+  --osg-gray-200: #e8e8e8;
+  --osg-gray-300: #d9d9d9;
+  --osg-gray-500: #8c8c8c;
+  --osg-gray-700: #434343;
+  --osg-gray-900: #1f1f1f;
+
+  /* Shadows */
+  --osg-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --osg-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --osg-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --osg-shadow-primary: 0 4px 12px rgba(113, 162, 65, 0.3);
+  --osg-shadow-accent: 0 4px 12px rgba(236, 108, 37, 0.3);
+
+  /* Border Radius */
+  --osg-radius-sm: 6px;
+  --osg-radius-md: 8px;
+  --osg-radius-lg: 12px;
+  --osg-radius-xl: 16px;
+
+  /* Transitions */
+  --osg-transition-fast: 0.15s ease;
+  --osg-transition-normal: 0.3s ease;
+  --osg-transition-slow: 0.5s ease;
+}
+
+/* ========================================
+   Base Styles
+   ======================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--osg-gray-100);
+}
+
+/* ========================================
+   Custom Scrollbar
+   ======================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--osg-gray-100);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--osg-gray-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--osg-gray-500);
+}
+
+/* ========================================
+   Sidebar Styles
+   ======================================== */
+.osg-sidebar {
+  background: var(--osg-gradient-sidebar) !important;
+}
+
+.osg-sidebar .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.osg-sidebar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  margin: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--osg-radius-lg);
+  backdrop-filter: blur(10px);
+  transition: all var(--osg-transition-normal);
+}
+
+.osg-sidebar-logo:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.osg-sidebar-logo img {
+  max-width: 100%;
+  height: auto;
+  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* ========================================
+   Menu Styles
+   ======================================== */
+.osg-menu {
+  background: transparent !important;
+  border: none !important;
+}
+
+.osg-menu .ant-menu-item {
+  margin: 4px 8px !important;
+  border-radius: var(--osg-radius-md) !important;
+  transition: all var(--osg-transition-normal) !important;
+}
+
+.osg-menu .ant-menu-item:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  transform: translateX(4px);
+}
+
+.osg-menu .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.osg-menu .ant-menu-item-selected::after {
+  display: none;
+}
+
+.osg-menu .ant-menu-submenu-title {
+  margin: 4px 8px !important;
+  border-radius: var(--osg-radius-md) !important;
+}
+
+.osg-menu .ant-menu-submenu-title:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.osg-menu .ant-menu-sub {
+  background: rgba(0, 0, 0, 0.1) !important;
+  border-radius: var(--osg-radius-md);
+  margin: 0 8px;
+}
+
+/* ========================================
+   Navbar Styles
+   ======================================== */
+.osg-navbar {
+  background: var(--osg-white) !important;
+  box-shadow: var(--osg-shadow-sm);
+  border-bottom: 1px solid var(--osg-gray-200);
+}
+
+.osg-navbar-title {
+  background: var(--osg-gradient-header);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.osg-navbar-toggle {
+  color: var(--osg-accent) !important;
+  transition: all var(--osg-transition-normal) !important;
+}
+
+.osg-navbar-toggle:hover {
+  color: var(--osg-accent-dark) !important;
+  background: rgba(236, 108, 37, 0.1) !important;
+}
+
+/* ========================================
+   Page Header Styles
+   ======================================== */
+.osg-page-header {
+  background: var(--osg-gradient-header);
+  padding: 20px 24px;
+  border-radius: var(--osg-radius-lg);
+  box-shadow: var(--osg-shadow-accent);
+  margin-bottom: 24px;
+}
+
+.osg-page-header h2 {
+  margin: 0;
+  color: var(--osg-white);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.osg-page-header p {
+  margin: 6px 0 0 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.875rem;
+}
+
+/* ========================================
+   Button Styles
+   ======================================== */
+.osg-btn-primary {
+  background: var(--osg-gradient-button) !important;
+  border: none !important;
+  box-shadow: var(--osg-shadow-primary) !important;
+  font-weight: 600;
+  transition: all var(--osg-transition-normal) !important;
+}
+
+.osg-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(113, 162, 65, 0.4) !important;
+}
+
+.osg-btn-accent {
+  background: var(--osg-gradient-header) !important;
+  border: none !important;
+  color: var(--osg-white) !important;
+  box-shadow: var(--osg-shadow-accent) !important;
+  font-weight: 600;
+  transition: all var(--osg-transition-normal) !important;
+}
+
+.osg-btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(236, 108, 37, 0.4) !important;
+}
+
+/* ========================================
+   Card Styles
+   ======================================== */
+.osg-card {
+  border-radius: var(--osg-radius-lg);
+  box-shadow: var(--osg-shadow-sm);
+  border: 1px solid var(--osg-gray-200);
+  transition: all var(--osg-transition-normal);
+}
+
+.osg-card:hover {
+  box-shadow: var(--osg-shadow-md);
+}
+
+/* ========================================
+   Avatar Styles
+   ======================================== */
+.osg-avatar {
+  background: var(--osg-gradient-header) !important;
+  font-weight: 600;
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s ease-out;
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+.text-primary {
+  color: var(--osg-primary);
+}
+
+.text-accent {
+  color: var(--osg-accent);
+}
+
+.bg-primary {
+  background-color: var(--osg-primary);
+}
+
+.bg-accent {
+  background-color: var(--osg-accent);
+}
+
+.gradient-text {
+  background: var(--osg-gradient-header);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+

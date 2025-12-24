@@ -25,15 +25,15 @@ export interface IPOController {
     limit?: string,
     sortBy?: string,
     sortOrder?: string,
-    clientName?: string,
+    clientId?: string,
     poStatus?: string
   ): Promise<APIGatewayProxyResult>;
-  getById(id: string): Promise<APIGatewayProxyResult>;
-  update(id: string, data: UpdatePORequest): Promise<APIGatewayProxyResult>;
-  delete(id: string): Promise<APIGatewayProxyResult>;
+  getById(poId: string): Promise<APIGatewayProxyResult>;
+  update(poId: string, data: UpdatePORequest): Promise<APIGatewayProxyResult>;
+  delete(poId: string): Promise<APIGatewayProxyResult>;
 }
 
-@Controller({ path: '/api/po', lambdaName: 'po' })
+@Controller({ path: '/api/po', lambdaName: 'CreatePO' })
 @injectable()
 export class POController implements IPOController {
   constructor(@inject(TYPES.POService) private poService: IPOService) {}
@@ -51,7 +51,7 @@ export class POController implements IPOController {
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
-    @Query('clientName') clientName?: string,
+    @Query('clientId') clientId?: string,
     @Query('poStatus') poStatus?: string
   ): Promise<APIGatewayProxyResult> {
     const params: ListPORequest = {
@@ -59,7 +59,7 @@ export class POController implements IPOController {
       limit: limit ? parseInt(limit, 10) : 10,
       sortBy: sortBy || 'createdAt',
       sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
-      clientName,
+      clientId,
       poStatus,
     };
 
@@ -67,48 +67,47 @@ export class POController implements IPOController {
     return createSuccessResponse(result.items, 200, result.pagination);
   }
 
-  @Get('/{id}')
-  async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
-    return createSuccessResponse({ id }, 200);
-    const po = await this.poService.getPOById(id);
+  @Get('/{poId}')
+  async getById(@Param('poId') poId: string): Promise<APIGatewayProxyResult> {
+    const po = await this.poService.getPOById(poId);
 
     if (!po) {
-      throw new NotFoundError(`Purchase Order with ID ${id} not found`);
+      throw new NotFoundError(`Purchase Order with ID ${poId} not found`);
     }
 
     return createSuccessResponse(po);
   }
 
-  @Put('/{id}')
+  @Put('/{poId}')
   async update(
-    @Param('id') id: string,
+    @Param('poId') poId: string,
     @Body() data: UpdatePORequest
   ): Promise<APIGatewayProxyResult> {
-    const updateData = { ...data, id };
-    const po = await this.poService.updatePO(id, updateData);
+    const updateData = { ...data, poId };
+    const po = await this.poService.updatePO(poId, updateData);
 
     if (!po) {
-      throw new NotFoundError(`Purchase Order with ID ${id} not found`);
+      throw new NotFoundError(`Purchase Order with ID ${poId} not found`);
     }
 
     return createSuccessResponse(po);
   }
 
-  @Delete('/{id}')
-  async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
-    const deleted = await this.poService.deletePO(id);
+  @Delete('/{poId}')
+  async delete(@Param('poId') poId: string): Promise<APIGatewayProxyResult> {
+    const deleted = await this.poService.deletePO(poId);
 
     if (!deleted) {
-      throw new NotFoundError(`Purchase Order with ID ${id} not found`);
+      throw new NotFoundError(`Purchase Order with ID ${poId} not found`);
     }
 
-    return createSuccessResponse({ id, deleted: true });
+    return createSuccessResponse({ poId, deleted: true });
   }
 
   private validateCreateRequest(data: CreatePORequest): void {
     const requiredFields: (keyof CreatePORequest)[] = [
-      'date',
-      'clientName',
+      'poReceivedDate',
+      'clientId',
       'osgPiNo',
       'osgPiDate',
       'clientPoNo',
@@ -135,8 +134,14 @@ export class POController implements IPOController {
     }
 
     for (const item of data.poItems) {
-      if (!item.category || !item.product || !item.quantity) {
-        throw new ValidationError('Each PO item must have category, product, and quantity');
+      if (!item.categoryId || !item.productId || !item.quantity) {
+        throw new ValidationError('Each PO item must have categoryId, productId, and quantity');
+      }
+      if (!item.oemId) {
+        throw new ValidationError('Each PO item must have oemId');
+      }
+      if (item.gstPercent === undefined || item.gstPercent === null) {
+        throw new ValidationError('Each PO item must have gstPercent');
       }
     }
   }

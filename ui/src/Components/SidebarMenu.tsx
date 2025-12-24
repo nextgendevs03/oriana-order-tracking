@@ -10,8 +10,9 @@ import {
   KeyOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { MenuProps } from "antd";
+import { motion } from "framer-motion";
 
 interface SidebarMenuProps {
   collapsed?: boolean;
@@ -19,18 +20,29 @@ interface SidebarMenuProps {
 
 const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
+  // Determine selected key based on current path
+  const getSelectedKey = () => {
+    const path = location.pathname;
+    if (path === "/dashboard") return "1";
+    if (path === "/summary-dashboard") return "1-1";
+    if (path === "/user-management") return "2-1";
+    if (path === "/role-management") return "2-2";
+    if (path === "/permissions") return "2-3";
+    if (path.includes("/product-management")) return "2-4";
+    if (path === "/profile") return "3";
+    return "1";
+  };
+
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     switch (e.key) {
       case "1":
         navigate("/dashboard");
         break;
-
       case "1-1":
         navigate("/summary-dashboard");
         break;
-
-      // Admin
       case "2-1":
         navigate("/user-management");
         break;
@@ -43,15 +55,12 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
       case "2-4":
         navigate("/product-management");
         break;
-
       case "3":
         navigate("/profile");
         break;
-
       case "4":
         navigate("/");
         break;
-
       default:
         break;
     }
@@ -92,19 +101,28 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
   ];
 
   return (
-    <Menu
-      theme="dark"
-      mode="inline"
-      defaultOpenKeys={["2"]}
-      items={menuItems}
-      onClick={handleMenuClick}
-      style={{
-        background: "#001529",
-        flex: 1,
-        borderRight: 0,
-      }}
-      inlineCollapsed={collapsed}
-    />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
+      style={{ flex: 1, overflow: "auto" }}
+    >
+      <Menu
+        theme="dark"
+        mode="inline"
+        selectedKeys={[getSelectedKey()]}
+        defaultOpenKeys={collapsed ? [] : ["2"]}
+        items={menuItems}
+        onClick={handleMenuClick}
+        className="osg-menu"
+        style={{
+          background: "transparent",
+          border: "none",
+          padding: "8px 0",
+        }}
+        inlineCollapsed={collapsed}
+      />
+    </motion.div>
   );
 };
 
