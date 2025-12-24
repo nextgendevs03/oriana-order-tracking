@@ -28,9 +28,9 @@ export interface IPOController {
     clientId?: string,
     poStatus?: string
   ): Promise<APIGatewayProxyResult>;
-  getById(poId: string): Promise<APIGatewayProxyResult>;
-  update(poId: string, data: UpdatePORequest): Promise<APIGatewayProxyResult>;
-  delete(poId: string): Promise<APIGatewayProxyResult>;
+  getById(id: string): Promise<APIGatewayProxyResult>;
+  update(id: string, data: UpdatePORequest): Promise<APIGatewayProxyResult>;
+  delete(id: string): Promise<APIGatewayProxyResult>;
 }
 
 @Controller({ path: '/api/po', lambdaName: 'CreatePO' })
@@ -67,41 +67,41 @@ export class POController implements IPOController {
     return createSuccessResponse(result.items, 200, result.pagination);
   }
 
-  @Get('/{poId}')
-  async getById(@Param('poId') poId: string): Promise<APIGatewayProxyResult> {
-    const po = await this.poService.getPOById(poId);
+  @Get('/{id}')
+  async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
+    const po = await this.poService.getPOById(id);
 
     if (!po) {
-      throw new NotFoundError(`Purchase Order with ID ${poId} not found`);
+      throw new NotFoundError(`Purchase Order with ID ${id} not found`);
     }
 
     return createSuccessResponse(po);
   }
 
-  @Put('/{poId}')
+  @Put('/{id}')
   async update(
-    @Param('poId') poId: string,
+    @Param('id') id: string,
     @Body() data: UpdatePORequest
   ): Promise<APIGatewayProxyResult> {
-    const updateData = { ...data, poId };
-    const po = await this.poService.updatePO(poId, updateData);
+    const updateData = { ...data, poId: id };
+    const po = await this.poService.updatePO(id, updateData);
 
     if (!po) {
-      throw new NotFoundError(`Purchase Order with ID ${poId} not found`);
+      throw new NotFoundError(`Purchase Order with ID ${id} not found`);
     }
 
     return createSuccessResponse(po);
   }
 
-  @Delete('/{poId}')
-  async delete(@Param('poId') poId: string): Promise<APIGatewayProxyResult> {
-    const deleted = await this.poService.deletePO(poId);
+  @Delete('/{id}')
+  async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
+    const deleted = await this.poService.deletePO(id);
 
     if (!deleted) {
-      throw new NotFoundError(`Purchase Order with ID ${poId} not found`);
+      throw new NotFoundError(`Purchase Order with ID ${id} not found`);
     }
 
-    return createSuccessResponse({ poId, deleted: true });
+    return createSuccessResponse({ id, deleted: true });
   }
 
   private validateCreateRequest(data: CreatePORequest): void {

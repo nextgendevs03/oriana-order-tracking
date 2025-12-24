@@ -7,9 +7,9 @@
  * Handles all PO operations:
  * - POST /api/po - Create new PO
  * - GET /api/po - List all POs
- * - GET /api/po/{poId} - Get PO by ID
- * - PUT /api/po/{poId} - Update PO
- * - DELETE /api/po/{poId} - Delete PO
+ * - GET /api/po/{id} - Get PO by ID
+ * - PUT /api/po/{id} - Update PO
+ * - DELETE /api/po/{id} - Delete PO
  */
 
 import 'reflect-metadata';
