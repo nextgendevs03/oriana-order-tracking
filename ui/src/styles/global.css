@@ -21,11 +21,11 @@
   --osg-accent-light: #f5894d;
   --osg-accent-dark: #d45a1a;
 
-  /* Sidebar - Vibrant gradient */
-  --osg-sidebar-bg: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-  --osg-sidebar-hover: rgba(255, 255, 255, 0.15);
-  --osg-sidebar-active: rgba(255, 255, 255, 0.25);
-  --osg-sidebar-border: rgba(255, 255, 255, 0.1);
+  /* Sidebar - Dark elegant with brand accents */
+  --osg-sidebar-bg: #1a1d2e;
+  --osg-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --osg-sidebar-active: rgba(113, 162, 65, 0.15);
+  --osg-sidebar-border: rgba(255, 255, 255, 0.06);
 
   /* Neutrals - Warm grays */
   --osg-white: #ffffff;
@@ -103,10 +103,11 @@ body {
 }
 
 /* ========================================
-   Sidebar Styles - Vibrant Gradient
+   Sidebar Styles - Dark with Brand Accents
    ======================================== */
 .osg-sidebar {
   background: var(--osg-sidebar-bg) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .osg-sidebar .ant-layout-sider-children {
@@ -120,35 +121,36 @@ body {
   justify-content: center;
   padding: 16px;
   margin: 16px 12px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: var(--osg-radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all var(--osg-transition-normal);
 }
 
 .osg-sidebar-logo:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--osg-accent);
   transform: scale(1.02);
 }
 
 .osg-sidebar-logo img {
   max-width: 100%;
   height: auto;
-  filter: brightness(0) invert(1);
-  opacity: 0.95;
+  /* Keep original logo colors */
+  filter: none;
+  opacity: 1;
 }
 
 /* Sidebar divider */
 .osg-sidebar-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  background: linear-gradient(90deg, transparent, var(--osg-accent), var(--osg-primary), transparent);
   margin: 12px 16px;
+  opacity: 0.3;
 }
 
 /* ========================================
-   Menu Styles - Vibrant & Modern
+   Menu Styles - Dark with Brand Accents
    ======================================== */
 .osg-menu {
   background: transparent !important;
@@ -159,26 +161,33 @@ body {
   margin: 4px 10px !important;
   border-radius: 10px !important;
   transition: all var(--osg-transition-fast) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
   height: 44px !important;
   line-height: 44px !important;
 }
 
 .osg-menu .ant-menu-item:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #fff !important;
+  background: rgba(236, 108, 37, 0.1) !important;
+  color: var(--osg-accent) !important;
   transform: translateX(4px);
 }
 
 .osg-menu .ant-menu-item-selected {
-  background: rgba(255, 255, 255, 0.25) !important;
-  color: #fff !important;
+  background: rgba(113, 162, 65, 0.15) !important;
+  color: var(--osg-primary) !important;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .osg-menu .ant-menu-item-selected::before {
-  display: none;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: linear-gradient(180deg, var(--osg-accent), var(--osg-primary));
+  border-radius: 0 3px 3px 0;
 }
 
 .osg-menu .ant-menu-item-selected::after {
@@ -188,22 +197,22 @@ body {
 .osg-menu .ant-menu-submenu-title {
   margin: 4px 10px !important;
   border-radius: 10px !important;
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
   height: 44px !important;
   line-height: 44px !important;
 }
 
 .osg-menu .ant-menu-submenu-title:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #fff !important;
+  background: rgba(236, 108, 37, 0.1) !important;
+  color: var(--osg-accent) !important;
 }
 
 .osg-menu .ant-menu-sub {
-  background: rgba(0, 0, 0, 0.12) !important;
+  background: rgba(0, 0, 0, 0.2) !important;
   border-radius: 10px;
   margin: 4px 10px;
   padding: 6px 0;
-  backdrop-filter: blur(10px);
+  border-left: 2px solid var(--osg-primary);
 }
 
 .osg-menu .ant-menu-sub .ant-menu-item {
@@ -213,8 +222,18 @@ body {
   line-height: 40px !important;
 }
 
+/* Menu icons - brand color on hover/active */
+.osg-menu .ant-menu-item:hover .anticon,
+.osg-menu .ant-menu-submenu-title:hover .anticon {
+  color: var(--osg-accent) !important;
+}
+
+.osg-menu .ant-menu-item-selected .anticon {
+  color: var(--osg-primary) !important;
+}
+
 /* ========================================
-   Navbar Styles - Clean & Light
+   Navbar Styles - Clean with Brand Accents
    ======================================== */
 .osg-navbar {
   background: var(--osg-white) !important;
@@ -229,13 +248,13 @@ body {
 }
 
 .osg-navbar-toggle {
-  color: var(--osg-gray-500) !important;
+  color: var(--osg-accent) !important;
   transition: all var(--osg-transition-fast) !important;
 }
 
 .osg-navbar-toggle:hover {
-  color: var(--osg-gray-700) !important;
-  background: var(--osg-gray-100) !important;
+  color: var(--osg-accent-dark) !important;
+  background: rgba(236, 108, 37, 0.1) !important;
 }
 
 /* ========================================
@@ -268,19 +287,20 @@ body {
 }
 
 /* ========================================
-   Button Styles - Clean & Professional
+   Button Styles - Brand Colors
    ======================================== */
 .osg-btn-primary {
   background: var(--osg-primary) !important;
   border: none !important;
-  box-shadow: var(--osg-shadow-sm) !important;
-  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(113, 162, 65, 0.25) !important;
+  font-weight: 600;
   transition: all var(--osg-transition-fast) !important;
 }
 
 .osg-btn-primary:hover {
   background: var(--osg-primary-dark) !important;
-  box-shadow: 0 2px 8px rgba(113, 162, 65, 0.3) !important;
+  box-shadow: 0 6px 16px rgba(113, 162, 65, 0.35) !important;
+  transform: translateY(-1px);
 }
 
 .osg-btn-secondary {
@@ -292,8 +312,23 @@ body {
 }
 
 .osg-btn-secondary:hover {
-  border-color: var(--osg-primary) !important;
-  color: var(--osg-primary) !important;
+  border-color: var(--osg-accent) !important;
+  color: var(--osg-accent) !important;
+}
+
+.osg-btn-accent {
+  background: var(--osg-accent) !important;
+  border: none !important;
+  color: var(--osg-white) !important;
+  box-shadow: 0 4px 12px rgba(236, 108, 37, 0.25) !important;
+  font-weight: 600;
+  transition: all var(--osg-transition-fast) !important;
+}
+
+.osg-btn-accent:hover {
+  background: var(--osg-accent-dark) !important;
+  box-shadow: 0 6px 16px rgba(236, 108, 37, 0.35) !important;
+  transform: translateY(-1px);
 }
 
 /* ========================================

@@ -197,6 +197,7 @@ const Dashboard: React.FC = () => {
             borderRadius: 16,
             boxShadow: shadows.card,
             border: `1px solid ${colors.gray200}`,
+            borderLeft: `4px solid ${colors.accent}`,
             background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
           }}
           bodyStyle={{
@@ -258,13 +259,13 @@ const Dashboard: React.FC = () => {
               icon={<PlusOutlined />}
               onClick={handleCreatePO}
               style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: colors.primary,
                 border: "none",
                 borderRadius: 10,
                 fontWeight: 600,
                 height: 44,
                 padding: "0 24px",
-                boxShadow: "0 4px 16px rgba(102, 126, 234, 0.35)",
+                boxShadow: "0 4px 16px rgba(113, 162, 65, 0.35)",
               }}
             >
               Create PO

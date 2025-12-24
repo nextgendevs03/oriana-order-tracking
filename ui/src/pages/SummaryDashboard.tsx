@@ -112,6 +112,7 @@ const SummaryDashboard: React.FC = () => {
             borderRadius: 16,
             boxShadow: shadows.card,
             border: `1px solid ${colors.gray200}`,
+            borderLeft: `4px solid ${colors.accent}`,
             background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
           }}
           bodyStyle={{
@@ -170,14 +171,14 @@ const SummaryDashboard: React.FC = () => {
               icon={<ReloadOutlined />}
               onClick={handleRefresh}
               style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: colors.primary,
                 color: colors.white,
                 border: "none",
                 borderRadius: 10,
                 fontWeight: 600,
                 height: 44,
                 padding: "0 24px",
-                boxShadow: "0 4px 16px rgba(102, 126, 234, 0.35)",
+                boxShadow: "0 4px 16px rgba(113, 162, 65, 0.35)",
               }}
             >
               Refresh
@@ -422,7 +423,7 @@ const SummaryDashboard: React.FC = () => {
                 Columns
                 <span
                   style={{
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    background: colors.accent,
                     borderRadius: 6,
                     padding: "2px 8px",
                     fontSize: 12,
@@ -599,10 +600,10 @@ const SummaryDashboard: React.FC = () => {
                     marginTop: 12,
                     borderRadius: 10,
                     height: 44,
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    background: colors.primary,
                     border: "none",
                     fontWeight: 600,
-                    boxShadow: "0 4px 16px rgba(102, 126, 234, 0.3)",
+                    boxShadow: "0 4px 16px rgba(113, 162, 65, 0.3)",
                   }}
                 >
                   Apply Filters
@@ -739,9 +740,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ title, onClose, content }) => (
             margin: 0,
             fontSize: 18,
             fontWeight: 700,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            color: colors.gray900,
           }}
         >
           {title}

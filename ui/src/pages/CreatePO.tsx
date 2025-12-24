@@ -320,6 +320,7 @@ const CreatePO: FC = () => {
           background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
           borderRadius: 16,
           border: `1px solid ${colors.gray200}`,
+          borderLeft: `4px solid ${colors.primary}`,
           boxShadow: shadows.card,
           padding: "24px 28px",
           marginBottom: 24,

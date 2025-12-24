@@ -16,12 +16,12 @@ export const colors = {
   accentDark: "#d45a1a",
   accentMuted: "#ec6c2510",
 
-  // Sidebar - Vibrant purple gradient
-  sidebarBg: "linear-gradient(180deg, #667eea 0%, #764ba2 100%)",
-  sidebarBgSolid: "#667eea",
-  sidebarHover: "rgba(255, 255, 255, 0.15)",
-  sidebarActive: "rgba(255, 255, 255, 0.25)",
-  sidebarBorder: "rgba(255, 255, 255, 0.1)",
+  // Sidebar - Dark elegant with brand accents
+  sidebarBg: "#1a1d2e",
+  sidebarBgSolid: "#1a1d2e",
+  sidebarHover: "rgba(255, 255, 255, 0.08)",
+  sidebarActive: "rgba(113, 162, 65, 0.15)",
+  sidebarBorder: "rgba(255, 255, 255, 0.06)",
 
   // Neutral Colors - Refined palette
   white: "#ffffff",
