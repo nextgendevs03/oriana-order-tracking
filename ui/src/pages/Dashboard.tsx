@@ -1,14 +1,22 @@
 import { useEffect, useMemo } from "react";
-import { Table, Button, Tag } from "antd";
-import { PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import { Table, Button, Tag, Card } from "antd";
+import {
+  PlusOutlined,
+  EyeOutlined,
+  FileTextOutlined,
+} from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { POData } from "../store/poSlice";
 import { selectPOList } from "../store/poSelectors";
 import type { ColumnsType } from "antd/es/table";
-import { getPaymentStatusColor, getPoStatusColor, formatLabel } from "../utils";
-import { colors, gradients } from "../styles/theme";
+import {
+  getPaymentStatusColor,
+  getPoStatusColor,
+  formatLabel,
+} from "../utils";
+import { colors, shadows } from "../styles/theme";
 
 interface PORecord {
   key: string;
@@ -80,6 +88,9 @@ const Dashboard: React.FC = () => {
       key: "poOrderId",
       fixed: "left",
       width: 120,
+      render: (text) => (
+        <span style={{ fontWeight: 500, color: colors.gray800 }}>{text}</span>
+      ),
     },
     {
       title: "Date",
@@ -118,7 +129,17 @@ const Dashboard: React.FC = () => {
       onFilter: (value, record) => record.assignDispatchTo === value,
       render: (value: number) => {
         const assigneeMap: Record<number, string> = { 1: "Aman", 2: "Rahul" };
-        return <Tag color="cyan">{assigneeMap[value] || "-"}</Tag>;
+        return (
+          <Tag
+            style={{
+              background: colors.gray100,
+              color: colors.gray700,
+              border: "none",
+            }}
+          >
+            {assigneeMap[value] || "-"}
+          </Tag>
+        );
       },
     },
     {
@@ -143,113 +164,166 @@ const Dashboard: React.FC = () => {
       ),
     },
     {
-      title: "View",
+      title: "Action",
       key: "action",
       fixed: "right",
       width: 80,
       render: (_, record) => (
         <Button
-          type="link"
+          type="text"
           icon={<EyeOutlined />}
           onClick={() => handleView(record)}
-          style={{ color: colors.primary }}
+          style={{
+            color: colors.primary,
+            borderRadius: 6,
+          }}
         />
       ),
     },
   ];
 
   return (
-    <div style={{ padding: "0.5rem", background: "#fff", minHeight: "100%" }}>
-      {/* Header with OSG gradient */}
+    <div style={{ minHeight: "100%" }}>
+      {/* Page Header - Clean & Elegant */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="osg-page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "20px 24px",
-          background: gradients.header,
-          borderRadius: 12,
-          boxShadow: "0 4px 15px rgba(236, 108, 37, 0.25)",
-          marginBottom: "1.5rem",
-        }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
       >
-        <div>
-          <h2
-            style={{
-              margin: 0,
-              fontWeight: 700,
-              fontSize: "1.5rem",
-              color: "#ffffff",
-              letterSpacing: "0.5px",
-            }}
-          >
-            Order Punch Dashboard
-          </h2>
-          <p
-            style={{
-              margin: "0.35rem 0 0 0",
-              fontSize: "0.875rem",
-              color: "rgba(255, 255, 255, 0.9)",
-              fontWeight: 400,
-            }}
-          >
-            Track and manage all purchase orders in one place
-          </p>
-        </div>
-        <motion.div
-          whileHover={{ scale: 1.03, y: -2 }}
-          whileTap={{ scale: 0.97 }}
+        <Card
+          bordered={false}
+          style={{
+            marginBottom: 24,
+            borderRadius: 12,
+            boxShadow: shadows.card,
+            border: `1px solid ${colors.gray200}`,
+          }}
+          bodyStyle={{
+            padding: "20px 24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreatePO}
-            style={{
-              backgroundColor: colors.white,
-              color: colors.primary,
-              border: "none",
-              borderRadius: 8,
-              fontWeight: 600,
-              height: 42,
-              padding: "0 24px",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-            }}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: colors.primaryMuted,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FileTextOutlined
+                style={{ fontSize: 22, color: colors.primary }}
+              />
+            </div>
+            <div>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                  color: colors.gray900,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Order Punch Dashboard
+              </h2>
+              <p
+                style={{
+                  margin: "2px 0 0 0",
+                  fontSize: "0.875rem",
+                  color: colors.gray500,
+                }}
+              >
+                Track and manage all purchase orders
+              </p>
+            </div>
+          </div>
+          <motion.div
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.15 }}
           >
-            Create PO
-          </Button>
-        </motion.div>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreatePO}
+              style={{
+                background: colors.primary,
+                borderColor: colors.primary,
+                borderRadius: 8,
+                fontWeight: 500,
+                height: 40,
+                padding: "0 20px",
+                boxShadow: shadows.primary,
+              }}
+            >
+              Create PO
+            </Button>
+          </motion.div>
+        </Card>
       </motion.div>
 
-      {/* PO Table with entrance animation */}
+      {/* PO Table */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+        transition={{ duration: 0.25, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
       >
-        <Table<PORecord>
-          columns={columns}
-          dataSource={dataSource}
-          scroll={{ x: 1200 }}
-          pagination={{
-            defaultPageSize: 10,
-            showSizeChanger: true,
-            pageSizeOptions: ["10", "20", "50", "100"],
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} items`,
-          }}
-          locale={{
-            emptyText: "No PO available",
-          }}
-          bordered
+        <Card
+          bordered={false}
           style={{
-            borderRadius: 8,
-            overflow: "hidden",
+            borderRadius: 12,
+            boxShadow: shadows.card,
+            border: `1px solid ${colors.gray200}`,
           }}
-        />
+          bodyStyle={{ padding: 0 }}
+        >
+          <Table<PORecord>
+            columns={columns}
+            dataSource={dataSource}
+            scroll={{ x: 1200 }}
+            pagination={{
+              defaultPageSize: 10,
+              showSizeChanger: true,
+              pageSizeOptions: ["10", "20", "50", "100"],
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} items`,
+              style: { padding: "12px 16px", margin: 0 },
+            }}
+            locale={{
+              emptyText: (
+                <div style={{ padding: "48px 0", textAlign: "center" }}>
+                  <FileTextOutlined
+                    style={{
+                      fontSize: 48,
+                      color: colors.gray300,
+                      marginBottom: 12,
+                    }}
+                  />
+                  <p
+                    style={{
+                      margin: 0,
+                      color: colors.gray500,
+                      fontSize: 14,
+                    }}
+                  >
+                    No purchase orders yet
+                  </p>
+                </div>
+              ),
+            }}
+            style={{
+              borderRadius: 12,
+              overflow: "hidden",
+            }}
+          />
+        </Card>
       </motion.div>
     </div>
   );

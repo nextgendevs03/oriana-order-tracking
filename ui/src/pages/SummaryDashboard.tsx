@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Card, Button, Input, Select, Table, Checkbox, DatePicker } from "antd";
+import {
+  Card,
+  Button,
+  Input,
+  Select,
+  Table,
+  Checkbox,
+  DatePicker,
+} from "antd";
 import {
   ReloadOutlined,
   FileTextOutlined,
@@ -10,10 +18,11 @@ import {
   FilterOutlined,
   SettingOutlined,
   CloseOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import moment from "moment";
-import { colors, gradients } from "../styles/theme";
+import { colors, shadows } from "../styles/theme";
 
 const SummaryDashboard: React.FC = () => {
   const [status, setStatus] = useState<"active" | "inactive">("active");
@@ -45,31 +54,39 @@ const SummaryDashboard: React.FC = () => {
     setStatus("active");
   };
 
-  /* ---------- Cards ---------- */
-  const cards = [
+  /* ---------- Stats Cards Data ---------- */
+  const stats = [
     {
-      title: "TOTAL ORDERS",
+      title: "Total Orders",
+      value: 0,
       subtitle: "All orders",
-      color: gradients.header,
       icon: <FileTextOutlined />,
+      color: colors.primary,
+      bgColor: colors.primaryMuted,
     },
     {
-      title: "IN PROGRESS",
+      title: "In Progress",
+      value: 0,
       subtitle: "Processing",
-      color: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.accentDark} 100%)`,
       icon: <SyncOutlined />,
+      color: colors.accent,
+      bgColor: colors.accentMuted,
     },
     {
-      title: "PENDING",
+      title: "Pending",
+      value: 0,
       subtitle: "Awaiting action",
-      color: `linear-gradient(135deg, ${colors.primaryLight} 0%, ${colors.primary} 100%)`,
       icon: <ClockCircleOutlined />,
+      color: "#f59e0b",
+      bgColor: "rgba(245, 158, 11, 0.08)",
     },
     {
-      title: "COMPLETED",
+      title: "Completed",
+      value: 0,
       subtitle: "Closed",
-      color: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryDark} 100%)`,
       icon: <CheckCircleOutlined />,
+      color: "#22c55e",
+      bgColor: "rgba(34, 197, 94, 0.08)",
     },
   ];
 
@@ -81,149 +98,174 @@ const SummaryDashboard: React.FC = () => {
   const [endDate, setEndDate] = useState<moment.Moment | null>(null);
 
   return (
-    <div style={{ padding: 24, background: colors.gray50, minHeight: "100vh" }}>
-      {/* ---------- Header - OSG Gradient Style ---------- */}
+    <div style={{ minHeight: "100%" }}>
+      {/* ---------- Page Header ---------- */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        style={{
-          position: "relative",
-          marginBottom: 24,
-          padding: "1.5rem 2rem",
-          background: `linear-gradient(135deg, rgba(236, 108, 37, 0.1) 0%, rgba(113, 162, 65, 0.1) 100%)`,
-          borderRadius: 16,
-          border: `1px solid rgba(236, 108, 37, 0.2)`,
-          backdropFilter: "blur(10px)",
-          overflow: "hidden",
-        }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
       >
-        {/* Decorative circles */}
-        <div
+        <Card
+          bordered={false}
           style={{
-            position: "absolute",
-            top: -30,
-            right: -30,
-            width: 120,
-            height: 120,
-            borderRadius: "50%",
-            background: `linear-gradient(135deg, rgba(236, 108, 37, 0.3), rgba(113, 162, 65, 0.1))`,
-            pointerEvents: "none",
+            marginBottom: 24,
+            borderRadius: 12,
+            boxShadow: shadows.card,
+            border: `1px solid ${colors.gray200}`,
           }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: -20,
-            right: 80,
-            width: 60,
-            height: 60,
-            borderRadius: "50%",
-            background: `rgba(113, 162, 65, 0.15)`,
-            pointerEvents: "none",
+          bodyStyle={{
+            padding: "20px 24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
-        />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative", zIndex: 1 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: colors.primaryMuted,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <BarChartOutlined
+                style={{ fontSize: 22, color: colors.primary }}
+              />
+            </div>
+            <div>
+              <h2
                 style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  background: gradients.header,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: `0 4px 12px rgba(236, 108, 37, 0.4)`,
+                  margin: 0,
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                  color: colors.gray900,
+                  letterSpacing: "-0.01em",
                 }}
               >
-                <FileTextOutlined style={{ fontSize: 24, color: "#fff" }} />
-              </div>
-              <div>
-                <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.5rem", color: colors.gray800 }}>
-                  Summary Dashboard
-                </h2>
-                <p style={{ margin: 0, fontSize: "0.875rem", color: colors.gray500 }}>
-                  Track all purchase orders at a glance
-                </p>
-              </div>
+                Summary Dashboard
+              </h2>
+              <p
+                style={{
+                  margin: "2px 0 0 0",
+                  fontSize: "0.875rem",
+                  color: colors.gray500,
+                }}
+              >
+                Track all purchase orders at a glance
+              </p>
             </div>
           </div>
-          <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
+          <motion.div
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+          >
             <Button
               icon={<ReloadOutlined />}
               onClick={handleRefresh}
               style={{
-                background: gradients.button,
-                color: "#fff",
+                background: colors.primary,
+                color: colors.white,
                 border: "none",
-                borderRadius: 10,
-                fontWeight: 600,
-                height: 42,
-                padding: "0 24px",
-                boxShadow: `0 4px 12px rgba(113, 162, 65, 0.35)`,
+                borderRadius: 8,
+                fontWeight: 500,
+                height: 40,
+                padding: "0 20px",
+                boxShadow: shadows.primary,
               }}
             >
               Refresh
             </Button>
           </motion.div>
-        </div>
+        </Card>
       </motion.div>
 
-      {/* ---------- Cards ---------- */}
+      {/* ---------- Stat Cards ---------- */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+        transition={{ duration: 0.25, delay: 0.05, ease: [0.4, 0, 0.2, 1] }}
         style={{
-          display: "flex",
-          flexWrap: "wrap",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: 16,
           marginBottom: 24,
         }}
       >
-        {cards.map((card, index) => (
+        {stats.map((stat, index) => (
           <motion.div
-            key={card.title}
-            initial={{ opacity: 0, y: 20 }}
+            key={stat.title}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 + index * 0.1 }}
-            style={{ flex: "1 1 200px", minWidth: 180 }}
+            transition={{
+              duration: 0.25,
+              delay: 0.05 + index * 0.05,
+              ease: [0.4, 0, 0.2, 1],
+            }}
           >
             <Card
               bordered={false}
               style={{
-                background: card.color,
-                borderRadius: 14,
-                color: "#fff",
+                borderRadius: 12,
+                border: `1px solid ${colors.gray200}`,
+                boxShadow: shadows.card,
+                transition: "all 0.2s ease",
               }}
+              bodyStyle={{ padding: 20 }}
+              hoverable
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
                 <div
                   style={{
-                    background: "rgba(255,255,255,0.25)",
-                    padding: 12,
+                    width: 44,
+                    height: 44,
                     borderRadius: 10,
+                    background: stat.bgColor,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    fontSize: 20,
+                    color: stat.color,
+                    flexShrink: 0,
                   }}
                 >
-                  {card.icon}
+                  {stat.icon}
                 </div>
-                <div>
-                  <div
-                    style={{ fontSize: 14, fontWeight: 500, letterSpacing: 0.5 }}
+                <div style={{ flex: 1 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 13,
+                      color: colors.gray500,
+                      fontWeight: 500,
+                    }}
                   >
-                    {card.title}
-                  </div>
-                  <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>
-                    0
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>
-                    {card.subtitle}
-                  </div>
+                    {stat.title}
+                  </p>
+                  <p
+                    style={{
+                      margin: "4px 0 0 0",
+                      fontSize: 28,
+                      fontWeight: 700,
+                      color: colors.gray900,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stat.value}
+                  </p>
+                  <p
+                    style={{
+                      margin: "4px 0 0 0",
+                      fontSize: 12,
+                      color: colors.gray400,
+                    }}
+                  >
+                    {stat.subtitle}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -231,24 +273,42 @@ const SummaryDashboard: React.FC = () => {
         ))}
       </motion.div>
 
-      {/* ---------- Table ---------- */}
+      {/* ---------- Table Card ---------- */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
+        transition={{ duration: 0.25, delay: 0.15, ease: [0.4, 0, 0.2, 1] }}
       >
-        <Card bordered={false} style={{ borderRadius: 12 }}>
-          <div style={{ display: "flex", gap: 12, paddingBottom: 12 }}>
-            {/* Status Select */}
+        <Card
+          bordered={false}
+          style={{
+            borderRadius: 12,
+            border: `1px solid ${colors.gray200}`,
+            boxShadow: shadows.card,
+          }}
+          bodyStyle={{ padding: 0 }}
+        >
+          {/* Table Toolbar */}
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              padding: "16px 20px",
+              borderBottom: `1px solid ${colors.gray200}`,
+              flexWrap: "wrap",
+            }}
+          >
             <Select
               value={status}
               onChange={(v) => setStatus(v)}
-              style={{ width: 180 }}
+              style={{ width: 160 }}
               options={[
                 {
                   value: "active",
                   label: (
-                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
                       <span
                         style={{
                           width: 8,
@@ -264,13 +324,15 @@ const SummaryDashboard: React.FC = () => {
                 {
                   value: "inactive",
                   label: (
-                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
                       <span
                         style={{
                           width: 8,
                           height: 8,
                           borderRadius: "50%",
-                          background: colors.accent,
+                          background: colors.gray400,
                         }}
                       />
                       Inactive Orders
@@ -280,12 +342,19 @@ const SummaryDashboard: React.FC = () => {
               ]}
             />
 
-            <Input.Search placeholder="Search orders..." style={{ width: 260 }} />
+            <Input.Search
+              placeholder="Search orders..."
+              style={{ width: 240 }}
+            />
 
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               <Button
                 icon={<FilterOutlined />}
                 onClick={() => setShowFilter(true)}
+                style={{
+                  borderRadius: 8,
+                  borderColor: colors.gray300,
+                }}
               >
                 Filters
               </Button>
@@ -293,16 +362,23 @@ const SummaryDashboard: React.FC = () => {
               <Button
                 icon={<SettingOutlined />}
                 onClick={() => setShowColumns(true)}
-                style={{ display: "flex", alignItems: "center", gap: 6 }}
+                style={{
+                  borderRadius: 8,
+                  borderColor: colors.gray300,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
               >
                 Columns
                 <span
                   style={{
-                    background: colors.gray200,
-                    borderRadius: 6,
+                    background: colors.gray100,
+                    borderRadius: 4,
                     padding: "0 6px",
                     fontSize: 12,
                     fontWeight: 600,
+                    color: colors.gray600,
                   }}
                 >
                   {selectedColumns.length}
@@ -317,15 +393,22 @@ const SummaryDashboard: React.FC = () => {
             dataSource={[]}
             locale={{
               emptyText: (
-                <div style={{ textAlign: "center", padding: 32 }}>
+                <div style={{ textAlign: "center", padding: 48 }}>
                   <FileSearchOutlined
-                    style={{ fontSize: 40, color: colors.gray300 }}
+                    style={{ fontSize: 48, color: colors.gray300 }}
                   />
-                  <div style={{ marginTop: 8 }}>
+                  <p
+                    style={{
+                      marginTop: 12,
+                      marginBottom: 0,
+                      color: colors.gray500,
+                      fontSize: 14,
+                    }}
+                  >
                     {status === "active"
-                      ? "No Active Orders Found"
-                      : "No Inactive Orders Found"}
-                  </div>
+                      ? "No active orders found"
+                      : "No inactive orders found"}
+                  </p>
                 </div>
               ),
             }}
@@ -341,40 +424,90 @@ const SummaryDashboard: React.FC = () => {
             onClose={() => setShowFilter(false)}
             content={
               <>
-                <Input
-                  placeholder="PO ID"
-                  style={{ marginBottom: 12 }}
-                  value={poId}
-                  onChange={(e) => setPoId(e.target.value)}
-                />
-                <Input
-                  placeholder="Client"
-                  style={{ marginBottom: 12 }}
-                  value={client}
-                  onChange={(e) => setClient(e.target.value)}
-                />
-                <Select
-                  placeholder="Order Status"
-                  style={{ width: "100%", marginBottom: 12 }}
-                  value={orderStatus}
-                  onChange={(v) => setOrderStatus(v)}
-                  options={[
-                    { value: "pending", label: "Pending" },
-                    { value: "completed", label: "Completed" },
-                  ]}
-                />
-                <DatePicker
-                  placeholder="Start Date"
-                  style={{ width: "100%", marginBottom: 12 }}
-                  value={startDate}
-                  onChange={(date) => setStartDate(date)}
-                />
-                <DatePicker
-                  placeholder="End Date"
-                  style={{ width: "100%", marginBottom: 16 }}
-                  value={endDate}
-                  onChange={(date) => setEndDate(date)}
-                />
+                <div style={{ marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: colors.gray700,
+                    }}
+                  >
+                    PO ID
+                  </label>
+                  <Input
+                    placeholder="Enter PO ID"
+                    value={poId}
+                    onChange={(e) => setPoId(e.target.value)}
+                  />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: colors.gray700,
+                    }}
+                  >
+                    Client
+                  </label>
+                  <Input
+                    placeholder="Enter client name"
+                    value={client}
+                    onChange={(e) => setClient(e.target.value)}
+                  />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: colors.gray700,
+                    }}
+                  >
+                    Order Status
+                  </label>
+                  <Select
+                    placeholder="Select status"
+                    style={{ width: "100%" }}
+                    value={orderStatus}
+                    onChange={(v) => setOrderStatus(v)}
+                    options={[
+                      { value: "pending", label: "Pending" },
+                      { value: "completed", label: "Completed" },
+                    ]}
+                  />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: colors.gray700,
+                    }}
+                  >
+                    Date Range
+                  </label>
+                  <DatePicker
+                    placeholder="Start Date"
+                    style={{ width: "100%", marginBottom: 8 }}
+                    value={startDate}
+                    onChange={(date) => setStartDate(date)}
+                  />
+                  <DatePicker
+                    placeholder="End Date"
+                    style={{ width: "100%" }}
+                    value={endDate}
+                    onChange={(date) => setEndDate(date)}
+                  />
+                </div>
 
                 <Button
                   type="primary"
@@ -389,6 +522,11 @@ const SummaryDashboard: React.FC = () => {
                     });
                     setShowFilter(false);
                   }}
+                  style={{
+                    marginTop: 8,
+                    borderRadius: 8,
+                    height: 40,
+                  }}
                 >
                   Apply Filters
                 </Button>
@@ -402,25 +540,38 @@ const SummaryDashboard: React.FC = () => {
       <AnimatePresence>
         {showColumns && (
           <SidePanel
-            title="Columns"
+            title="Manage Columns"
             onClose={() => setShowColumns(false)}
             content={
               <>
-                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    marginBottom: 16,
+                    paddingBottom: 16,
+                    borderBottom: `1px solid ${colors.gray200}`,
+                  }}
+                >
                   <Button
                     size="small"
                     onClick={() =>
                       setSelectedColumns(allColumns.map((c) => c.key))
                     }
+                    style={{ borderRadius: 6 }}
                   >
                     Select All
                   </Button>
-                  <Button size="small" onClick={() => setSelectedColumns([])}>
-                    Clear
+                  <Button
+                    size="small"
+                    onClick={() => setSelectedColumns([])}
+                    style={{ borderRadius: 6 }}
+                  >
+                    Clear All
                   </Button>
                 </div>
 
-                <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
                   {allColumns.map((col) => (
                     <Checkbox
                       key={col.key}
@@ -432,7 +583,11 @@ const SummaryDashboard: React.FC = () => {
                             : selectedColumns.filter((k) => k !== col.key)
                         )
                       }
-                      style={{ display: "flex", padding: "6px 0" }}
+                      style={{
+                        display: "flex",
+                        padding: "10px 0",
+                        borderBottom: `1px solid ${colors.gray100}`,
+                      }}
                     >
                       {col.title}
                     </Checkbox>
@@ -447,38 +602,82 @@ const SummaryDashboard: React.FC = () => {
   );
 };
 
-/* ---------- SIDE PANEL ---------- */
-const SidePanel = ({ title, onClose, content }: any) => (
-  <motion.div
-    initial={{ x: 320, opacity: 0 }}
-    animate={{ x: 0, opacity: 1 }}
-    exit={{ x: 320, opacity: 0 }}
-    transition={{ duration: 0.3, ease: "easeOut" }}
-    style={{
-      position: "fixed",
-      top: 0,
-      right: 0,
-      width: 320,
-      height: "100vh",
-      background: "#fff",
-      padding: 20,
-      boxShadow: "-4px 0 12px rgba(0,0,0,0.1)",
-      borderRadius: "12px 0 0 12px",
-      zIndex: 1000,
-    }}
-  >
-    <div
+/* ---------- SIDE PANEL COMPONENT ---------- */
+interface SidePanelProps {
+  title: string;
+  onClose: () => void;
+  content: React.ReactNode;
+}
+
+const SidePanel: React.FC<SidePanelProps> = ({ title, onClose, content }) => (
+  <>
+    {/* Backdrop */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginBottom: 12,
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0, 0, 0, 0.3)",
+        zIndex: 999,
+      }}
+    />
+    {/* Panel */}
+    <motion.div
+      initial={{ x: 340, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 340, opacity: 0 }}
+      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+      style={{
+        position: "fixed",
+        top: 0,
+        right: 0,
+        width: 340,
+        height: "100vh",
+        background: colors.white,
+        padding: 24,
+        boxShadow: shadows.xl,
+        zIndex: 1000,
       }}
     >
-      <h3 style={{ margin: 0, color: colors.gray800 }}>{title}</h3>
-      <Button type="text" icon={<CloseOutlined />} onClick={onClose} />
-    </div>
-    {content}
-  </motion.div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+          paddingBottom: 16,
+          borderBottom: `1px solid ${colors.gray200}`,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: 16,
+            fontWeight: 600,
+            color: colors.gray900,
+          }}
+        >
+          {title}
+        </h3>
+        <Button
+          type="text"
+          icon={<CloseOutlined />}
+          onClick={onClose}
+          style={{
+            color: colors.gray500,
+            borderRadius: 6,
+          }}
+        />
+      </div>
+      {content}
+    </motion.div>
+  </>
 );
 
 export default SummaryDashboard;

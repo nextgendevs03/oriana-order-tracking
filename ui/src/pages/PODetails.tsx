@@ -22,7 +22,7 @@ import {
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useParams } from "react-router-dom";
-import { colors, gradients } from "../styles/theme";
+import { colors, shadows } from "../styles/theme";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import {
   deleteDispatchDetail,
@@ -1180,76 +1180,86 @@ const PODetails: React.FC = () => {
         minHeight: "100%",
       }}
     >
-      {/* Page Header - Split Card with Badge Style */}
+      {/* Page Header - Clean & Elegant */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         style={{
+          background: colors.white,
+          borderRadius: 12,
+          border: `1px solid ${colors.gray200}`,
+          boxShadow: shadows.card,
+          padding: "20px 24px",
+          marginBottom: 24,
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "stretch",
-          marginBottom: "1.5rem",
-          borderRadius: 14,
-          overflow: "hidden",
-          boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)",
+          alignItems: "center",
         }}
       >
-        {/* Left colored section */}
-        <div
-          style={{
-            background: gradients.header,
-            padding: "1.25rem 1.5rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: 80,
-          }}
-        >
-          <FileTextOutlined style={{ fontSize: 32, color: "#fff" }} />
-        </div>
-        {/* Right content section */}
-        <div
-          style={{
-            flex: 1,
-            background: "#fff",
-            padding: "1rem 1.5rem",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderTop: `1px solid ${colors.gray200}`,
-            borderRight: `1px solid ${colors.gray200}`,
-            borderBottom: `1px solid ${colors.gray200}`,
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 12,
+              background: colors.primaryMuted,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FileTextOutlined style={{ fontSize: 22, color: colors.primary }} />
+          </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.35rem", color: colors.gray800 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                  color: colors.gray900,
+                  letterSpacing: "-0.01em",
+                }}
+              >
                 Order Tracking
               </h2>
               <span
                 style={{
-                  background: gradients.header,
-                  color: "#fff",
-                  padding: "4px 12px",
-                  borderRadius: 20,
-                  fontSize: "0.8rem",
+                  background: colors.primary,
+                  color: colors.white,
+                  padding: "3px 10px",
+                  borderRadius: 6,
+                  fontSize: "0.75rem",
                   fontWeight: 600,
                 }}
               >
                 {selectedPO.id}
               </span>
               <Tag
-                color={isPOClosed ? "red" : "green"}
-                style={{ fontSize: "12px", padding: "2px 10px", fontWeight: 500, borderRadius: 12 }}
+                color={isPOClosed ? "error" : "success"}
+                style={{
+                  fontSize: 12,
+                  padding: "2px 8px",
+                  fontWeight: 500,
+                  borderRadius: 4,
+                  border: "none",
+                }}
               >
                 {isPOClosed ? "Closed" : "Active"}
               </Tag>
             </div>
-            <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.85rem", color: colors.gray500 }}>
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                fontSize: "0.875rem",
+                color: colors.gray500,
+              }}
+            >
               View and manage order details, dispatches & commissioning
             </p>
           </div>
+        </div>
         <Popconfirm
           title="Close PO"
           description="Are you sure you want to close this PO? This action cannot be undone."
@@ -1266,9 +1276,9 @@ const PODetails: React.FC = () => {
             disabled={!allAccordionsDone || isPOClosed}
             style={{
               borderRadius: 8,
-              fontWeight: 600,
-              height: 38,
-              padding: "0 18px",
+              fontWeight: 500,
+              height: 40,
+              padding: "0 20px",
             }}
             title={
               isPOClosed
@@ -1281,7 +1291,6 @@ const PODetails: React.FC = () => {
             {isPOClosed ? "PO Closed" : "Close PO"}
           </Button>
         </Popconfirm>
-        </div>
       </motion.div>
 
       <Collapse defaultActiveKey={["1"]} accordion={false}>

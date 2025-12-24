@@ -1,47 +1,57 @@
 /* ========================================
-   OSG Global Styles
-   Brand Colors: Orange #ec6c25, Green #71a241
+   OSG Order Tracking - Global Styles
+   Elegant, Modern Design System
    ======================================== */
 
-/* Google Font Import - Poppins */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+/* Google Font Import - Inter for clean, professional look */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ========================================
-   CSS Variables
+   CSS Variables - Refined Palette
    ======================================== */
 :root {
   /* Primary Colors (Green) */
   --osg-primary: #71a241;
-  --osg-primary-light: #8fc05a;
-  --osg-primary-dark: #5a8234;
+  --osg-primary-light: #8cb85a;
+  --osg-primary-dark: #5d8736;
+  --osg-primary-muted: rgba(113, 162, 65, 0.08);
 
-  /* Accent Colors (Orange) */
+  /* Accent Colors (Orange - use sparingly) */
   --osg-accent: #ec6c25;
-  --osg-accent-light: #f5924d;
+  --osg-accent-light: #f5894d;
   --osg-accent-dark: #d45a1a;
 
-  /* Gradients */
-  --osg-gradient-header: linear-gradient(135deg, #ec6c25 0%, #71a241 100%);
-  --osg-gradient-sidebar: linear-gradient(180deg, #ec6c25 0%, #d45a1a 30%, #5a8234 70%, #71a241 100%);
-  --osg-gradient-button: linear-gradient(135deg, #71a241 0%, #5a8234 100%);
+  /* Sidebar - Elegant dark */
+  --osg-sidebar-bg: #1a1f2e;
+  --osg-sidebar-hover: #252b3d;
+  --osg-sidebar-active: #2d3548;
+  --osg-sidebar-border: #2d3548;
 
-  /* Neutrals */
+  /* Neutrals - Warm grays */
   --osg-white: #ffffff;
-  --osg-black: #000000;
-  --osg-gray-50: #fafafa;
-  --osg-gray-100: #f5f5f5;
-  --osg-gray-200: #e8e8e8;
-  --osg-gray-300: #d9d9d9;
-  --osg-gray-500: #8c8c8c;
-  --osg-gray-700: #434343;
-  --osg-gray-900: #1f1f1f;
+  --osg-black: #0f1419;
+  --osg-gray-50: #fafbfc;
+  --osg-gray-100: #f4f5f7;
+  --osg-gray-200: #e8eaed;
+  --osg-gray-300: #d1d5db;
+  --osg-gray-400: #9ca3af;
+  --osg-gray-500: #6b7280;
+  --osg-gray-600: #4b5563;
+  --osg-gray-700: #374151;
+  --osg-gray-800: #1f2937;
+  --osg-gray-900: #111827;
 
-  /* Shadows */
-  --osg-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --osg-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --osg-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
-  --osg-shadow-primary: 0 4px 12px rgba(113, 162, 65, 0.3);
-  --osg-shadow-accent: 0 4px 12px rgba(236, 108, 37, 0.3);
+  /* Backgrounds */
+  --osg-bg-light: #f8fafc;
+  --osg-bg-page: #f1f5f9;
+  --osg-bg-card: #ffffff;
+
+  /* Shadows - Subtle and refined */
+  --osg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --osg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --osg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --osg-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --osg-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   /* Border Radius */
   --osg-radius-sm: 6px;
@@ -51,8 +61,8 @@
 
   /* Transitions */
   --osg-transition-fast: 0.15s ease;
-  --osg-transition-normal: 0.3s ease;
-  --osg-transition-slow: 0.5s ease;
+  --osg-transition-normal: 0.25s ease;
+  --osg-transition-slow: 0.4s ease;
 }
 
 /* ========================================
@@ -64,39 +74,40 @@
 
 body {
   margin: 0;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--osg-gray-100);
+  background: var(--osg-bg-page);
+  color: var(--osg-gray-800);
 }
 
 /* ========================================
-   Custom Scrollbar
+   Custom Scrollbar - Refined
    ======================================== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--osg-gray-100);
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--osg-gray-300);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--osg-gray-500);
+  background: var(--osg-gray-400);
 }
 
 /* ========================================
-   Sidebar Styles
+   Sidebar Styles - Dark & Elegant
    ======================================== */
 .osg-sidebar {
-  background: var(--osg-gradient-sidebar) !important;
+  background: var(--osg-sidebar-bg) !important;
+  border-right: 1px solid var(--osg-sidebar-border);
 }
 
 .osg-sidebar .ant-layout-sider-children {
@@ -109,25 +120,34 @@ body {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  margin: 8px 12px;
-  background: rgba(255, 255, 255, 0.1);
+  margin: 16px 12px;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: var(--osg-radius-lg);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all var(--osg-transition-normal);
 }
 
 .osg-sidebar-logo:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .osg-sidebar-logo img {
   max-width: 100%;
   height: auto;
-  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  filter: brightness(1.15) saturate(0.9);
+  opacity: 0.95;
+}
+
+/* Sidebar divider */
+.osg-sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  margin: 8px 16px;
 }
 
 /* ========================================
-   Menu Styles
+   Menu Styles - Clean & Minimal
    ======================================== */
 .osg-menu {
   background: transparent !important;
@@ -135,19 +155,33 @@ body {
 }
 
 .osg-menu .ant-menu-item {
-  margin: 4px 8px !important;
+  margin: 2px 8px !important;
   border-radius: var(--osg-radius-md) !important;
-  transition: all var(--osg-transition-normal) !important;
+  transition: all var(--osg-transition-fast) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .osg-menu .ant-menu-item:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
-  transform: translateX(4px);
+  background: var(--osg-sidebar-hover) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .osg-menu .ant-menu-item-selected {
-  background: rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: var(--osg-sidebar-active) !important;
+  color: var(--osg-white) !important;
+  font-weight: 500;
+}
+
+.osg-menu .ant-menu-item-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--osg-primary);
+  border-radius: 0 2px 2px 0;
 }
 
 .osg-menu .ant-menu-item-selected::after {
@@ -155,22 +189,30 @@ body {
 }
 
 .osg-menu .ant-menu-submenu-title {
-  margin: 4px 8px !important;
+  margin: 2px 8px !important;
   border-radius: var(--osg-radius-md) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .osg-menu .ant-menu-submenu-title:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--osg-sidebar-hover) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .osg-menu .ant-menu-sub {
-  background: rgba(0, 0, 0, 0.1) !important;
+  background: rgba(0, 0, 0, 0.15) !important;
   border-radius: var(--osg-radius-md);
-  margin: 0 8px;
+  margin: 4px 8px;
+  padding: 4px 0;
+}
+
+.osg-menu .ant-menu-sub .ant-menu-item {
+  margin: 2px 4px !important;
+  padding-left: 24px !important;
 }
 
 /* ========================================
-   Navbar Styles
+   Navbar Styles - Clean & Light
    ======================================== */
 .osg-navbar {
   background: var(--osg-white) !important;
@@ -179,98 +221,186 @@ body {
 }
 
 .osg-navbar-title {
-  background: var(--osg-gradient-header);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  color: var(--osg-gray-800);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .osg-navbar-toggle {
-  color: var(--osg-accent) !important;
-  transition: all var(--osg-transition-normal) !important;
+  color: var(--osg-gray-500) !important;
+  transition: all var(--osg-transition-fast) !important;
 }
 
 .osg-navbar-toggle:hover {
-  color: var(--osg-accent-dark) !important;
-  background: rgba(236, 108, 37, 0.1) !important;
+  color: var(--osg-gray-700) !important;
+  background: var(--osg-gray-100) !important;
 }
 
 /* ========================================
-   Page Header Styles
+   Page Header Styles - Refined
    ======================================== */
 .osg-page-header {
-  background: var(--osg-gradient-header);
-  padding: 20px 24px;
+  background: var(--osg-white);
+  padding: 24px;
   border-radius: var(--osg-radius-lg);
-  box-shadow: var(--osg-shadow-accent);
+  border: 1px solid var(--osg-gray-200);
   margin-bottom: 24px;
+}
+
+.osg-page-header-accent {
+  border-left: 4px solid var(--osg-primary);
 }
 
 .osg-page-header h2 {
   margin: 0;
-  color: var(--osg-white);
-  font-weight: 700;
-  font-size: 1.5rem;
+  color: var(--osg-gray-900);
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
 }
 
 .osg-page-header p {
-  margin: 6px 0 0 0;
-  color: rgba(255, 255, 255, 0.85);
+  margin: 4px 0 0 0;
+  color: var(--osg-gray-500);
   font-size: 0.875rem;
 }
 
 /* ========================================
-   Button Styles
+   Button Styles - Clean & Professional
    ======================================== */
 .osg-btn-primary {
-  background: var(--osg-gradient-button) !important;
+  background: var(--osg-primary) !important;
   border: none !important;
-  box-shadow: var(--osg-shadow-primary) !important;
-  font-weight: 600;
-  transition: all var(--osg-transition-normal) !important;
+  box-shadow: var(--osg-shadow-sm) !important;
+  font-weight: 500;
+  transition: all var(--osg-transition-fast) !important;
 }
 
 .osg-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(113, 162, 65, 0.4) !important;
+  background: var(--osg-primary-dark) !important;
+  box-shadow: 0 2px 8px rgba(113, 162, 65, 0.3) !important;
 }
 
-.osg-btn-accent {
-  background: var(--osg-gradient-header) !important;
-  border: none !important;
-  color: var(--osg-white) !important;
-  box-shadow: var(--osg-shadow-accent) !important;
-  font-weight: 600;
-  transition: all var(--osg-transition-normal) !important;
+.osg-btn-secondary {
+  background: var(--osg-white) !important;
+  border: 1px solid var(--osg-gray-300) !important;
+  color: var(--osg-gray-700) !important;
+  font-weight: 500;
+  transition: all var(--osg-transition-fast) !important;
 }
 
-.osg-btn-accent:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(236, 108, 37, 0.4) !important;
+.osg-btn-secondary:hover {
+  border-color: var(--osg-primary) !important;
+  color: var(--osg-primary) !important;
 }
 
 /* ========================================
-   Card Styles
+   Card Styles - Subtle & Elegant
    ======================================== */
 .osg-card {
+  background: var(--osg-white);
   border-radius: var(--osg-radius-lg);
-  box-shadow: var(--osg-shadow-sm);
   border: 1px solid var(--osg-gray-200);
+  box-shadow: var(--osg-shadow-card);
   transition: all var(--osg-transition-normal);
 }
 
 .osg-card:hover {
-  box-shadow: var(--osg-shadow-md);
+  box-shadow: var(--osg-shadow-card-hover);
+  border-color: var(--osg-gray-300);
+}
+
+/* ========================================
+   Stat Cards - Modern style
+   ======================================== */
+.osg-stat-card {
+  background: var(--osg-white);
+  border-radius: var(--osg-radius-lg);
+  border: 1px solid var(--osg-gray-200);
+  padding: 20px;
+  transition: all var(--osg-transition-normal);
+}
+
+.osg-stat-card:hover {
+  border-color: var(--osg-primary);
+  box-shadow: 0 0 0 1px var(--osg-primary);
+}
+
+.osg-stat-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--osg-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.osg-stat-card-icon.primary {
+  background: var(--osg-primary-muted);
+  color: var(--osg-primary);
+}
+
+.osg-stat-card-icon.accent {
+  background: rgba(236, 108, 37, 0.08);
+  color: var(--osg-accent);
 }
 
 /* ========================================
    Avatar Styles
    ======================================== */
 .osg-avatar {
-  background: var(--osg-gradient-header) !important;
+  background: var(--osg-primary) !important;
+  font-weight: 500;
+}
+
+/* ========================================
+   Table Enhancements
+   ======================================== */
+.ant-table {
+  border-radius: var(--osg-radius-lg) !important;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--osg-gray-50) !important;
   font-weight: 600;
+  color: var(--osg-gray-700);
+  border-bottom: 1px solid var(--osg-gray-200);
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--osg-gray-50) !important;
+}
+
+/* ========================================
+   Form Enhancements
+   ======================================== */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: var(--osg-gray-700);
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector {
+  border-radius: var(--osg-radius-md) !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--osg-primary) !important;
+  box-shadow: 0 0 0 2px rgba(113, 162, 65, 0.1) !important;
+}
+
+/* ========================================
+   Tag Styles
+   ======================================== */
+.ant-tag {
+  border-radius: var(--osg-radius-sm);
+  font-weight: 500;
+  border: none;
 }
 
 /* ========================================
@@ -279,7 +409,7 @@ body {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -288,18 +418,14 @@ body {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes slideInLeft {
+@keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translateX(-12px);
   }
   to {
     opacity: 1;
@@ -307,50 +433,31 @@ body {
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
 .animate-fade-in {
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.4s ease-out;
+  animation: fadeInUp 0.3s ease-out;
 }
 
-.animate-slide-in-left {
-  animation: slideInLeft 0.4s ease-out;
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
 }
 
 /* ========================================
    Utility Classes
    ======================================== */
-.text-primary {
-  color: var(--osg-primary);
-}
+.text-primary { color: var(--osg-primary); }
+.text-accent { color: var(--osg-accent); }
+.text-muted { color: var(--osg-gray-500); }
 
-.text-accent {
-  color: var(--osg-accent);
-}
+.bg-primary { background-color: var(--osg-primary); }
+.bg-accent { background-color: var(--osg-accent); }
+.bg-muted { background-color: var(--osg-gray-100); }
 
-.bg-primary {
-  background-color: var(--osg-primary);
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--osg-primary);
+  outline-offset: 2px;
 }
-
-.bg-accent {
-  background-color: var(--osg-accent);
-}
-
-.gradient-text {
-  background: var(--osg-gradient-header);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
