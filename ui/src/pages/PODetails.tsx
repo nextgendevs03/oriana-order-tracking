@@ -1406,7 +1406,7 @@ const PODetails: React.FC = () => {
               icon={<PlusOutlined />}
               onClick={handleAddDispatch}
               style={{
-                background: gradients.button,
+                background: colors.primary,
                 borderRadius: 8,
                 fontWeight: 600,
                 border: "none",
@@ -1455,7 +1455,7 @@ const PODetails: React.FC = () => {
               icon={<FileTextOutlined />}
               onClick={handleAddDocument}
               style={{
-                background: gradients.button,
+                background: colors.primary,
                 borderRadius: 8,
                 fontWeight: 600,
                 border: "none",
@@ -1508,7 +1508,7 @@ const PODetails: React.FC = () => {
               onClick={handleAddDeliveryConfirmation}
               disabled={dispatchesForDeliveryConfirmation.length === 0}
               style={{
-                background: gradients.button,
+                background: colors.primary,
                 borderRadius: 8,
                 fontWeight: 600,
                 border: "none",
@@ -1569,7 +1569,7 @@ const PODetails: React.FC = () => {
               onClick={handleAddPreCommissioning}
               disabled={dispatchesForPreCommissioning.length === 0}
               style={{
-                background: gradients.button,
+                background: colors.primary,
                 borderRadius: 8,
                 fontWeight: 600,
                 border: "none",
@@ -1628,7 +1628,7 @@ const PODetails: React.FC = () => {
               onClick={handleAddCommissioning}
               disabled={preCommissioningForCommissioning.length === 0}
               style={{
-                background: gradients.button,
+                background: colors.primary,
                 borderRadius: 8,
                 fontWeight: 600,
                 border: "none",
@@ -1687,7 +1687,7 @@ const PODetails: React.FC = () => {
               onClick={handleAddWarranty}
               disabled={commissioningForWarranty.length === 0}
               style={{
-                background: gradients.button,
+                background: colors.primary,
                 borderRadius: 8,
                 fontWeight: 600,
                 border: "none",
