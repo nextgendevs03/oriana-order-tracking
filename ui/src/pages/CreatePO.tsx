@@ -16,7 +16,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
-import { colors, gradients } from "../styles/theme";
+import { colors, shadows } from "../styles/theme";
 import FileUpload from "../Components/POManagement/FileUpload";
 import POItemsTable from "../Components/POManagement/POItemsTable";
 import AddClientModal from "../Components/POManagement/AddClientModal";
@@ -311,53 +311,58 @@ const CreatePO: FC = () => {
         minHeight: "100%",
       }}
     >
-      {/* Page Header - OSG Gradient Style */}
+      {/* Page Header - Vibrant & Modern */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         style={{
-          marginBottom: "1.5rem",
-          padding: "1.25rem 1.5rem",
-          background: colors.gray50,
-          borderRadius: 12,
-          borderLeft: `4px solid ${colors.accent}`,
-          position: "relative",
-          overflow: "hidden",
+          background: "linear-gradient(135deg, #667eea08 0%, #764ba208 100%)",
+          borderRadius: 16,
+          border: `1px solid ${colors.gray200}`,
+          borderLeft: `4px solid ${colors.primary}`,
+          boxShadow: shadows.card,
+          padding: "24px 28px",
+          marginBottom: 24,
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: 200,
-            height: "100%",
-            background: `linear-gradient(90deg, transparent, rgba(236, 108, 37, 0.05))`,
-            pointerEvents: "none",
-          }}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: 16, position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: gradients.header,
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: `0 3px 10px rgba(236, 108, 37, 0.3)`,
+              boxShadow: "0 8px 24px rgba(67, 233, 123, 0.35)",
             }}
           >
-            <span style={{ fontSize: 22, color: "#fff" }}>+</span>
+            <span style={{ fontSize: 28, color: "#fff", fontWeight: 300 }}>+</span>
           </div>
           <div>
-            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: colors.accent }}>
-              Order Punching
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "1.5rem",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Create New Order
             </h2>
-            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: colors.gray500 }}>
-              Create and submit new purchase orders
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                fontSize: "0.9rem",
+                color: colors.gray500,
+              }}
+            >
+              Fill in the details to create a new purchase order
             </p>
           </div>
         </div>
