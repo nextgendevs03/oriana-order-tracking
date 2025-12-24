@@ -1,28 +1,36 @@
 export interface POItemResponse {
   id: string;
-  category: string;
-  oemName: string;
-  product: string;
+  categoryId: string;
+  categoryName?: string; // Resolved from relation
+  oemId: string;
+  oemName?: string; // Resolved from relation
+  productId: string;
+  productName?: string; // Resolved from relation
   quantity: number;
   spareQuantity: number;
   totalQuantity: number;
   pricePerUnit: number;
   totalPrice: number;
+  gstPercent: number;
+  finalPrice: number;
   warranty: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface POResponse {
-  id: string;
-  date: string;
-  clientName: string;
-  osgPiNo: number;
+  poId: string;
+  poReceivedDate: string;
+  clientId: string;
+  clientName?: string; // Resolved from relation
+  osgPiNo: string; // Alphanumeric
   osgPiDate: string;
-  clientPoNo: number;
+  clientPoNo: string; // Alphanumeric
   clientPoDate: string;
   poStatus: string;
   noOfDispatch: string;
+  assignDispatchTo: string | null;
+  assignedUserName?: string | null; // Resolved from relation
   clientAddress: string;
   clientContact: string;
   poItems: POItemResponse[];
@@ -47,6 +55,6 @@ export interface POListResponse {
 }
 
 export interface DeletePOResponse {
-  id: string;
+  poId: string;
   deleted: boolean;
 }

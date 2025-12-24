@@ -1,13 +1,15 @@
 /**
- * PO Lambda Configuration
+ * CreatePO Lambda Configuration
  *
  * This file defines the lambda configuration for the Purchase Order API.
  * It registers the controller, services, and repositories with the DI container.
  *
- * To create a new lambda, copy this file and update:
- * 1. The lambda name
- * 2. The controller import and reference
- * 3. The service/repository bindings
+ * Handles all PO operations:
+ * - POST /api/po - Create new PO
+ * - GET /api/po - List all POs
+ * - GET /api/po/{poId} - Get PO by ID
+ * - PUT /api/po/{poId} - Update PO
+ * - DELETE /api/po/{poId} - Delete PO
  */
 
 import 'reflect-metadata';
@@ -23,7 +25,7 @@ import { PORepository } from '../repositories/PORepository';
 
 // Define and register the lambda configuration
 defineLambda({
-  name: 'po',
+  name: 'CreatePO',
   controllers: [POController],
   bindings: [
     { symbol: TYPES.POService, implementation: POService },
@@ -34,4 +36,4 @@ defineLambda({
 });
 
 // Export the Lambda handler
-export const handler = createLambdaHandler('po');
+export const handler = createLambdaHandler('CreatePO');

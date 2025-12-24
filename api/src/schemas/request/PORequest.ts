@@ -1,24 +1,27 @@
 export interface POItemRequest {
-  category: string;
-  oemName: string;
-  product: string;
+  categoryId: string;
+  oemId: string;
+  productId: string;
   quantity: number;
   spareQuantity: number;
   totalQuantity: number;
   pricePerUnit: number;
   totalPrice: number;
+  gstPercent: number;
+  finalPrice: number;
   warranty: string;
 }
 
 export interface CreatePORequest {
-  date: string;
-  clientName: string;
-  osgPiNo: number;
+  poReceivedDate: string;
+  clientId: string;
+  osgPiNo: string; // Alphanumeric
   osgPiDate: string;
-  clientPoNo: number;
+  clientPoNo: string; // Alphanumeric
   clientPoDate: string;
   poStatus: string;
   noOfDispatch: string;
+  assignDispatchTo?: string; // Optional - userId from users table
   clientAddress: string;
   clientContact: string;
   poItems: POItemRequest[];
@@ -31,15 +34,15 @@ export interface CreatePORequest {
 }
 
 export interface UpdatePORequest extends Partial<CreatePORequest> {
-  id: string;
+  poId: string;
 }
 
 export interface GetPOByIdRequest {
-  id: string;
+  poId: string;
 }
 
 export interface DeletePORequest {
-  id: string;
+  poId: string;
 }
 
 export interface ListPORequest {
@@ -47,6 +50,6 @@ export interface ListPORequest {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
-  clientName?: string;
+  clientId?: string;
   poStatus?: string;
 }

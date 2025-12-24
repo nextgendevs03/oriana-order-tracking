@@ -7,22 +7,24 @@ import {
   Button,
   Row,
   Col,
-  InputNumber,
-  Typography,
   AutoComplete,
   Spin,
+  notification,
+  message,
 } from "antd";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "../store/hooks";
-import { addPO, POData, PODocument } from "../store/poSlice";
 import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
+import { colors, gradients } from "../styles/theme";
 import FileUpload from "../Components/POManagement/FileUpload";
 import POItemsTable from "../Components/POManagement/POItemsTable";
 import AddClientModal from "../Components/POManagement/AddClientModal";
 import { useGetCategoriesQuery } from "../store/api/categoryApi";
 import { useGetOEMsQuery } from "../store/api/oemApi";
 import { useGetClientsQuery } from "../store/api/clientApi";
+import { useCreatePOMutation } from "../store/api/poApi";
+import { CreatePORequest, POItemRequest } from "@OrianaTypes";
 import { useDebounce } from "../hooks";
 import {
   poStatusOptions,
@@ -30,22 +32,19 @@ import {
   assignDispatchToOptions,
   oscSupportOptions,
   paymentStatusOptions,
-  productOptions,
   warrantyOptions,
   gstPercentOptions,
   textFieldRules,
   textFieldRulesWithMinLength,
-  numberFieldRules,
   selectFieldRules,
   dateFieldRules,
 } from "../utils";
 
-const { Title } = Typography;
-
-interface ItemDetail {
-  category: string;
-  oemName: string;
-  product: string;
+// Interface for PO Item form values
+interface POItemFormValues {
+  categoryId: string;
+  oemId: string;
+  productId: string;
   quantity: number;
   spareQuantity: number;
   totalQuantity: number;
@@ -56,50 +55,78 @@ interface ItemDetail {
   warranty: string;
 }
 
+// Client option with both id and name
+interface ClientOption {
+  clientId: string;
+  clientName: string;
+}
+
 const CreatePO: FC = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null);
+
+  // API mutation for creating PO
+  const [createPO, { isLoading: isCreatingPO }] = useCreatePOMutation();
 
   // Debounce client search term with 500ms delay
   const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 500);
 
-  // Fetch categories and OEMs from API
-  const { data: categoriesData = [], error: categoriesError } =
-    useGetCategoriesQuery();
-  const { data: oemsData = [], error: oemsError } = useGetOEMsQuery();
+  // Fetch categories and OEMs from API (with automatic retry on failure)
+  const {
+    data: categoriesData = [],
+    isError: categoriesError,
+  } = useGetCategoriesQuery();
+  const {
+    data: oemsData = [],
+    isError: oemsError,
+  } = useGetOEMsQuery();
 
-  // Fetch clients based on debounced search term (min 3 characters)
+  // Fetch clients based on debounced search term (min 3 characters, with automatic retry on failure)
   const shouldFetchClients = debouncedClientSearchTerm.length >= 3;
   const {
     data: clientsData = [],
-    error: clientsError,
-    refetch: refetchClients,
+    isError: clientsError,
     isLoading: isLoadingClients,
   } = useGetClientsQuery(
     { clientName: debouncedClientSearchTerm, isActive: true },
     { skip: !shouldFetchClients }
   );
 
-  // Log errors for debugging
+  // Show error toast after all retries have failed (RTK Query retries 3 times automatically)
   useEffect(() => {
     if (categoriesError) {
-      console.error("Failed to fetch categories:", categoriesError);
+      notification.error({
+        key: "categories-error",
+        message: "Failed to load Categories",
+        description: "Unable to fetch categories after multiple attempts. Please refresh the page.",
+        duration: 0,
+      });
     }
   }, [categoriesError]);
 
   useEffect(() => {
     if (oemsError) {
-      console.error("Failed to fetch OEMs:", oemsError);
+      notification.error({
+        key: "oems-error",
+        message: "Failed to load OEMs",
+        description: "Unable to fetch OEM list after multiple attempts. Please refresh the page.",
+        duration: 0,
+      });
     }
   }, [oemsError]);
 
   useEffect(() => {
     if (clientsError) {
-      console.error("Failed to fetch clients:", clientsError);
+      notification.error({
+        key: "clients-error",
+        message: "Failed to load Clients",
+        description: "Unable to search clients. Please try again later.",
+        duration: 5,
+      });
     }
   }, [clientsError]);
 
@@ -128,21 +155,36 @@ const CreatePO: FC = () => {
   }, [oemsData, oemsError]);
 
   // Transform clients data to AutoComplete options
+  // Store clientId as value but display clientName
   const clientOptions = useMemo(() => {
     if (!clientsData || clientsError || !shouldFetchClients) return [];
     return clientsData.map((client) => ({
-      value: client.clientName,
+      value: client.clientName, // Display value in input
       label: client.clientName,
+      clientId: client.clientId, // Store clientId for form submission
     }));
   }, [clientsData, clientsError, shouldFetchClients]);
 
+  // Handle client selection from autocomplete
+  const handleClientSelect = (value: string, option: any) => {
+    // Store the selected client's ID
+    setSelectedClient({
+      clientId: option.clientId,
+      clientName: value,
+    });
+    // Set the hidden clientId field
+    form.setFieldValue("clientId", option.clientId);
+  };
+
   // Handle successful client creation
-  const handleClientCreated = (newClientName: string) => {
+  const handleClientCreated = (newClientName: string, newClientId?: string) => {
     // Set the newly created client name in the form
     form.setFieldValue("clientName", newClientName);
+    if (newClientId) {
+      form.setFieldValue("clientId", newClientId);
+      setSelectedClient({ clientId: newClientId, clientName: newClientName });
+    }
     setClientSearchTerm(newClientName);
-    // Refetch clients to include the new client
-    refetchClients();
   };
 
   const updateCalculatedFields = (index: number) => {
@@ -169,67 +211,86 @@ const CreatePO: FC = () => {
     }
   };
 
-  const onFinish = (values: Record<string, unknown>) => {
-    // Generate unique PO ID
-    const poId = `OSG-${Date.now().toString().slice(-6)}`;
+  const onFinish = async (values: Record<string, unknown>) => {
+    // Safety check: ensure client is selected
+    if (!values.clientId || !selectedClient) {
+      notification.error({
+        message: "Client Required",
+        description: "Please select a client from the dropdown list.",
+      });
+      return;
+    }
 
-    // Format dates to string
+    // Format dates to string (YYYY-MM-DD)
     const formatDate = (date: dayjs.Dayjs | undefined) => {
       return date ? dayjs(date).format("YYYY-MM-DD") : "";
     };
 
-    // Map uploaded files to PODocument format
-    const uploadedDocuments: PODocument[] = fileList.map((file) => ({
-      uid: file.uid,
-      name: file.name,
-      type: file.type || "unknown",
-      size: file.size || 0,
-      url: file.thumbUrl || URL.createObjectURL(file.originFileObj as Blob),
-      uploadedAt: new Date().toISOString(),
+    // Build PO items array with proper types
+    const poItems: POItemRequest[] = (values.poItems as POItemFormValues[]).map((item) => ({
+      categoryId: item.categoryId,
+      oemId: item.oemId,
+      productId: item.productId,
+      quantity: item.quantity,
+      spareQuantity: item.spareQuantity || 0,
+      totalQuantity: item.totalQuantity,
+      pricePerUnit: item.pricePerUnit,
+      totalPrice: item.totalPrice,
+      gstPercent: item.gstPercent,
+      finalPrice: item.finalPrice,
+      warranty: item.warranty,
     }));
 
-    const poData: POData = {
-      id: poId,
-      date: formatDate(values.date as dayjs.Dayjs),
-      clientName: values.clientName as string,
-      osgPiNo: values.osgPiNo as number,
+    // Build the API request payload
+    const createPORequest: CreatePORequest = {
+      poReceivedDate: formatDate(values.poReceivedDate as dayjs.Dayjs),
+      clientId: values.clientId as string,
+      osgPiNo: values.osgPiNo as string,
       osgPiDate: formatDate(values.osgPiDate as dayjs.Dayjs),
-      clientPoNo: values.clientPoNo as number,
+      clientPoNo: values.clientPoNo as string,
       clientPoDate: formatDate(values.clientPoDate as dayjs.Dayjs),
       poStatus: values.poStatus as string,
       noOfDispatch: values.noOfDispatch as string,
-      assignDispatchTo: values.assignDispatchTo as number,
+      assignDispatchTo: values.assignDispatchTo as string | undefined,
       clientAddress: values.clientAddress as string,
       clientContact: values.clientContact as string,
-      poItems: values.poItems as POData["poItems"],
+      poItems,
       dispatchPlanDate: formatDate(values.dispatchPlanDate as dayjs.Dayjs),
       siteLocation: values.siteLocation as string,
       oscSupport: values.oscSupport as string,
-      confirmDateOfDispatch: formatDate(
-        values.confirmDateOfDispatch as dayjs.Dayjs
-      ),
+      confirmDateOfDispatch: formatDate(values.confirmDateOfDispatch as dayjs.Dayjs),
       paymentStatus: values.paymentStatus as string,
-      remarks: values.remarks as string,
-      createdAt: new Date().toISOString(),
-      uploadedDocuments:
-        uploadedDocuments.length > 0 ? uploadedDocuments : undefined,
+      remarks: (values.remarks as string) || undefined,
     };
 
-    console.log("Form Data:", poData);
+    console.log("Creating PO with data:", createPORequest);
 
-    // Dispatch to Redux store
-    dispatch(addPO(poData));
+    try {
+      // Call the API to create PO
+      const result = await createPO(createPORequest).unwrap();
+      
+      message.success(`Purchase Order ${result.poId} created successfully!`);
+      
+      // Reset form and file list
+      form.resetFields();
+      setFileList([]);
+      setSelectedClient(null);
+      setClientSearchTerm("");
 
-    // Reset form and file list
-    form.resetFields();
-    setFileList([]);
-
-    // Navigate to dashboard
-    navigate("/dashboard");
+      // Navigate to dashboard
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Failed to create PO:", error);
+      notification.error({
+        message: "Failed to create Purchase Order",
+        description: error?.data?.message || error?.message || "An error occurred. Please try again.",
+        duration: 5,
+      });
+    }
   };
 
   // Validation for at least 1 PO item with min 1 quantity
-  const poItemsValidator = async (_: unknown, value: ItemDetail[]) => {
+  const poItemsValidator = async (_: unknown, value: POItemFormValues[]) => {
     if (!value || value.length === 0) {
       return Promise.reject(new Error("At least 1 PO item is required"));
     }
@@ -250,14 +311,17 @@ const CreatePO: FC = () => {
         minHeight: "100%",
       }}
     >
-      {/* Page Header - Minimal Left Accent Style */}
-      <div
+      {/* Page Header - OSG Gradient Style */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
         style={{
           marginBottom: "1.5rem",
           padding: "1.25rem 1.5rem",
-          background: "#fafafa",
+          background: colors.gray50,
           borderRadius: 12,
-          borderLeft: "4px solid #0d9488",
+          borderLeft: `4px solid ${colors.accent}`,
           position: "relative",
           overflow: "hidden",
         }}
@@ -269,7 +333,7 @@ const CreatePO: FC = () => {
             right: 0,
             width: 200,
             height: "100%",
-            background: "linear-gradient(90deg, transparent, rgba(13, 148, 136, 0.05))",
+            background: `linear-gradient(90deg, transparent, rgba(236, 108, 37, 0.05))`,
             pointerEvents: "none",
           }}
         />
@@ -279,25 +343,25 @@ const CreatePO: FC = () => {
               width: 44,
               height: 44,
               borderRadius: 10,
-              background: "linear-gradient(135deg, #0d9488, #14b8a6)",
+              background: gradients.header,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 3px 10px rgba(13, 148, 136, 0.3)",
+              boxShadow: `0 3px 10px rgba(236, 108, 37, 0.3)`,
             }}
           >
             <span style={{ fontSize: 22, color: "#fff" }}>+</span>
           </div>
           <div>
-            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: "#0d9488" }}>
+            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: colors.accent }}>
               Order Punching
             </h2>
-            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
+            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: colors.gray500 }}>
               Create and submit new purchase orders
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <Form
         form={form}
@@ -306,10 +370,19 @@ const CreatePO: FC = () => {
         autoComplete="off"
         initialValues={{ poItems: [] }}
       >
-        {/* Row 1: Date, Client Name */}
+        {/* Hidden field for clientId - required for submission */}
+        <Form.Item
+          name="clientId"
+          hidden
+          rules={[{ required: true, message: "Please select a client from the list" }]}
+        >
+          <Input />
+        </Form.Item>
+
+        {/* Row 1: PO Received Date, Client Name */}
         <Row gutter={24}>
           <Col span={12}>
-            <Form.Item name="date" label="Date" rules={dateFieldRules}>
+            <Form.Item name="poReceivedDate" label="PO Received Date" rules={dateFieldRules}>
               <DatePicker style={{ width: "100%" }} />
             </Form.Item>
           </Col>
@@ -322,7 +395,15 @@ const CreatePO: FC = () => {
               <Spin spinning={isLoadingClients && shouldFetchClients}>
                 <AutoComplete
                   options={clientOptions}
-                  onSearch={(value) => setClientSearchTerm(value)}
+                  onSearch={(value) => {
+                    setClientSearchTerm(value);
+                    // Clear clientId if user is typing (not selecting)
+                    if (selectedClient?.clientName !== value) {
+                      form.setFieldValue("clientId", undefined);
+                      setSelectedClient(null);
+                    }
+                  }}
+                  onSelect={handleClientSelect}
                   placeholder="Enter client name (min 3 characters)"
                   filterOption={false}
                   notFoundContent={
@@ -356,11 +437,9 @@ const CreatePO: FC = () => {
             <Form.Item
               name="osgPiNo"
               label="OSG PI No"
-              rules={numberFieldRules}
+              rules={textFieldRulesWithMinLength}
             >
-              <InputNumber
-                style={{ width: "100%" }}
-                min={1}
+              <Input
                 placeholder="Enter OSG PI number"
               />
             </Form.Item>
@@ -382,11 +461,9 @@ const CreatePO: FC = () => {
             <Form.Item
               name="clientPoNo"
               label="Client PO No"
-              rules={numberFieldRules}
+              rules={textFieldRulesWithMinLength}
             >
-              <InputNumber
-                style={{ width: "100%" }}
-                min={1}
+              <Input
                 placeholder="Enter Client PO number"
               />
             </Form.Item>
@@ -436,11 +513,11 @@ const CreatePO: FC = () => {
             <Form.Item
               name="assignDispatchTo"
               label="Assign Dispatch To"
-              rules={selectFieldRules}
             >
               <Select
-                placeholder="Select person"
+                placeholder="Select person (optional)"
                 options={assignDispatchToOptions}
+                allowClear
               />
             </Form.Item>
           </Col>
@@ -481,9 +558,9 @@ const CreatePO: FC = () => {
                   fields={fields}
                   add={add}
                   remove={remove}
+                  form={form}
                   categoryOptions={categoryOptions}
                   oemNameOptions={oemNameOptions}
-                  productOptions={productOptions}
                   warrantyOptions={warrantyOptions}
                   gstPercentOptions={gstPercentOptions}
                   onUpdateCalculatedFields={updateCalculatedFields}
@@ -579,34 +656,37 @@ const CreatePO: FC = () => {
           </Col>
         </Row>
 
-        {/* Submit Button - Centered with disabled state based on form validity */}
+        {/* Submit Button - Centered */}
         <Form.Item shouldUpdate style={{ marginBottom: 0 }}>
-          {() => (
-            <Row justify="center" style={{ marginTop: "1.5rem" }}>
-              <Col>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  size="large"
-                  disabled={
-                    !form.isFieldsTouched(true) ||
-                    !!form
-                      .getFieldsError()
-                      .filter(({ errors }) => errors.length).length
-                  }
-                  style={{
-                    backgroundColor: "#4b6cb7",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    paddingLeft: "2rem",
-                    paddingRight: "2rem",
-                  }}
-                >
-                  Create PO
-                </Button>
-              </Col>
-            </Row>
-          )}
+          {() => {
+            // Check if there are any form errors
+            const hasErrors = form
+              .getFieldsError()
+              .some(({ errors }) => errors.length > 0);
+
+            return (
+              <Row justify="center" style={{ marginTop: "1.5rem" }}>
+                <Col>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    size="large"
+                    loading={isCreatingPO}
+                    disabled={hasErrors}
+                    style={{
+                      backgroundColor: "#4b6cb7",
+                      borderRadius: 8,
+                      fontWeight: 600,
+                      paddingLeft: "2rem",
+                      paddingRight: "2rem",
+                    }}
+                  >
+                    {isCreatingPO ? "Creating..." : "Create PO"}
+                  </Button>
+                </Col>
+              </Row>
+            );
+          }}
         </Form.Item>
       </Form>
 

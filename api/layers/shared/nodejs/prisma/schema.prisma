@@ -13,15 +13,18 @@ datasource db {
 }
 
 model PurchaseOrder {
-  id                    String   @id @default(uuid())
-  date                  DateTime @db.Date
-  clientName            String   @map("client_name") @db.VarChar(255)
-  osgPiNo               Int      @map("osg_pi_no")
+  poId                  String   @id @map("po_id") @db.VarChar(20) // Format: OSG-00000001 (auto-generated)
+  poReceivedDate        DateTime @map("po_received_date") @db.Date
+  clientId              String   @map("client_id")
+  client                Client   @relation(fields: [clientId], references: [clientId], onDelete: Restrict)
+  osgPiNo               String   @map("osg_pi_no") @db.VarChar(50) // Alphanumeric
   osgPiDate             DateTime @map("osg_pi_date") @db.Date
-  clientPoNo            Int      @map("client_po_no")
+  clientPoNo            String   @map("client_po_no") @db.VarChar(50) // Alphanumeric
   clientPoDate          DateTime @map("client_po_date") @db.Date
   poStatus              String   @map("po_status") @db.VarChar(50)
   noOfDispatch          String   @map("no_of_dispatch") @db.VarChar(20)
+  assignDispatchTo      String?  @map("assign_dispatch_to") // FK to users table (nullable)
+  assignedUser          User?    @relation(fields: [assignDispatchTo], references: [userId], onDelete: SetNull)
   clientAddress         String   @map("client_address")
   clientContact         String   @map("client_contact") @db.VarChar(100)
   dispatchPlanDate      DateTime @map("dispatch_plan_date") @db.Date
@@ -34,45 +37,53 @@ model PurchaseOrder {
   updatedAt             DateTime @updatedAt @map("updated_at")
   poItems               POItem[]
 
-  @@index([clientName])
+  @@index([clientId])
   @@index([poStatus])
   @@index([createdAt])
+  @@index([assignDispatchTo])
   @@map("purchase_orders")
 }
 
 model POItem {
-  id              String        @id @default(uuid())
-  purchaseOrderId String        @map("purchase_order_id")
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  category        String        @db.VarChar(100)
-  oemName         String        @map("oem_name") @db.VarChar(100)
-  product         String        @db.VarChar(255)
-  quantity        Int
-  spareQuantity   Int           @default(0) @map("spare_quantity")
-  totalQuantity   Int           @map("total_quantity")
-  pricePerUnit    Decimal       @map("price_per_unit") @db.Decimal(12, 2)
-  totalPrice      Decimal       @map("total_price") @db.Decimal(14, 2)
-  warranty        String        @db.VarChar(100)
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  id            String        @id @default(uuid())
+  poId          String        @map("po_id")
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [poId], onDelete: Cascade)
+  categoryId    String        @map("category_id")
+  category      Category      @relation(fields: [categoryId], references: [categoryId], onDelete: Restrict)
+  oemId         String        @map("oem_id")
+  oem           OEM           @relation(fields: [oemId], references: [oemId], onDelete: Restrict)
+  productId     String        @map("product_id")
+  product       Product       @relation(fields: [productId], references: [productId], onDelete: Restrict)
+  quantity      Int
+  spareQuantity Int           @default(0) @map("spare_quantity")
+  totalQuantity Int           @map("total_quantity")
+  pricePerUnit  Decimal       @map("price_per_unit") @db.Decimal(12, 2)
+  totalPrice    Decimal       @map("total_price") @db.Decimal(14, 2)
+  gstPercent    Decimal       @map("gst_percent") @db.Decimal(5, 2)
+  finalPrice    Decimal       @map("final_price") @db.Decimal(14, 2)
+  warranty      String        @db.VarChar(100)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
 
-  @@index([purchaseOrderId])
-  @@index([category])
-  @@index([product])
+  @@index([poId])
+  @@index([categoryId])
+  @@index([oemId])
+  @@index([productId])
   @@map("po_items")
 }
 
 model User {
-  userId    String     @id @default(uuid()) @map("user_id")
-  username  String     @unique @db.VarChar(100)
-  email     String     @unique @db.VarChar(255)
-  password  String     @db.VarChar(255)
-  isActive  Boolean    @default(true) @map("is_active")
-  createdBy String     @map("created_by") @db.VarChar(100)
-  updatedBy String     @map("updated_by") @db.VarChar(100)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  userRoles UserRole[] // A user can have multiple roles
+  userId      String          @id @default(uuid()) @map("user_id")
+  username    String          @unique @db.VarChar(100)
+  email       String          @unique @db.VarChar(255)
+  password    String          @db.VarChar(255)
+  isActive    Boolean         @default(true) @map("is_active")
+  createdBy   String          @map("created_by") @db.VarChar(100)
+  updatedBy   String          @map("updated_by") @db.VarChar(100)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  userRoles   UserRole[] // A user can have multiple roles
+  assignedPOs PurchaseOrder[] // POs assigned to this user for dispatch
 
   @@index([email])
   @@index([username])
@@ -157,6 +168,7 @@ model Category {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   products     Product[]
+  poItems      POItem[] // PO items using this category
 
   @@index([categoryName])
   @@index([isActive])
@@ -172,6 +184,7 @@ model OEM {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   products  Product[]
+  poItems   POItem[] // PO items using this OEM
 
   @@index([oemName])
   @@index([isActive])
@@ -190,6 +203,7 @@ model Product {
   updatedBy   String   @map("updated_by") @db.VarChar(100)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  poItems     POItem[] // PO items using this product
 
   @@index([productName])
   @@index([isActive])
@@ -199,13 +213,14 @@ model Product {
 }
 
 model Client {
-  clientId   String   @id @default(uuid()) @map("client_id")
-  clientName String   @map("client_name") @db.VarChar(255)
-  isActive   Boolean  @default(true) @map("is_active")
-  createdBy  String   @map("created_by") @db.VarChar(100)
-  updatedBy  String   @map("updated_by") @db.VarChar(100)
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  clientId       String          @id @default(uuid()) @map("client_id")
+  clientName     String          @map("client_name") @db.VarChar(255)
+  isActive       Boolean         @default(true) @map("is_active")
+  createdBy      String          @map("created_by") @db.VarChar(100)
+  updatedBy      String          @map("updated_by") @db.VarChar(100)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  purchaseOrders PurchaseOrder[] // POs for this client
 
   @@index([clientName])
   @@index([isActive])

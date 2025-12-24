@@ -13,107 +13,16 @@
  */
 
 import { baseApi } from './baseApi';
+import {
+  CreatePORequest,
+  UpdatePORequest,
+  ListPORequest,
+  POResponse,
+  POListResponse,
+} from '@OrianaTypes';
 
-// ============================================
-// Type Definitions
-// ============================================
-
-/**
- * PO Item in a Purchase Order
- */
-export interface POItem {
-  id?: string;
-  category: string;
-  oemName: string;
-  product: string;
-  quantity: number;
-  spareQuantity: number;
-  totalQuantity: number;
-  pricePerUnit: number;
-  totalPrice: number;
-  warranty: string;
-}
-
-/**
- * Purchase Order Response from API
- */
-export interface POResponse {
-  id: string;
-  date: string;
-  clientName: string;
-  osgPiNo: number;
-  osgPiDate: string;
-  clientPoNo: number;
-  clientPoDate: string;
-  poStatus: string;
-  noOfDispatch: string;
-  clientAddress: string;
-  clientContact: string;
-  poItems: POItem[];
-  dispatchPlanDate: string;
-  siteLocation: string;
-  oscSupport: string;
-  confirmDateOfDispatch: string;
-  paymentStatus: string;
-  remarks: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Request params for listing POs
- */
-export interface ListPOParams {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  clientName?: string;
-  poStatus?: string;
-}
-
-/**
- * Paginated response wrapper
- */
-export interface PaginatedResponse<T> {
-  items: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-/**
- * Request body for creating a PO
- */
-export interface CreatePORequest {
-  date: string;
-  clientName: string;
-  osgPiNo: number;
-  osgPiDate: string;
-  clientPoNo: number;
-  clientPoDate: string;
-  poStatus: string;
-  noOfDispatch: string;
-  clientAddress: string;
-  clientContact: string;
-  poItems: POItem[];
-  dispatchPlanDate: string;
-  siteLocation: string;
-  oscSupport: string;
-  confirmDateOfDispatch: string;
-  paymentStatus: string;
-  remarks?: string;
-}
-
-/**
- * Request body for updating a PO
- */
-export interface UpdatePORequest extends Partial<CreatePORequest> {
-  id: string;
-}
+// Re-export types for convenience
+export type { CreatePORequest, UpdatePORequest, ListPORequest, POResponse, POListResponse };
 
 // ============================================
 // API Response Wrapper (matches backend format)
@@ -146,7 +55,7 @@ export const poApi = baseApi.injectEndpoints({
      * Usage:
      * const { data, isLoading } = useGetPOsQuery({ page: 1, limit: 10 });
      */
-    getPOs: builder.query<PaginatedResponse<POResponse>, ListPOParams | void>({
+    getPOs: builder.query<POListResponse, ListPORequest | void>({
       query: (params) => ({
         url: '/po',
         params: params || {},
@@ -166,7 +75,7 @@ export const poApi = baseApi.injectEndpoints({
         result
           ? [
               // Tag each individual PO
-              ...result.items.map(({ id }) => ({ type: 'PO' as const, id })),
+              ...result.items.map(({ poId }) => ({ type: 'PO' as const, id: poId })),
               // Tag for the entire list
               { type: 'PO', id: 'LIST' },
             ]
@@ -174,21 +83,21 @@ export const poApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * GET /po/:id
+     * GET /po/:poId
      * Fetch a single Purchase Order by ID
      *
-     * @param id - PO ID
+     * @param poId - PO ID
      * @returns Single PO object
      *
      * Usage:
-     * const { data, isLoading } = useGetPOByIdQuery('po-123');
+     * const { data, isLoading } = useGetPOByIdQuery('OSG-00000001');
      */
     getPOById: builder.query<POResponse, string>({
-      query: (id) => `/po/${id}`,
+      query: (poId) => `/po/${poId}`,
       // Transform the API response to extract data
       transformResponse: (response: ApiResponse<POResponse>) => response.data,
       // Tag this specific PO
-      providesTags: (result, error, id) => [{ type: 'PO', id }],
+      providesTags: (result, error, poId) => [{ type: 'PO', id: poId }],
     }),
 
     /**
@@ -215,54 +124,54 @@ export const poApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * PUT /po/:id
+     * PUT /po/:poId
      * Update an existing Purchase Order
      *
-     * @param updateData - PO data including ID
+     * @param updateData - PO data including poId
      * @returns Updated PO object
      *
      * Usage:
      * const [updatePO, { isLoading }] = useUpdatePOMutation();
-     * await updatePO({ id: 'po-123', clientName: 'New Name' }).unwrap();
+     * await updatePO({ poId: 'OSG-00000001', clientId: 'new-client-id' }).unwrap();
      */
     updatePO: builder.mutation<POResponse, UpdatePORequest>({
-      query: ({ id, ...body }) => ({
-        url: `/po/${id}`,
+      query: ({ poId, ...body }) => ({
+        url: `/po/${poId}`,
         method: 'PUT',
         body,
       }),
       // Transform the API response to extract data
       transformResponse: (response: ApiResponse<POResponse>) => response.data,
       // Invalidate both the specific PO and the list
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'PO', id },
+      invalidatesTags: (result, error, { poId }) => [
+        { type: 'PO', id: poId },
         { type: 'PO', id: 'LIST' },
       ],
     }),
 
     /**
-     * DELETE /po/:id
+     * DELETE /po/:poId
      * Delete a Purchase Order
      *
-     * @param id - PO ID to delete
+     * @param poId - PO ID to delete
      * @returns Deletion confirmation
      *
      * Usage:
      * const [deletePO, { isLoading }] = useDeletePOMutation();
-     * await deletePO('po-123').unwrap();
+     * await deletePO('OSG-00000001').unwrap();
      */
-    deletePO: builder.mutation<{ id: string; deleted: boolean }, string>({
-      query: (id) => ({
-        url: `/po/${id}`,
+    deletePO: builder.mutation<{ poId: string; deleted: boolean }, string>({
+      query: (poId) => ({
+        url: `/po/${poId}`,
         method: 'DELETE',
       }),
       // Transform the API response to extract data
       transformResponse: (
-        response: ApiResponse<{ id: string; deleted: boolean }>
+        response: ApiResponse<{ poId: string; deleted: boolean }>
       ) => response.data,
       // Invalidate the list cache
-      invalidatesTags: (result, error, id) => [
-        { type: 'PO', id },
+      invalidatesTags: (result, error, poId) => [
+        { type: 'PO', id: poId },
         { type: 'PO', id: 'LIST' },
       ],
     }),
@@ -288,4 +197,3 @@ export const {
   useUpdatePOMutation,
   useDeletePOMutation,
 } = poApi;
-

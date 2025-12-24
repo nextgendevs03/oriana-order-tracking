@@ -11,22 +11,20 @@
  * to add their endpoints.
  */
 
-import { createApi } from "@reduxjs/toolkit/query/react";
+import { createApi, retry } from "@reduxjs/toolkit/query/react";
 import { fetchBaseQuery } from "@reduxjs/toolkit/query";
+
 // API base URL - configure based on environment
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "http://localhost:4000/api";
 
-export const baseApi = createApi({
-  // Unique key in Redux store - all API data stored under this path
-  reducerPath: "api",
-
-  // Base query configuration
-  baseQuery: fetchBaseQuery({
+// Base query with automatic retry on failure (3 retries with exponential backoff)
+const baseQueryWithRetry = retry(
+  fetchBaseQuery({
     baseUrl: API_BASE_URL,
 
     // Prepare headers for every request
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers) => {
       const token = sessionStorage.getItem("authToken");
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -38,6 +36,15 @@ export const baseApi = createApi({
       return headers;
     },
   }),
+  { maxRetries: 3 } // Retry up to 3 times on failure
+);
+
+export const baseApi = createApi({
+  // Unique key in Redux store - all API data stored under this path
+  reducerPath: "api",
+
+  // Base query with retry logic
+  baseQuery: baseQueryWithRetry,
 
   // Define all tag types used across APIs for cache invalidation
   // Add new tags here as you create new APIs

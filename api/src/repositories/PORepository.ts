@@ -1,34 +1,93 @@
 import { injectable, inject } from 'inversify';
-import { PrismaClient, PurchaseOrder, POItem, Prisma } from '@prisma/client';
+import {
+  PrismaClient,
+  PurchaseOrder,
+  POItem,
+  Prisma,
+  Category,
+  OEM,
+  Product,
+  Client,
+  User,
+} from '@prisma/client';
 import { TYPES } from '../types/types';
 import { CreatePORequest, UpdatePORequest, ListPORequest, POItemRequest } from '../schemas';
 
-// Type for PurchaseOrder with included POItems
-export type PurchaseOrderWithItems = PurchaseOrder & { poItems: POItem[] };
+// Type for POItem with included relations
+export type POItemWithRelations = POItem & {
+  category: Category;
+  oem: OEM;
+  product: Product;
+};
+
+// Type for PurchaseOrder with included relations
+export type PurchaseOrderWithRelations = PurchaseOrder & {
+  poItems: POItemWithRelations[];
+  client: Client;
+  assignedUser: User | null;
+};
 
 export interface IPORepository {
-  create(data: CreatePORequest): Promise<PurchaseOrderWithItems>;
-  findById(id: string): Promise<PurchaseOrderWithItems | null>;
-  findAll(params: ListPORequest): Promise<{ rows: PurchaseOrderWithItems[]; count: number }>;
-  update(id: string, data: UpdatePORequest): Promise<PurchaseOrderWithItems | null>;
-  delete(id: string): Promise<boolean>;
+  create(data: CreatePORequest): Promise<PurchaseOrderWithRelations>;
+  findById(poId: string): Promise<PurchaseOrderWithRelations | null>;
+  findAll(params: ListPORequest): Promise<{ rows: PurchaseOrderWithRelations[]; count: number }>;
+  update(poId: string, data: UpdatePORequest): Promise<PurchaseOrderWithRelations | null>;
+  delete(poId: string): Promise<boolean>;
+  generatePoId(): Promise<string>;
 }
 
 @injectable()
 export class PORepository implements IPORepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async create(data: CreatePORequest): Promise<PurchaseOrderWithItems> {
+  /**
+   * Generate a unique PO ID in format OSG-XXXXXXXX (8 digits, zero-padded)
+   * Uses a database sequence for guaranteed uniqueness
+   */
+  async generatePoId(): Promise<string> {
+    // First, ensure the sequence exists (idempotent)
+    await this.prisma.$executeRaw`
+      CREATE SEQUENCE IF NOT EXISTS po_id_seq START WITH 1 INCREMENT BY 1
+    `;
+
+    // Get next value from sequence
+    const result = await this.prisma.$queryRaw<[{ nextval: bigint }]>`
+      SELECT nextval('po_id_seq')
+    `;
+
+    const seqNum = Number(result[0].nextval);
+    return `OSG-${seqNum.toString().padStart(8, '0')}`;
+  }
+
+  // Include clause for fetching all relations
+  private readonly includeRelations = {
+    client: true,
+    assignedUser: true,
+    poItems: {
+      include: {
+        category: true,
+        oem: true,
+        product: true,
+      },
+    },
+  };
+
+  async create(data: CreatePORequest): Promise<PurchaseOrderWithRelations> {
+    // Generate unique PO ID
+    const poId = await this.generatePoId();
+
     const po = await this.prisma.purchaseOrder.create({
       data: {
-        date: new Date(data.date),
-        clientName: data.clientName,
+        poId,
+        poReceivedDate: new Date(data.poReceivedDate),
+        clientId: data.clientId,
         osgPiNo: data.osgPiNo,
         osgPiDate: new Date(data.osgPiDate),
         clientPoNo: data.clientPoNo,
         clientPoDate: new Date(data.clientPoDate),
         poStatus: data.poStatus,
         noOfDispatch: data.noOfDispatch,
+        assignDispatchTo: data.assignDispatchTo || null,
         clientAddress: data.clientAddress,
         clientContact: data.clientContact,
         dispatchPlanDate: new Date(data.dispatchPlanDate),
@@ -40,40 +99,43 @@ export class PORepository implements IPORepository {
         poItems: {
           create:
             data.poItems?.map((item: POItemRequest) => ({
-              category: item.category,
-              oemName: item.oemName,
-              product: item.product,
+              categoryId: item.categoryId,
+              oemId: item.oemId,
+              productId: item.productId,
               quantity: item.quantity,
               spareQuantity: item.spareQuantity,
               totalQuantity: item.totalQuantity,
               pricePerUnit: new Prisma.Decimal(item.pricePerUnit),
               totalPrice: new Prisma.Decimal(item.totalPrice),
+              gstPercent: new Prisma.Decimal(item.gstPercent),
+              finalPrice: new Prisma.Decimal(item.finalPrice),
               warranty: item.warranty,
             })) || [],
         },
       },
-      include: {
-        poItems: true,
-      },
+      include: this.includeRelations,
     });
 
-    return po;
+    return po as PurchaseOrderWithRelations;
   }
 
-  async findById(id: string): Promise<PurchaseOrderWithItems | null> {
-    return this.prisma.purchaseOrder.findUnique({
-      where: { id },
-      include: { poItems: true },
+  async findById(poId: string): Promise<PurchaseOrderWithRelations | null> {
+    const po = await this.prisma.purchaseOrder.findUnique({
+      where: { poId },
+      include: this.includeRelations,
     });
+    return po as PurchaseOrderWithRelations | null;
   }
 
-  async findAll(params: ListPORequest): Promise<{ rows: PurchaseOrderWithItems[]; count: number }> {
+  async findAll(
+    params: ListPORequest
+  ): Promise<{ rows: PurchaseOrderWithRelations[]; count: number }> {
     const {
       page = 1,
       limit = 10,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      clientName,
+      clientId,
       poStatus,
     } = params;
 
@@ -81,8 +143,8 @@ export class PORepository implements IPORepository {
 
     // Build where clause
     const where: Prisma.PurchaseOrderWhereInput = {};
-    if (clientName) {
-      where.clientName = { contains: clientName, mode: 'insensitive' };
+    if (clientId) {
+      where.clientId = clientId;
     }
     if (poStatus) {
       where.poStatus = poStatus;
@@ -97,7 +159,7 @@ export class PORepository implements IPORepository {
     const [rows, count] = await this.prisma.$transaction([
       this.prisma.purchaseOrder.findMany({
         where,
-        include: { poItems: true },
+        include: this.includeRelations,
         orderBy,
         take: limit,
         skip,
@@ -105,26 +167,34 @@ export class PORepository implements IPORepository {
       this.prisma.purchaseOrder.count({ where }),
     ]);
 
-    return { rows, count };
+    return { rows: rows as PurchaseOrderWithRelations[], count };
   }
 
-  async update(id: string, data: UpdatePORequest): Promise<PurchaseOrderWithItems | null> {
+  async update(poId: string, data: UpdatePORequest): Promise<PurchaseOrderWithRelations | null> {
     // Check if PO exists
-    const existing = await this.prisma.purchaseOrder.findUnique({ where: { id } });
+    const existing = await this.prisma.purchaseOrder.findUnique({ where: { poId } });
     if (!existing) {
       return null;
     }
 
     // Build update data
     const updateData: Prisma.PurchaseOrderUpdateInput = {};
-    if (data.date !== undefined) updateData.date = new Date(data.date);
-    if (data.clientName !== undefined) updateData.clientName = data.clientName;
+    if (data.poReceivedDate !== undefined)
+      updateData.poReceivedDate = new Date(data.poReceivedDate);
+    if (data.clientId !== undefined) updateData.client = { connect: { clientId: data.clientId } };
     if (data.osgPiNo !== undefined) updateData.osgPiNo = data.osgPiNo;
     if (data.osgPiDate !== undefined) updateData.osgPiDate = new Date(data.osgPiDate);
     if (data.clientPoNo !== undefined) updateData.clientPoNo = data.clientPoNo;
     if (data.clientPoDate !== undefined) updateData.clientPoDate = new Date(data.clientPoDate);
     if (data.poStatus !== undefined) updateData.poStatus = data.poStatus;
     if (data.noOfDispatch !== undefined) updateData.noOfDispatch = data.noOfDispatch;
+    if (data.assignDispatchTo !== undefined) {
+      if (data.assignDispatchTo) {
+        updateData.assignedUser = { connect: { userId: data.assignDispatchTo } };
+      } else {
+        updateData.assignedUser = { disconnect: true };
+      }
+    }
     if (data.clientAddress !== undefined) updateData.clientAddress = data.clientAddress;
     if (data.clientContact !== undefined) updateData.clientContact = data.clientContact;
     if (data.dispatchPlanDate !== undefined)
@@ -139,21 +209,23 @@ export class PORepository implements IPORepository {
     // If poItems provided, delete existing and create new ones
     if (data.poItems) {
       await this.prisma.$transaction([
-        this.prisma.pOItem.deleteMany({ where: { purchaseOrderId: id } }),
+        this.prisma.pOItem.deleteMany({ where: { poId } }),
         this.prisma.purchaseOrder.update({
-          where: { id },
+          where: { poId },
           data: {
             ...updateData,
             poItems: {
               create: data.poItems.map((item: POItemRequest) => ({
-                category: item.category,
-                oemName: item.oemName,
-                product: item.product,
+                categoryId: item.categoryId,
+                oemId: item.oemId,
+                productId: item.productId,
                 quantity: item.quantity,
                 spareQuantity: item.spareQuantity,
                 totalQuantity: item.totalQuantity,
                 pricePerUnit: new Prisma.Decimal(item.pricePerUnit),
                 totalPrice: new Prisma.Decimal(item.totalPrice),
+                gstPercent: new Prisma.Decimal(item.gstPercent),
+                finalPrice: new Prisma.Decimal(item.finalPrice),
                 warranty: item.warranty,
               })),
             },
@@ -162,21 +234,18 @@ export class PORepository implements IPORepository {
       ]);
     } else {
       await this.prisma.purchaseOrder.update({
-        where: { id },
+        where: { poId },
         data: updateData,
       });
     }
 
-    // Return updated PO with items
-    return this.prisma.purchaseOrder.findUnique({
-      where: { id },
-      include: { poItems: true },
-    });
+    // Return updated PO with relations
+    return this.findById(poId);
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(poId: string): Promise<boolean> {
     try {
-      await this.prisma.purchaseOrder.delete({ where: { id } });
+      await this.prisma.purchaseOrder.delete({ where: { poId } });
       return true;
     } catch {
       return false;
