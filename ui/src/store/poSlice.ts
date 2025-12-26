@@ -119,9 +119,9 @@ export interface POData {
   id: string;
   date: string;
   clientName: string;
-  osgPiNo: number;
+  osgPiNo: string;
   osgPiDate: string;
-  clientPoNo: number;
+  clientPoNo: string;
   clientPoDate: string;
   poStatus: string;
   noOfDispatch: string;
@@ -186,10 +186,16 @@ const poSlice = createSlice({
     addPreCommissioning: (state, action: PayloadAction<PreCommissioning>) => {
       state.preCommissioningDetails.push(action.payload);
     },
-    addMultiplePreCommissioning: (state, action: PayloadAction<PreCommissioning[]>) => {
+    addMultiplePreCommissioning: (
+      state,
+      action: PayloadAction<PreCommissioning[]>
+    ) => {
       state.preCommissioningDetails.push(...action.payload);
     },
-    updatePreCommissioning: (state, action: PayloadAction<PreCommissioning>) => {
+    updatePreCommissioning: (
+      state,
+      action: PayloadAction<PreCommissioning>
+    ) => {
       const index = state.preCommissioningDetails.findIndex(
         (pc) => pc.id === action.payload.id
       );

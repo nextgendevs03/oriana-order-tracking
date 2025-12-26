@@ -1,9 +1,13 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
-import { PrismaClient, User } from '@prisma/client';
-import { CreateUserRequest, UpdateUserRequest } from '../schemas/request/UserRequest';
+import { PrismaClient, User, Prisma } from '@prisma/client';
+import {
+  CreateUserRequest,
+  UpdateUserRequest,
+  ListUserRequest,
+} from '../schemas/request/UserRequest';
 export interface IUserRepository {
-  findAll(): Promise<User[]>;
+  findAll(params?: ListUserRequest): Promise<{ rows: User[]; count: number }>;
   findById(id: string): Promise<User | null>;
   update(id: string, data: UpdateUserRequest): Promise<User>;
   delete(id: string): Promise<void>;
@@ -15,20 +19,41 @@ export class UserRepository implements IUserRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
   async create(data: CreateUserRequest): Promise<User> {
-    const { role, ...userData } = data;
+    const { role, roleId, ...userData } = data;
+    let finalRoleId: string | undefined = roleId;
+
+    // If roleId is not provided but role name is, find the role by name
+    if (!finalRoleId && role) {
+      const roleRecord = await this.prisma.role.findFirst({
+        where: {
+          roleName: role,
+          isActive: true,
+        },
+      });
+
+      if (roleRecord) {
+        finalRoleId = roleRecord.roleId;
+      }
+    }
+
+    // Create user with roleId
     const user = await this.prisma.user.create({
-      data: userData,
+      data: {
+        ...userData,
+        roleId: finalRoleId,
+      } as any,
       include: {
+        role: true,
         userRoles: {
           include: {
             role: true,
           },
         },
-      },
+      } as any,
     });
 
-    // If role is provided, find the role and create UserRole relationship
-    if (role) {
+    // If role is provided and roleId wasn't set, create UserRole relationship for backward compatibility
+    if (role && !finalRoleId) {
       const roleRecord = await this.prisma.role.findFirst({
         where: {
           roleName: role,
@@ -49,30 +74,54 @@ export class UserRepository implements IUserRepository {
       }
     }
 
-    // Fetch user again with roles included
+    // Fetch user again with all relations
     return this.prisma.user.findUnique({
       where: { userId: user.userId },
       include: {
+        role: true,
         userRoles: {
           include: {
             role: true,
           },
         },
-      },
+      } as any,
     }) as Promise<User>;
   }
 
-  async findAll(): Promise<User[]> {
-    const users = await this.prisma.user.findMany({
-      include: {
-        userRoles: {
-          include: {
-            role: true,
+  async findAll(params?: ListUserRequest): Promise<{ rows: User[]; count: number }> {
+    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'DESC' } = params || {};
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.UserWhereInput = {};
+
+    const orderBy: Prisma.UserOrderByWithRelationInput = {};
+    if (sortBy === 'createdAt') {
+      orderBy.createdAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'username') {
+      orderBy.username = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'email') {
+      orderBy.email = sortOrder === 'ASC' ? 'asc' : 'desc';
+    }
+
+    const [rows, count] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy,
+        include: {
+          role: true,
+          userRoles: {
+            include: {
+              role: true,
+            },
           },
-        },
-      },
-    });
-    return users;
+        } as any,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return { rows, count };
   }
 
   async findById(id: string): Promise<User | null> {
@@ -81,12 +130,13 @@ export class UserRepository implements IUserRepository {
         userId: id,
       },
       include: {
+        role: true,
         userRoles: {
           include: {
             role: true,
           },
         },
-      },
+      } as any,
     });
     return user;
   }
@@ -101,12 +151,32 @@ export class UserRepository implements IUserRepository {
       throw new Error('User not found');
     }
 
-    const { role, ...updateFields } = data;
-    const userUpdateData: any = {};
+    const { role, roleId, ...updateFields } = data;
+    const userUpdateData: Record<string, any> = {};
     if (updateFields.email !== undefined) userUpdateData.email = updateFields.email;
     if (updateFields.password !== undefined) userUpdateData.password = updateFields.password;
     if (updateFields.isActive !== undefined) userUpdateData.isActive = updateFields.isActive;
     if (updateFields.updatedBy !== undefined) userUpdateData.updatedBy = updateFields.updatedBy;
+
+    // Handle roleId: if roleId is provided, use it directly; if role name is provided, find the roleId
+    let finalRoleId: string | undefined | null = roleId;
+    if (finalRoleId === undefined && role !== undefined) {
+      const roleRecord = await this.prisma.role.findFirst({
+        where: {
+          roleName: role,
+          isActive: true,
+        },
+      });
+
+      if (roleRecord) {
+        finalRoleId = roleRecord.roleId;
+      }
+    }
+
+    // Update roleId if provided
+    if (finalRoleId !== undefined) {
+      userUpdateData.roleId = finalRoleId;
+    }
 
     // Actually update the user record in database
     if (Object.keys(userUpdateData).length > 0) {
@@ -116,8 +186,8 @@ export class UserRepository implements IUserRepository {
       });
     }
 
-    // If role is provided, update the UserRole relationship
-    if (role !== undefined) {
+    // If role is provided (for backward compatibility with UserRole table), update the UserRole relationship
+    if (role !== undefined && !roleId) {
       // Find the role
       const roleRecord = await this.prisma.role.findFirst({
         where: {
@@ -171,16 +241,17 @@ export class UserRepository implements IUserRepository {
       }
     }
 
-    // Fetch user again with roles included
+    // Fetch user again with all relations
     return this.prisma.user.findUnique({
       where: { userId: id },
       include: {
+        role: true,
         userRoles: {
           include: {
             role: true,
           },
         },
-      },
+      } as any,
     }) as Promise<User>;
   }
 

@@ -1,10 +1,14 @@
 import { injectable, inject } from 'inversify';
 import { PrismaClient, Category, Prisma } from '@prisma/client';
 import { TYPES } from '../types/types';
-import { CreateCategoryRequest, UpdateCategoryRequest } from '../schemas/request/CategoryRequest';
+import {
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+  ListCategoryRequest,
+} from '../schemas/request/CategoryRequest';
 import { CategoryResponse } from 'src/schemas/response/CategoryResponse';
 export interface ICategoryRepository {
-  findAll(filters?: { isActive?: boolean; categoryName?: string }): Promise<CategoryResponse[]>;
+  findAll(params?: ListCategoryRequest): Promise<{ rows: CategoryResponse[]; count: number }>;
   findById(id: string): Promise<Category | null>;
   create(data: CreateCategoryRequest): Promise<Category>;
   update(id: string, data: UpdateCategoryRequest): Promise<Category>;
@@ -15,36 +19,61 @@ export interface ICategoryRepository {
 export class CategoryRepository implements ICategoryRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(filters?: {
-    isActive?: boolean;
-    categoryName?: string;
-  }): Promise<CategoryResponse[]> {
+  async findAll(
+    params?: ListCategoryRequest
+  ): Promise<{ rows: CategoryResponse[]; count: number }> {
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      categoryName,
+      isActive,
+    } = params || {};
+    const skip = (page - 1) * limit;
+
     const where: Prisma.CategoryWhereInput = {};
 
-    if (filters?.isActive !== undefined) {
-      where.isActive = filters.isActive;
+    if (isActive !== undefined) {
+      where.isActive = isActive;
     }
 
-    if (filters?.categoryName) {
+    if (categoryName) {
       where.categoryName = {
-        contains: filters.categoryName,
+        contains: categoryName,
         mode: 'insensitive',
       };
     }
 
-    const categories = await this.prisma.category.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    const orderBy: Prisma.CategoryOrderByWithRelationInput = {};
+    if (sortBy === 'createdAt') {
+      orderBy.createdAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'categoryName') {
+      orderBy.categoryName = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'updatedAt') {
+      orderBy.updatedAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    }
 
-    // Map Prisma Category objects to CategoryResponse format, ensuring 'createdAt'/'updatedAt' are strings
-    return categories.map((category) => ({
-      categoryId: category.categoryId,
-      categoryName: category.categoryName,
-      isActive: category.isActive,
-      createdBy: category.createdBy,
-      updatedBy: category.updatedBy,
-    }));
+    const [rows, count] = await this.prisma.$transaction([
+      this.prisma.category.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy,
+      }),
+      this.prisma.category.count({ where }),
+    ]);
+
+    return {
+      rows: rows.map((category) => ({
+        categoryId: category.categoryId,
+        categoryName: category.categoryName,
+        isActive: category.isActive,
+        createdBy: category.createdBy,
+        updatedBy: category.updatedBy,
+      })),
+      count,
+    };
   }
 
   async findById(id: string): Promise<Category | null> {

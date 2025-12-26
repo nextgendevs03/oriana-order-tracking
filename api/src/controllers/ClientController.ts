@@ -44,13 +44,24 @@ export class ClientController implements IClientController {
   }
 
   @Get('/')
-  async getAll(@Query('isActive') isActive?: string, @Query('clientName') clientName?: string) {
+  async getAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('isActive') isActive?: string,
+    @Query('clientName') clientName?: string
+  ) {
     try {
-      const clients = await this.clientService.getAllClients({
+      const result = await this.clientService.getAllClients({
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+        sortBy: sortBy || 'createdAt',
+        sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
         isActive: isActive ? isActive === 'true' : undefined,
         clientName: clientName || undefined,
       });
-      return createSuccessResponse(clients);
+      return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
     }

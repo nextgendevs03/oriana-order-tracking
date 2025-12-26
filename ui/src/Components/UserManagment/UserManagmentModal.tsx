@@ -4,6 +4,7 @@ import {
   useCreateUserMutation,
   useUpdateUserMutation,
 } from "../../store/api/userApi";
+import { useGetAllRolesQuery } from "../../store/api/roleApi";
 import {
   CreateUserRequest,
   UpdateUserRequest,
@@ -29,6 +30,11 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
 
+  // Fetch roles from API
+  const { data: rolesData, isLoading: isLoadingRoles } = useGetAllRolesQuery({
+    limit: 100, // Fetch all roles
+  });
+
   useEffect(() => {
     if (editingUser) {
       form.setFieldsValue({
@@ -40,6 +46,10 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
       });
     } else {
       form.resetFields();
+      // Set default value for isActive to true when creating new user
+      form.setFieldsValue({
+        isActive: true,
+      });
     }
   }, [editingUser, form]);
 
@@ -74,7 +84,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           email: values.email,
           password: values.password,
           role: values.role,
-          isActive: values.isActive ? true : false,
+          isActive: values.isActive ?? true,
           createdBy: userId,
           updatedBy: userId,
         };
@@ -141,22 +151,35 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           name="role"
           rules={[{ required: true, message: "Please select role" }]}
         >
-          <Select placeholder="Select role">
-            <Option value="Super Admin">Super Admin</Option>
-            <Option value="Manager">Manager</Option>
-            <Option value="Viewer">Viewer</Option>
+          <Select
+            placeholder="Select role"
+            loading={isLoadingRoles}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.children as unknown as string)
+                ?.toLowerCase()
+                .includes(input.toLowerCase())
+            }
+          >
+            {rolesData?.data
+              ?.filter((role) => role.isActive) // Only show active roles
+              .map((role) => (
+                <Option key={role.roleId} value={role.roleName}>
+                  {role.roleName}
+                </Option>
+              ))}
           </Select>
         </Form.Item>
 
         <Form.Item
           label="Status"
           name="isActive"
-          rules={[{ required: true, message: "Please select status" }]}
+          initialValue={true}
+          valuePropName="checked"
         >
           <Switch
             checkedChildren="Active"
             unCheckedChildren="Inactive"
-            defaultChecked
             onChange={(checked) => {
               form.setFieldsValue({
                 isActive: checked ? true : false,

@@ -1,36 +1,51 @@
-import { CreateProductRequest, ProductResponse, UpdateProductRequest } from "@OrianaTypes";
+import {
+  CreateProductRequest,
+  ProductResponse,
+  UpdateProductRequest,
+  ProductListResponse,
+  ListProductRequest,
+} from "@OrianaTypes";
 import { baseApi } from "./baseApi";
 
-// Query params for filtered products
-export interface GetProductsParams {
-  categoryId?: string;
-  oemId?: string;
-  isActive?: boolean;
-  name?: string;
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getProducts: builder.query<{ data: ProductResponse[] }, void>({
-      query: () => ({ url: "product/", method: "GET" }),
+    getProducts: builder.query<ProductListResponse, ListProductRequest | void>({
+      query: (params) => ({
+        url: "product/",
+        method: "GET",
+        params: params || {},
+      }),
+      transformResponse: (response: ApiResponse<ProductResponse[]>): ProductListResponse => ({
+        data: response.data || [],
+        pagination: response.pagination || {
+          page: 1,
+          limit: 20,
+          total: response.data?.length || 0,
+          totalPages: 1,
+        },
+      }),
       providesTags: ["Product"],
     }),
 
-    // Get filtered products by categoryId and/or oemId
-    getFilteredProducts: builder.query<ProductResponse[], GetProductsParams>({
-      query: (params) => {
-        const queryParams = new URLSearchParams();
-        if (params.categoryId) queryParams.append("categoryId", params.categoryId);
-        if (params.oemId) queryParams.append("oemId", params.oemId);
-        if (params.isActive !== undefined) queryParams.append("isActive", String(params.isActive));
-        if (params.name) queryParams.append("name", params.name);
-        
-        return {
-          url: `product/?${queryParams.toString()}`,
-          method: "GET",
-        };
-      },
-      transformResponse: (response: any) => {
+    // Get filtered products by categoryId and/or oemId (backward compatibility)
+    getFilteredProducts: builder.query<ProductResponse[], ListProductRequest>({
+      query: (params) => ({
+        url: "product/",
+        method: "GET",
+        params,
+      }),
+      transformResponse: (response: ApiResponse<ProductResponse[]>) => {
         return response.data || [];
       },
       providesTags: ["Product"],

@@ -5,3 +5,13 @@ export interface CategoryResponse {
   createdBy: string;
   updatedBy: string;
 }
+
+export interface CategoryListResponse {
+  data: CategoryResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

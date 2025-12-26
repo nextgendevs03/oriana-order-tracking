@@ -42,15 +42,23 @@ export class OEMController implements IOEMController {
 
   @Get('/')
   async getAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
     @Query('oemName') oemName?: string,
     @Query('isActive') isActive?: string
   ): Promise<APIGatewayProxyResult> {
     try {
-      const oems = await this.oemService.getAllOEMs({
+      const result = await this.oemService.getAllOEMs({
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+        sortBy: sortBy || 'createdAt',
+        sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
         oemName: oemName || undefined,
         isActive: isActive ? isActive === 'true' : undefined,
       });
-      return createSuccessResponse(oems);
+      return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error fetching OEMs');
       return createErrorResponse(error);

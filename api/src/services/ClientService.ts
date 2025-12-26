@@ -1,12 +1,16 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
 import { IClientRepository } from '../repositories/ClientRepository';
-import { CreateClientRequest, UpdateClientRequest } from '../schemas/request/ClientRequest';
-import { ClientResponse } from '../schemas/response/ClientResponse';
+import {
+  CreateClientRequest,
+  UpdateClientRequest,
+  ListClientRequest,
+} from '../schemas/request/ClientRequest';
+import { ClientResponse, ClientListResponse } from '../schemas/response/ClientResponse';
 
 export interface IClientService {
   createClient(data: CreateClientRequest): Promise<ClientResponse>;
-  getAllClients(filters?: { isActive?: boolean; clientName?: string }): Promise<ClientResponse[]>;
+  getAllClients(params?: ListClientRequest): Promise<ClientListResponse>;
   getClientById(id: string): Promise<ClientResponse | null>;
   updateClient(id: string, data: UpdateClientRequest): Promise<ClientResponse>;
   deleteClient(id: string): Promise<void>;
@@ -24,11 +28,19 @@ export class ClientService implements IClientService {
     return created;
   }
 
-  async getAllClients(filters?: {
-    isActive?: boolean;
-    clientName?: string;
-  }): Promise<ClientResponse[]> {
-    return this.clientRepository.findAll(filters);
+  async getAllClients(params?: ListClientRequest): Promise<ClientListResponse> {
+    const { page = 1, limit = 20 } = params || {};
+    const { rows, count } = await this.clientRepository.findAll(params);
+
+    return {
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
+    };
   }
 
   async getClientById(id: string): Promise<ClientResponse | null> {

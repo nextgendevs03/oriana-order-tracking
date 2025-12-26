@@ -14,7 +14,7 @@ export interface RoleResponse {
 }
 
 export interface RoleListResponse {
-  items: RoleResponse[];
+  data: RoleResponse[];
   pagination: {
     page: number;
     limit: number;

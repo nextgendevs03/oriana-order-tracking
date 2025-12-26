@@ -6,11 +6,11 @@ import {
 } from "@OrianaTypes";
 import { baseApi } from "./baseApi";
 
-// Backend wraps responses in { success: true, data: T, meta?: ... }
+// Backend wraps responses in { success: true, data: T, pagination?: ... }
 interface ApiResponse<T> {
   success: boolean;
   data: T;
-  meta?: {
+  pagination?: {
     page: number;
     limit: number;
     total: number;
@@ -32,8 +32,8 @@ export const permissionApi = baseApi.injectEndpoints({
         return `/permission${queryString ? `?${queryString}` : ""}`;
       },
       transformResponse: (response: ApiResponse<PermissionResponse[]>): PermissionListResponse => ({
-        items: response.data,
-        pagination: response.meta || { page: 1, limit: 10, total: 0, totalPages: 0 },
+        data: response.data,
+        pagination: response.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 },
       }),
       providesTags: ["Permission"],
     }),

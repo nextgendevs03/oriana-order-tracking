@@ -191,7 +191,7 @@ const PermissionsManagement: React.FC = () => {
       <Table
         loading={isLoading}
         columns={columns}
-        dataSource={data?.items}
+        dataSource={data?.data}
         rowKey="permissionId"
         style={{ marginTop: 20 }}
       />

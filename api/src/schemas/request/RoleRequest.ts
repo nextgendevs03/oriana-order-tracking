@@ -13,5 +13,7 @@ export interface UpdateRoleRequest {
 export interface ListRoleRequest {
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
   isActive?: boolean;
 }

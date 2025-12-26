@@ -9,3 +9,12 @@ export interface UpdateCategoryRequest {
   isActive?: boolean;
   updatedBy: string;
 }
+
+export interface ListCategoryRequest {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  categoryName?: string;
+  isActive?: boolean;
+}

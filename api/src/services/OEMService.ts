@@ -1,12 +1,12 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
 import { IOEMRepository } from '../repositories/OEMRepository';
-import { CreateOEMRequest, UpdateOEMRequest } from '../schemas/request/OEMRequest';
-import { OEMResponse } from '../schemas/response/OEMResponse';
+import { CreateOEMRequest, UpdateOEMRequest, ListOEMRequest } from '../schemas/request/OEMRequest';
+import { OEMResponse, OEMListResponse } from '../schemas/response/OEMResponse';
 
 export interface IOEMService {
   createOEM(data: CreateOEMRequest): Promise<OEMResponse>;
-  getAllOEMs(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]>;
+  getAllOEMs(params?: ListOEMRequest): Promise<OEMListResponse>;
   getOEMById(id: string): Promise<OEMResponse | null>;
   updateOEM(id: string, data: UpdateOEMRequest): Promise<OEMResponse>;
   deleteOEM(id: string): Promise<void>;
@@ -21,9 +21,19 @@ export class OEMService implements IOEMService {
     return created;
   }
 
-  async getAllOEMs(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]> {
-    const rows = await this.repo.findAll(filters);
-    return rows;
+  async getAllOEMs(params?: ListOEMRequest): Promise<OEMListResponse> {
+    const { page = 1, limit = 20 } = params || {};
+    const { rows, count } = await this.repo.findAll(params);
+
+    return {
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
+    };
   }
 
   async getOEMById(id: string): Promise<OEMResponse | null> {

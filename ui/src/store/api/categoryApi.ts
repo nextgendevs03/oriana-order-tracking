@@ -3,15 +3,43 @@ import {
   CreateCategoryRequest,
   UpdateCategoryRequest,
   CategoryResponse,
+  CategoryListResponse,
+  ListCategoryRequest,
 } from "@OrianaTypes";
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export const categoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getCategories: builder.query<CategoryResponse[], void>({
-      query: () => ({ url: "category/", method: "GET" }),
-      transformResponse: (response: any) => {
-        return response.data; 
-      },
+    getCategories: builder.query<
+      CategoryListResponse,
+      ListCategoryRequest | void
+    >({
+      query: (params) => ({
+        url: "category/",
+        method: "GET",
+        params: params || {},
+      }),
+      transformResponse: (
+        response: ApiResponse<CategoryResponse[]>
+      ): CategoryListResponse => ({
+        data: response.data || [],
+        pagination: response.pagination || {
+          page: 1,
+          limit: 20,
+          total: response.data?.length || 0,
+          totalPages: 1,
+        },
+      }),
       providesTags: ["Category"],
     }),
 

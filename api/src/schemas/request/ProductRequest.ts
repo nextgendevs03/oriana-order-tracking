@@ -13,3 +13,14 @@ export interface UpdateProductRequest {
   isActive?: boolean;
   updatedBy?: string;
 }
+
+export interface ListProductRequest {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  name?: string;
+  isActive?: boolean;
+  categoryId?: string;
+  oemId?: string;
+}

@@ -43,14 +43,25 @@ export class CategoryController implements ICategoryController {
   }
 
   @Get('/')
-  async getAll(@Query('isActive') isActive?: string, @Query('categoryName') categoryName?: string) {
+  async getAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('isActive') isActive?: string,
+    @Query('categoryName') categoryName?: string
+  ) {
     try {
       const trimmedCategoryName = categoryName?.trim();
-      const categories = await this.categoryService.getAllCategories({
+      const result = await this.categoryService.getAllCategories({
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+        sortBy: sortBy || 'createdAt',
+        sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
         isActive: isActive ? isActive === 'true' : undefined,
         categoryName: trimmedCategoryName || undefined,
       });
-      return createSuccessResponse(categories);
+      return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
     }

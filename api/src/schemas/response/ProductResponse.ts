@@ -15,3 +15,13 @@ export interface ProductResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ProductListResponse {
+  data: ProductResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

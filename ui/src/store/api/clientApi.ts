@@ -3,29 +3,38 @@ import {
   CreateClientRequest,
   UpdateClientRequest,
   ClientResponse,
+  ClientListResponse,
+  ListClientRequest,
 } from "@OrianaTypes";
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export const clientApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getClients: builder.query<
-      ClientResponse[],
-      { isActive?: boolean; clientName?: string } | void
-    >({
+    getClients: builder.query<ClientListResponse, ListClientRequest | void>({
       query: (params) => ({
         url: "client/",
         method: "GET",
-        params: params
-          ? {
-              ...(params.isActive !== undefined && {
-                isActive: String(params.isActive),
-              }),
-              ...(params.clientName && { clientName: params.clientName }),
-            }
-          : undefined,
+        params: params || {},
       }),
-      transformResponse: (response: any) => {
-        return response.data;
-      },
+      transformResponse: (response: ApiResponse<ClientResponse[]>): ClientListResponse => ({
+        data: response.data || [],
+        pagination: response.pagination || {
+          page: 1,
+          limit: 20,
+          total: response.data?.length || 0,
+          totalPages: 1,
+        },
+      }),
       providesTags: ["Client"],
     }),
 

@@ -11,8 +11,10 @@ import type { OEMResponse } from "@OrianaTypes";
 import AddOEMModal from "./AddOEMModal";
 
 const OEMManagement: React.FC = () => {
-  const { data: oems = [], isLoading } = useGetOEMsQuery();
+  const { data: oemsResponse, isLoading } = useGetOEMsQuery();
   const [deleteOEM] = useDeleteOEMMutation();
+  
+  const oems = oemsResponse?.data || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOEM, setEditingOEM] = useState<OEMResponse | null>(null);

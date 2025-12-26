@@ -12,11 +12,10 @@ import {
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import UserManagmentModal from "./UserManagmentModal";
-import { useAppDispatch } from "../../store/hooks";
-import { updateUserStatus } from "../../store/userSlice";
 import {
   useGetUsersQuery,
   useDeleteUserMutation,
+  useUpdateUserMutation,
 } from "../../store/api/userApi";
 import { UserResponse } from "@OrianaTypes";
 
@@ -24,26 +23,33 @@ const { Search } = Input;
 const { Option } = Select;
 
 const UserManagement = () => {
-  const dispatch = useAppDispatch();
-  const [editingUser, setEditingUser] = useState<
-    (UserResponse & { id?: string }) | null
-  >(null);
+  const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
 
-  const { data, isLoading: isGettingUsers, refetch } = useGetUsersQuery();
+  const {
+    data,
+    isLoading: isGettingUsers,
+    refetch,
+  } = useGetUsersQuery({
+    page: currentPage,
+    limit: pageSize,
+    sortBy: "createdAt",
+    sortOrder: "DESC",
+  });
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-  // const users = useAppSelector(selectUsers);
+  const [updateUser, { isLoading: isUpdatingStatus }] = useUpdateUserMutation();
 
-  const handleEdit = (record: UserResponse & { id?: string }) => {
+  const handleEdit = (record: UserResponse) => {
     setEditingUser(record);
     setOpenModal(true);
   };
 
-  const handleDelete = async (record: UserResponse & { id?: string }) => {
+  const handleDelete = async (record: UserResponse) => {
     try {
-      // Use userId instead of username (backend expects userId)
-      const userIdForDelete = record.userId || record.id;
+      const userIdForDelete = record.userId;
 
       if (!userIdForDelete) {
         message.error("User ID not found. Cannot delete user.");
@@ -93,55 +99,69 @@ const UserManagement = () => {
       dataIndex: "role",
       key: "role",
       render: (role: string, record: UserResponse) => (
-        <Tag
-          color={
-            role === "Super Admin"
-              ? "gold"
-              : role === "Manager"
-                ? "blue"
-                : "cyan"
-          }
-        >
-          {record.role}
-        </Tag>
+        <Tag color={"cyan"}>{record.role}</Tag>
       ),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (_: any, record: any) => (
+      render: (_: any, record: UserResponse) => (
         <Switch
           checkedChildren="Active"
           unCheckedChildren="Inactive"
-          checked={record.status === "Active"}
-          onChange={() =>
-            dispatch(
-              updateUserStatus({
-                id: record.id,
-                status: record.status === "Active" ? false : true,
-              })
-            )
-          }
+          checked={record.isActive}
+          loading={isUpdatingStatus}
+          onChange={async (checked) => {
+            try {
+              if (!record.userId) {
+                message.error("User ID not found. Cannot update status.");
+                return;
+              }
+
+              await updateUser({
+                userId: record.userId,
+                data: {
+                  isActive: checked,
+                  updatedBy: "system",
+                },
+              }).unwrap();
+
+              message.success(
+                `User status updated to ${checked ? "Active" : "Inactive"}`
+              );
+              refetch(); // Refresh the user list after status update
+            } catch (error: any) {
+              console.error("Status update failed:", error);
+              const errorMessage =
+                error?.data?.error?.message ||
+                error?.message ||
+                "Failed to update user status. Please try again.";
+              message.error(errorMessage);
+            }
+          }}
         />
       ),
     },
     {
-      title: "Last Login",
-      dataIndex: "lastLogin",
-      key: "lastLogin",
-      render: (lastLogin: string) => (lastLogin ? lastLogin : "-"),
-    },
-    {
       title: "Created",
-      dataIndex: "created",
-      key: "created",
-      render: (created: string) => (created ? created : "-"),
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (createdAt: string | Date) => {
+        if (!createdAt) return "-";
+        try {
+          const date =
+            typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+          return date.toLocaleString();
+        } catch {
+          return createdAt.toString();
+        }
+      },
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: UserResponse & { id?: string }) => (
+      render: (_: any, record: UserResponse) => (
         <Space size="middle">
           <Button
             type="link"
@@ -195,13 +215,22 @@ const UserManagement = () => {
             right: 0,
             width: 150,
             height: "100%",
-            backgroundImage: "radial-gradient(circle, #fda4af 1.5px, transparent 1.5px)",
+            backgroundImage:
+              "radial-gradient(circle, #fda4af 1.5px, transparent 1.5px)",
             backgroundSize: "12px 12px",
             opacity: 0.5,
             pointerEvents: "none",
           }}
         />
-        <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           <div
             style={{
               width: 48,
@@ -217,10 +246,23 @@ const UserManagement = () => {
             <span style={{ fontSize: 22 }}>👥</span>
           </div>
           <div>
-            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: "#be123c" }}>
+            <h2
+              style={{
+                margin: 0,
+                fontWeight: 700,
+                fontSize: "1.4rem",
+                color: "#be123c",
+              }}
+            >
               User Management
             </h2>
-            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
+            <p
+              style={{
+                margin: "0.2rem 0 0 0",
+                fontSize: "0.85rem",
+                color: "#6b7280",
+              }}
+            >
               Manage user accounts and access controls
             </p>
           </div>
@@ -271,11 +313,20 @@ const UserManagement = () => {
       {/* Table */}
       <Table
         columns={columns}
-        dataSource={data?.items}
+        dataSource={data?.data}
         loading={isGettingUsers}
-        rowKey={(record) => record.userId || record.username || 'key'}
-        pagination={{ pageSize: 5 }}
-        footer={() => `Total ${data?.items?.length || 0} users`}
+        rowKey={(record) => record.userId || record.username || "key"}
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: data?.pagination?.total || 0,
+          showSizeChanger: false,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} of ${total} users`,
+          onChange: (page) => {
+            setCurrentPage(page);
+          },
+        }}
       />
 
       {/* Popup modal */}

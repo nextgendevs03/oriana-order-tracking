@@ -8,11 +8,16 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   createSuccessResponse,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IUserService } from '../services/UserService';
-import { CreateUserRequest, UpdateUserRequest } from '../schemas/request/UserRequest';
+import {
+  CreateUserRequest,
+  UpdateUserRequest,
+  ListUserRequest,
+} from '../schemas/request/UserRequest';
 
 export interface IUserController {
   create(data: CreateUserRequest): Promise<APIGatewayProxyResult>;
@@ -34,10 +39,21 @@ export class UserController implements IUserController {
   }
 
   @Get('/')
-  async getAll(): Promise<APIGatewayProxyResult> {
-    const users = await this.userService.getAllUsers();
+  async getAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string
+  ): Promise<APIGatewayProxyResult> {
+    const params: ListUserRequest = {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      sortBy: sortBy || 'createdAt',
+      sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
+    };
 
-    return createSuccessResponse(users);
+    const result = await this.userService.getAllUsers(params);
+    return createSuccessResponse(result.data, 200, result.pagination);
   }
 
   @Get('/{id}')

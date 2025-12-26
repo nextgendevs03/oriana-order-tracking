@@ -1,17 +1,16 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
 import { IProductRepository } from '../repositories/ProductRepository';
-import { CreateProductRequest, UpdateProductRequest } from '../schemas/request/ProductRequest';
-import { ProductResponse } from '../schemas/response/ProductResponse';
+import {
+  CreateProductRequest,
+  UpdateProductRequest,
+  ListProductRequest,
+} from '../schemas/request/ProductRequest';
+import { ProductResponse, ProductListResponse } from '../schemas/response/ProductResponse';
 
 export interface IProductService {
   createProduct(data: CreateProductRequest): Promise<ProductResponse | null>;
-  getAllProducts(filters?: {
-    name?: string;
-    isActive?: boolean;
-    categoryId?: string;
-    oemId?: string;
-  }): Promise<ProductResponse[]>;
+  getAllProducts(params?: ListProductRequest): Promise<ProductListResponse>;
   getProductById(id: string): Promise<ProductResponse | null>;
   updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse | null>;
   deleteProduct(id: string): Promise<void>;
@@ -26,14 +25,19 @@ export class ProductService implements IProductService {
     return created ?? null;
   }
 
-  async getAllProducts(filters?: {
-    name?: string;
-    isActive?: boolean;
-    categoryId?: string;
-    oemId?: string;
-  }): Promise<ProductResponse[]> {
-    const rows = await this.repo.findAll(filters);
-    return rows;
+  async getAllProducts(params?: ListProductRequest): Promise<ProductListResponse> {
+    const { page = 1, limit = 20 } = params || {};
+    const { rows, count } = await this.repo.findAll(params);
+
+    return {
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
+    };
   }
 
   async getProductById(id: string): Promise<ProductResponse | null> {

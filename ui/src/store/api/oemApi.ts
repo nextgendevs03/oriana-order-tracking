@@ -3,32 +3,44 @@ import {
   CreateOEMRequest,
   UpdateOEMRequest,
   OEMResponse,
+  OEMListResponse,
+  ListOEMRequest,
 } from "@OrianaTypes";
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export const oemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-   
-    getOEMs: builder.query<OEMResponse[], void>({
-      query: () => ({
+    getOEMs: builder.query<OEMListResponse, ListOEMRequest | void>({
+      query: (params) => ({
         url: "oem/",
         method: "GET",
+        params: params || {},
       }),
-
-      transformResponse: (response: any) => {
-        const list = Array.isArray(response)
-          ? response
-          : response?.data || [];
-
-        return list.map((item: any) => ({
+      transformResponse: (response: ApiResponse<OEMResponse[]>): OEMListResponse => ({
+        data: (response.data || []).map((item: any) => ({
           ...item,
-
           isActive:
             typeof item.isActive === "boolean"
               ? item.isActive
               : item.status === "Active",
-        }));
-      },
-
+        })),
+        pagination: response.pagination || {
+          page: 1,
+          limit: 20,
+          total: response.data?.length || 0,
+          totalPages: 1,
+        },
+      }),
       providesTags: ["OEM"],
     }),
 

@@ -35,7 +35,7 @@ export class PermissionService implements IPermissionService {
     const { page = 1, limit = 10 } = params;
     const { rows, count } = await this.repository.findAll(params);
     return {
-      items: rows.map(this.mapToResponse),
+      data: rows.map(this.mapToResponse),
       pagination: { page, limit, total: count, totalPages: Math.ceil(count / limit) },
     };
   }

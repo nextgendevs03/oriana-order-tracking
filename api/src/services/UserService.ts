@@ -1,13 +1,17 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
 import { UserListResponse, UserResponse } from '../schemas/response/UserResponse';
-import { CreateUserRequest, UpdateUserRequest } from '../schemas/request/UserRequest';
+import {
+  CreateUserRequest,
+  UpdateUserRequest,
+  ListUserRequest,
+} from '../schemas/request/UserRequest';
 import { IUserRepository } from '../repositories/UserRepository';
 import { User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 export interface IUserService {
-  getAllUsers(): Promise<UserListResponse>;
+  getAllUsers(params?: ListUserRequest): Promise<UserListResponse>;
   createUser(data: CreateUserRequest): Promise<UserResponse>;
   getUserById(id: string): Promise<UserResponse | null>;
   updateUser(id: string, data: UpdateUserRequest): Promise<UserResponse>;
@@ -34,6 +38,7 @@ export class UserService implements IUserService {
       email: data.email,
       password: encryptedPassword, // ONLY THIS FIELD IS ENCRYPTED
       role: data.role,
+      roleId: data.roleId,
       isActive: data.isActive,
       createdBy: data.createdBy,
       updatedBy: data.updatedBy,
@@ -41,10 +46,21 @@ export class UserService implements IUserService {
 
     const user: User = await this.userRepository.create(userData);
 
+    // Extract role name from direct role relation or userRoles
+    const userWithRole = user as unknown as {
+      role?: { roleName: string };
+      userRoles?: Array<{ role: { roleName: string } }>;
+      roleId?: string | null;
+    };
+    const roleName =
+      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+
     return {
+      userId: user.userId,
       username: user.username,
       email: user.email,
-      role: 'roleName',
+      role: roleName,
+      roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
       isActive: user.isActive,
     };
   }
@@ -54,27 +70,58 @@ export class UserService implements IUserService {
 
     if (!user) return null;
 
+    // Extract role name from direct role relation or userRoles
+    const userWithRole = user as unknown as {
+      role?: { roleName: string };
+      userRoles?: Array<{ role: { roleName: string } }>;
+      roleId?: string | null;
+    };
+    const roleName =
+      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+
     return {
+      userId: user.userId,
       username: user.username,
       email: user.email,
-      role: 'roleName',
+      role: roleName,
+      roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
       isActive: user.isActive,
     };
   }
 
-  async getAllUsers(): Promise<UserListResponse> {
-    const users = await this.userRepository.findAll();
+  async getAllUsers(params?: ListUserRequest): Promise<UserListResponse> {
+    const { rows, count } = await this.userRepository.findAll(params);
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const totalPages = Math.ceil(count / limit);
 
-    const modifiedUsers = users.map((user: User) => ({
-      username: user.username,
-      email: user.email,
-      role: 'roleName',
-      isActive: user.isActive,
-      name: user.username,
-      createdAt: user.createdAt.toISOString(),
-    }));
+    const modifiedUsers = rows.map((user: User) => {
+      const userWithRole = user as unknown as {
+        role?: { roleName: string };
+        userRoles?: Array<{ role: { roleName: string } }>;
+      };
+      const roleName =
+        userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+      return {
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        role: roleName,
+        roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
+        isActive: user.isActive,
+        createdAt: user.createdAt.toISOString(),
+      };
+    });
 
-    return { items: modifiedUsers };
+    return {
+      data: modifiedUsers,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages,
+      },
+    };
   }
 
   async updateUser(id: string, data: UpdateUserRequest): Promise<UserResponse> {
@@ -84,10 +131,21 @@ export class UserService implements IUserService {
     }
     const user: User = await this.userRepository.update(id, data);
 
+    // Extract role name from direct role relation or userRoles
+    const userWithRole = user as unknown as {
+      role?: { roleName: string };
+      userRoles?: Array<{ role: { roleName: string } }>;
+      roleId?: string | null;
+    };
+    const roleName =
+      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+
     return {
+      userId: user.userId,
       username: user.username,
       email: user.email,
-      role: 'roleName',
+      role: roleName,
+      roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
       isActive: user.isActive,
     };
   }

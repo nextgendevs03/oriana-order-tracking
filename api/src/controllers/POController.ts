@@ -64,7 +64,7 @@ export class POController implements IPOController {
     };
 
     const result = await this.poService.getAllPOs(params);
-    return createSuccessResponse(result.items, 200, result.pagination);
+    return createSuccessResponse(result.data, 200, result.pagination);
   }
 
   @Get('/{id}')

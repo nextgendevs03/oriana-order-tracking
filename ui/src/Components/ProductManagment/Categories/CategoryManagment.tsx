@@ -11,8 +11,10 @@ import type { CategoryResponse } from "@OrianaTypes";
 import AddCategoryModal from "./AddCategoryModal";
 
 const CategoryManagement: React.FC = () => {
-  const { data: categories = [], isLoading } = useGetCategoriesQuery();
+  const { data: categoriesResponse, isLoading } = useGetCategoriesQuery();
   const [deleteCategory] = useDeleteCategoryMutation();
+  
+  const categories = categoriesResponse?.data || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] =

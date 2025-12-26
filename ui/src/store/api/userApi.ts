@@ -2,15 +2,36 @@ import {
   CreateUserRequest,
   UpdateUserRequest,
   UserListResponse,
+  ListUserRequest,
 } from "@OrianaTypes";
 import { baseApi } from "./baseApi";
 
+interface ApiResponse<T> {
+  data: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getUsers: builder.query<UserListResponse, void>({
-      query: () => ({
+    getUsers: builder.query<UserListResponse, ListUserRequest | void>({
+      query: (params) => ({
         url: "/user",
         method: "GET",
+        params: params || {},
+      }),
+      transformResponse: (response: ApiResponse<UserListResponse["data"]>) => ({
+        data: response.data,
+        pagination: response.pagination || {
+          page: 1,
+          limit: 20,
+          total: response.data.length,
+          totalPages: 1,
+        },
       }),
       providesTags: ["User"],
     }),
@@ -24,7 +45,7 @@ export const userApi = baseApi.injectEndpoints({
     }),
 
     updateUser: builder.mutation<
-      UserListResponse,
+      { userId: string; username: string; email: string; role: string; isActive: boolean },
       { userId: string; data: UpdateUserRequest }
     >({
       query: ({ userId, data }) => ({

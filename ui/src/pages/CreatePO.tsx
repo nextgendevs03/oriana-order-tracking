@@ -67,7 +67,9 @@ const CreatePO: FC = () => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null);
+  const [selectedClient, setSelectedClient] = useState<ClientOption | null>(
+    null
+  );
 
   // API mutation for creating PO
   const [createPO, { isLoading: isCreatingPO }] = useCreatePOMutation();
@@ -76,19 +78,14 @@ const CreatePO: FC = () => {
   const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 500);
 
   // Fetch categories and OEMs from API (with automatic retry on failure)
-  const {
-    data: categoriesData = [],
-    isError: categoriesError,
-  } = useGetCategoriesQuery();
-  const {
-    data: oemsData = [],
-    isError: oemsError,
-  } = useGetOEMsQuery();
+  const { data: categoriesResponse, isError: categoriesError } =
+    useGetCategoriesQuery();
+  const { data: oemsResponse, isError: oemsError } = useGetOEMsQuery();
 
   // Fetch clients based on debounced search term (min 3 characters, with automatic retry on failure)
   const shouldFetchClients = debouncedClientSearchTerm.length >= 3;
   const {
-    data: clientsData = [],
+    data: clientsResponse,
     isError: clientsError,
     isLoading: isLoadingClients,
   } = useGetClientsQuery(
@@ -96,13 +93,19 @@ const CreatePO: FC = () => {
     { skip: !shouldFetchClients }
   );
 
+  // Extract data arrays from responses
+  const categoriesData = categoriesResponse?.data || [];
+  const oemsData = oemsResponse?.data || [];
+  const clientsData = clientsResponse?.data || [];
+
   // Show error toast after all retries have failed (RTK Query retries 3 times automatically)
   useEffect(() => {
     if (categoriesError) {
       notification.error({
         key: "categories-error",
         message: "Failed to load Categories",
-        description: "Unable to fetch categories after multiple attempts. Please refresh the page.",
+        description:
+          "Unable to fetch categories after multiple attempts. Please refresh the page.",
         duration: 0,
       });
     }
@@ -113,7 +116,8 @@ const CreatePO: FC = () => {
       notification.error({
         key: "oems-error",
         message: "Failed to load OEMs",
-        description: "Unable to fetch OEM list after multiple attempts. Please refresh the page.",
+        description:
+          "Unable to fetch OEM list after multiple attempts. Please refresh the page.",
         duration: 0,
       });
     }
@@ -227,19 +231,21 @@ const CreatePO: FC = () => {
     };
 
     // Build PO items array with proper types
-    const poItems: POItemRequest[] = (values.poItems as POItemFormValues[]).map((item) => ({
-      categoryId: item.categoryId,
-      oemId: item.oemId,
-      productId: item.productId,
-      quantity: item.quantity,
-      spareQuantity: item.spareQuantity || 0,
-      totalQuantity: item.totalQuantity,
-      pricePerUnit: item.pricePerUnit,
-      totalPrice: item.totalPrice,
-      gstPercent: item.gstPercent,
-      finalPrice: item.finalPrice,
-      warranty: item.warranty,
-    }));
+    const poItems: POItemRequest[] = (values.poItems as POItemFormValues[]).map(
+      (item) => ({
+        categoryId: item.categoryId,
+        oemId: item.oemId,
+        productId: item.productId,
+        quantity: item.quantity,
+        spareQuantity: item.spareQuantity || 0,
+        totalQuantity: item.totalQuantity,
+        pricePerUnit: item.pricePerUnit,
+        totalPrice: item.totalPrice,
+        gstPercent: item.gstPercent,
+        finalPrice: item.finalPrice,
+        warranty: item.warranty,
+      })
+    );
 
     // Build the API request payload
     const createPORequest: CreatePORequest = {
@@ -258,7 +264,9 @@ const CreatePO: FC = () => {
       dispatchPlanDate: formatDate(values.dispatchPlanDate as dayjs.Dayjs),
       siteLocation: values.siteLocation as string,
       oscSupport: values.oscSupport as string,
-      confirmDateOfDispatch: formatDate(values.confirmDateOfDispatch as dayjs.Dayjs),
+      confirmDateOfDispatch: formatDate(
+        values.confirmDateOfDispatch as dayjs.Dayjs
+      ),
       paymentStatus: values.paymentStatus as string,
       remarks: (values.remarks as string) || undefined,
     };
@@ -268,9 +276,9 @@ const CreatePO: FC = () => {
     try {
       // Call the API to create PO
       const result = await createPO(createPORequest).unwrap();
-      
+
       message.success(`Purchase Order ${result.poId} created successfully!`);
-      
+
       // Reset form and file list
       form.resetFields();
       setFileList([]);
@@ -283,7 +291,10 @@ const CreatePO: FC = () => {
       console.error("Failed to create PO:", error);
       notification.error({
         message: "Failed to create Purchase Order",
-        description: error?.data?.message || error?.message || "An error occurred. Please try again.",
+        description:
+          error?.data?.message ||
+          error?.message ||
+          "An error occurred. Please try again.",
         duration: 5,
       });
     }
@@ -339,7 +350,9 @@ const CreatePO: FC = () => {
               boxShadow: "0 8px 24px rgba(67, 233, 123, 0.35)",
             }}
           >
-            <span style={{ fontSize: 28, color: "#fff", fontWeight: 300 }}>+</span>
+            <span style={{ fontSize: 28, color: "#fff", fontWeight: 300 }}>
+              +
+            </span>
           </div>
           <div>
             <h2
@@ -379,7 +392,9 @@ const CreatePO: FC = () => {
         <Form.Item
           name="clientId"
           hidden
-          rules={[{ required: true, message: "Please select a client from the list" }]}
+          rules={[
+            { required: true, message: "Please select a client from the list" },
+          ]}
         >
           <Input />
         </Form.Item>
@@ -387,7 +402,11 @@ const CreatePO: FC = () => {
         {/* Row 1: PO Received Date, Client Name */}
         <Row gutter={24}>
           <Col span={12}>
-            <Form.Item name="poReceivedDate" label="PO Received Date" rules={dateFieldRules}>
+            <Form.Item
+              name="poReceivedDate"
+              label="PO Received Date"
+              rules={dateFieldRules}
+            >
               <DatePicker style={{ width: "100%" }} />
             </Form.Item>
           </Col>
@@ -444,9 +463,7 @@ const CreatePO: FC = () => {
               label="OSG PI No"
               rules={textFieldRulesWithMinLength}
             >
-              <Input
-                placeholder="Enter OSG PI number"
-              />
+              <Input placeholder="Enter OSG PI number" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -468,9 +485,7 @@ const CreatePO: FC = () => {
               label="Client PO No"
               rules={textFieldRulesWithMinLength}
             >
-              <Input
-                placeholder="Enter Client PO number"
-              />
+              <Input placeholder="Enter Client PO number" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -515,10 +530,7 @@ const CreatePO: FC = () => {
         {/* Row 5: Assign Dispatch To */}
         <Row gutter={24}>
           <Col span={12}>
-            <Form.Item
-              name="assignDispatchTo"
-              label="Assign Dispatch To"
-            >
+            <Form.Item name="assignDispatchTo" label="Assign Dispatch To">
               <Select
                 placeholder="Select person (optional)"
                 options={assignDispatchToOptions}

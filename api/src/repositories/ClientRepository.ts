@@ -1,11 +1,15 @@
 import { injectable, inject } from 'inversify';
 import { PrismaClient, Client, Prisma } from '@prisma/client';
 import { TYPES } from '../types/types';
-import { CreateClientRequest, UpdateClientRequest } from '../schemas/request/ClientRequest';
+import {
+  CreateClientRequest,
+  UpdateClientRequest,
+  ListClientRequest,
+} from '../schemas/request/ClientRequest';
 import { ClientResponse } from 'src/schemas/response/ClientResponse';
 
 export interface IClientRepository {
-  findAll(filters?: { isActive?: boolean; clientName?: string }): Promise<ClientResponse[]>;
+  findAll(params?: ListClientRequest): Promise<{ rows: ClientResponse[]; count: number }>;
   findById(id: string): Promise<Client | null>;
   create(data: CreateClientRequest): Promise<Client>;
   update(id: string, data: UpdateClientRequest): Promise<Client>;
@@ -16,32 +20,59 @@ export interface IClientRepository {
 export class ClientRepository implements IClientRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(filters?: { isActive?: boolean; clientName?: string }): Promise<ClientResponse[]> {
+  async findAll(params?: ListClientRequest): Promise<{ rows: ClientResponse[]; count: number }> {
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      clientName,
+      isActive,
+    } = params || {};
+    const skip = (page - 1) * limit;
+
     const where: Prisma.ClientWhereInput = {};
 
-    if (filters?.isActive !== undefined) {
-      where.isActive = filters.isActive;
+    if (isActive !== undefined) {
+      where.isActive = isActive;
     }
 
-    if (filters?.clientName) {
+    if (clientName) {
       where.clientName = {
-        contains: filters.clientName,
+        contains: clientName,
         mode: 'insensitive',
       };
     }
 
-    const clients = await this.prisma.client.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    const orderBy: Prisma.ClientOrderByWithRelationInput = {};
+    if (sortBy === 'createdAt') {
+      orderBy.createdAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'clientName') {
+      orderBy.clientName = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'updatedAt') {
+      orderBy.updatedAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    }
 
-    return clients.map((client) => ({
-      clientId: client.clientId,
-      clientName: client.clientName,
-      isActive: client.isActive,
-      createdBy: client.createdBy,
-      updatedBy: client.updatedBy,
-    }));
+    const [rows, count] = await this.prisma.$transaction([
+      this.prisma.client.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy,
+      }),
+      this.prisma.client.count({ where }),
+    ]);
+
+    return {
+      rows: rows.map((client) => ({
+        clientId: client.clientId,
+        clientName: client.clientName,
+        isActive: client.isActive,
+        createdBy: client.createdBy,
+        updatedBy: client.updatedBy,
+      })),
+      count,
+    };
   }
 
   async findById(id: string): Promise<Client | null> {

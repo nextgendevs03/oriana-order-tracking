@@ -9,3 +9,12 @@ export interface UpdateOEMRequest {
   isActive?: boolean;
   updatedBy?: string;
 }
+
+export interface ListOEMRequest {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  oemName?: string;
+  isActive?: boolean;
+}

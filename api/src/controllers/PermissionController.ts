@@ -42,7 +42,7 @@ export class PermissionController {
       limit: limit ? parseInt(limit, 10) : 10,
       isActive: isActive ? isActive === 'true' : undefined,
     });
-    return createSuccessResponse(result.items, 200, result.pagination);
+    return createSuccessResponse(result.data, 200, result.pagination);
   }
 
   @Get('/{id}')

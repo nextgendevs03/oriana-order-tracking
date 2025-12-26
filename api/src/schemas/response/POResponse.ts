@@ -45,7 +45,7 @@ export interface POResponse {
 }
 
 export interface POListResponse {
-  items: POResponse[];
+  data: POResponse[];
   pagination: {
     page: number;
     limit: number;

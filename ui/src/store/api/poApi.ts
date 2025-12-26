@@ -12,17 +12,23 @@
  * - deletePO: Delete a PO
  */
 
-import { baseApi } from './baseApi';
+import { baseApi } from "./baseApi";
 import {
   CreatePORequest,
   UpdatePORequest,
   ListPORequest,
   POResponse,
   POListResponse,
-} from '@OrianaTypes';
+} from "@OrianaTypes";
 
 // Re-export types for convenience
-export type { CreatePORequest, UpdatePORequest, ListPORequest, POResponse, POListResponse };
+export type {
+  CreatePORequest,
+  UpdatePORequest,
+  ListPORequest,
+  POResponse,
+  POListResponse,
+};
 
 // ============================================
 // API Response Wrapper (matches backend format)
@@ -57,12 +63,12 @@ export const poApi = baseApi.injectEndpoints({
      */
     getPOs: builder.query<POListResponse, ListPORequest | void>({
       query: (params) => ({
-        url: '/po',
+        url: "/po",
         params: params || {},
       }),
       // Transform the API response to extract data
       transformResponse: (response: ApiResponse<POResponse[]>) => ({
-        items: response.data,
+        data: response.data,
         pagination: response.pagination || {
           page: 1,
           limit: 10,
@@ -75,11 +81,14 @@ export const poApi = baseApi.injectEndpoints({
         result
           ? [
               // Tag each individual PO
-              ...result.items.map(({ poId }) => ({ type: 'PO' as const, id: poId })),
+              ...result.data.map(({ poId }) => ({
+                type: "PO" as const,
+                id: poId,
+              })),
               // Tag for the entire list
-              { type: 'PO', id: 'LIST' },
+              { type: "PO", id: "LIST" },
             ]
-          : [{ type: 'PO', id: 'LIST' }],
+          : [{ type: "PO", id: "LIST" }],
     }),
 
     /**
@@ -95,9 +104,9 @@ export const poApi = baseApi.injectEndpoints({
     getPOById: builder.query<POResponse, string>({
       query: (poId) => `/po/${poId}`,
       // Transform the API response to extract data
-      transformResponse: (response: ApiResponse<POResponse>) => response.data,
+      // transformResponse: (response: ApiResponse<POResponse>) => response,
       // Tag this specific PO
-      providesTags: (result, error, poId) => [{ type: 'PO', id: poId }],
+      providesTags: (result, error, poId) => [{ type: "PO", id: poId }],
     }),
 
     /**
@@ -113,14 +122,12 @@ export const poApi = baseApi.injectEndpoints({
      */
     createPO: builder.mutation<POResponse, CreatePORequest>({
       query: (newPO) => ({
-        url: '/po',
-        method: 'POST',
+        url: "/po",
+        method: "POST",
         body: newPO,
       }),
-      // Transform the API response to extract data
-      transformResponse: (response: ApiResponse<POResponse>) => response.data,
       // Invalidate the list cache so it refetches
-      invalidatesTags: [{ type: 'PO', id: 'LIST' }],
+      invalidatesTags: [{ type: "PO", id: "LIST" }],
     }),
 
     /**
@@ -137,15 +144,15 @@ export const poApi = baseApi.injectEndpoints({
     updatePO: builder.mutation<POResponse, UpdatePORequest>({
       query: ({ poId, ...body }) => ({
         url: `/po/${poId}`,
-        method: 'PUT',
+        method: "PUT",
         body,
       }),
       // Transform the API response to extract data
       transformResponse: (response: ApiResponse<POResponse>) => response.data,
       // Invalidate both the specific PO and the list
       invalidatesTags: (result, error, { poId }) => [
-        { type: 'PO', id: poId },
-        { type: 'PO', id: 'LIST' },
+        { type: "PO", id: poId },
+        { type: "PO", id: "LIST" },
       ],
     }),
 
@@ -163,7 +170,7 @@ export const poApi = baseApi.injectEndpoints({
     deletePO: builder.mutation<{ poId: string; deleted: boolean }, string>({
       query: (poId) => ({
         url: `/po/${poId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
       // Transform the API response to extract data
       transformResponse: (
@@ -171,8 +178,8 @@ export const poApi = baseApi.injectEndpoints({
       ) => response.data,
       // Invalidate the list cache
       invalidatesTags: (result, error, poId) => [
-        { type: 'PO', id: poId },
-        { type: 'PO', id: 'LIST' },
+        { type: "PO", id: poId },
+        { type: "PO", id: "LIST" },
       ],
     }),
   }),

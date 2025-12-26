@@ -7,3 +7,13 @@ export interface OEMResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface OEMListResponse {
+  data: OEMResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

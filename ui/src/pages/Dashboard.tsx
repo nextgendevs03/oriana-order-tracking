@@ -1,21 +1,13 @@
-import { useEffect, useMemo } from "react";
-import { Table, Button, Tag, Card } from "antd";
-import {
-  PlusOutlined,
-  EyeOutlined,
-  FileTextOutlined,
-} from "@ant-design/icons";
+import { useEffect, useMemo, useState } from "react";
+import { Table, Button, Tag, Card, Alert } from "antd";
+import { PlusOutlined, EyeOutlined, FileTextOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
-import { POData } from "../store/poSlice";
-import { selectPOList } from "../store/poSelectors";
+import { useGetPOsQuery } from "../store/api/poApi";
+import type { POResponse } from "../store/api/poApi";
 import type { ColumnsType } from "antd/es/table";
-import {
-  getPaymentStatusColor,
-  getPoStatusColor,
-  formatLabel,
-} from "../utils";
+import { getPaymentStatusColor, getPoStatusColor, formatLabel } from "../utils";
 import { colors, shadows } from "../styles/theme";
 
 interface PORecord {
@@ -25,15 +17,27 @@ interface PORecord {
   clientName: string;
   osgPiNo: string;
   osgPoNo: string;
-  assignDispatchTo: number;
   paymentStatus: string;
   poStatus: string;
 }
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const poList = useAppSelector(selectPOList);
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Fetch POs from API
+  const {
+    data: poListResponse,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetPOsQuery({
+    page: currentPage,
+    limit: pageSize,
+  });
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -41,17 +45,23 @@ const Dashboard: React.FC = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  const dataSource: PORecord[] = poList.map((po: POData) => ({
-    key: po.id,
-    poOrderId: po.id,
-    date: po.date,
-    clientName: po.clientName,
-    osgPiNo: String(po.osgPiNo),
-    osgPoNo: String(po.clientPoNo),
-    assignDispatchTo: po.assignDispatchTo,
-    paymentStatus: po.paymentStatus,
-    poStatus: po.poStatus,
-  }));
+  // Map API response to Dashboard format
+  const dataSource: PORecord[] = useMemo(() => {
+    if (!poListResponse?.data) return [];
+
+    return poListResponse.data.map(
+      (po: POResponse): PORecord => ({
+        key: po.poId,
+        poOrderId: po.poId,
+        date: po.poReceivedDate,
+        clientName: po.clientName || "-",
+        osgPiNo: po.osgPiNo,
+        osgPoNo: po.clientPoNo,
+        paymentStatus: po.paymentStatus,
+        poStatus: po.poStatus,
+      })
+    );
+  }, [poListResponse]);
 
   const handleView = (record: PORecord) => {
     navigate(`/po-details/${record.poOrderId}`);
@@ -67,11 +77,6 @@ const Dashboard: React.FC = () => {
     );
     return uniqueNames.map((name) => ({ text: name, value: name }));
   }, [dataSource]);
-
-  const assignDispatchToFilters = [
-    { text: "Aman", value: 1 },
-    { text: "Rahul", value: 2 },
-  ];
 
   const poStatusFilters = [
     { text: "PO Received", value: "po_received" },
@@ -115,32 +120,9 @@ const Dashboard: React.FC = () => {
     },
     {
       title: "Client PO No",
-      dataIndex: "clientPoNo",
+      dataIndex: "osgPoNo",
       key: "clientPoNo",
       width: 140,
-    },
-    {
-      title: "Assign Dispatch To",
-      dataIndex: "assignDispatchTo",
-      key: "assignDispatchTo",
-      width: 160,
-      filters: assignDispatchToFilters,
-      filterSearch: true,
-      onFilter: (value, record) => record.assignDispatchTo === value,
-      render: (value: number) => {
-        const assigneeMap: Record<number, string> = { 1: "Aman", 2: "Rahul" };
-        return (
-          <Tag
-            style={{
-              background: colors.gray100,
-              color: colors.gray700,
-              border: "none",
-            }}
-          >
-            {assigneeMap[value] || "-"}
-          </Tag>
-        );
-      },
     },
     {
       title: "Payment Status",
@@ -220,9 +202,7 @@ const Dashboard: React.FC = () => {
                 boxShadow: "0 8px 24px rgba(102, 126, 234, 0.35)",
               }}
             >
-              <FileTextOutlined
-                style={{ fontSize: 26, color: "#fff" }}
-              />
+              <FileTextOutlined style={{ fontSize: 26, color: "#fff" }} />
             </div>
             <div>
               <h2
@@ -230,7 +210,8 @@ const Dashboard: React.FC = () => {
                   margin: 0,
                   fontSize: "1.5rem",
                   fontWeight: 700,
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   letterSpacing: "-0.02em",
@@ -289,17 +270,48 @@ const Dashboard: React.FC = () => {
           }}
           bodyStyle={{ padding: 0 }}
         >
+          {isError && (
+            <Alert
+              message="Error loading purchase orders"
+              description={
+                error && typeof error === "object" && "data" in error
+                  ? (error.data as any)?.message || "An error occurred"
+                  : "Failed to load purchase orders. Please try again."
+              }
+              type="error"
+              showIcon
+              closable
+              onClose={() => refetch()}
+              style={{ margin: 16 }}
+              action={
+                <Button size="small" onClick={() => refetch()}>
+                  Retry
+                </Button>
+              }
+            />
+          )}
           <Table<PORecord>
             columns={columns}
             dataSource={dataSource}
             scroll={{ x: 1200 }}
+            loading={isLoading}
             pagination={{
-              defaultPageSize: 10,
+              current: currentPage,
+              pageSize: pageSize,
+              total: poListResponse?.pagination?.total || 0,
               showSizeChanger: true,
               pageSizeOptions: ["10", "20", "50", "100"],
               showTotal: (total, range) =>
                 `${range[0]}-${range[1]} of ${total} items`,
               style: { padding: "12px 16px", margin: 0 },
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                setPageSize(size);
+              },
+              onShowSizeChange: (current, size) => {
+                setCurrentPage(1);
+                setPageSize(size);
+              },
             }}
             locale={{
               emptyText: (

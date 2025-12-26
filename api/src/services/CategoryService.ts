@@ -1,15 +1,16 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../types/types';
 import { ICategoryRepository } from '../repositories/CategoryRepository';
-import { CreateCategoryRequest, UpdateCategoryRequest } from '../schemas/request/CategoryRequest';
-import { CategoryResponse } from '../schemas/response/CategoryResponse';
+import {
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+  ListCategoryRequest,
+} from '../schemas/request/CategoryRequest';
+import { CategoryResponse, CategoryListResponse } from '../schemas/response/CategoryResponse';
 
 export interface ICategoryService {
   createCategory(data: CreateCategoryRequest): Promise<CategoryResponse>;
-  getAllCategories(filters?: {
-    isActive?: boolean;
-    categoryName?: string;
-  }): Promise<CategoryResponse[]>;
+  getAllCategories(params?: ListCategoryRequest): Promise<CategoryListResponse>;
   getCategoryById(id: string): Promise<CategoryResponse | null>;
   updateCategory(id: string, data: UpdateCategoryRequest): Promise<CategoryResponse>;
   deleteCategory(id: string): Promise<void>;
@@ -27,11 +28,19 @@ export class CategoryService implements ICategoryService {
     return created;
   }
 
-  async getAllCategories(filters?: {
-    isActive?: boolean;
-    categoryName?: string;
-  }): Promise<CategoryResponse[]> {
-    return this.categoryRepository.findAll(filters);
+  async getAllCategories(params?: ListCategoryRequest): Promise<CategoryListResponse> {
+    const { page = 1, limit = 20 } = params || {};
+    const { rows, count } = await this.categoryRepository.findAll(params);
+
+    return {
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
+    };
   }
 
   async getCategoryById(id: string): Promise<CategoryResponse | null> {

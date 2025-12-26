@@ -33,15 +33,19 @@ export class RoleController {
   async getAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
     @Query('isActive') isActive?: string
   ) {
     const result = await this.service.getAllRoles({
-      page: page ? parseInt(page) : 1,
-      limit: limit ? parseInt(limit) : 10,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      sortBy: sortBy || 'createdAt',
+      sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
       isActive: isActive ? isActive === 'true' : undefined,
     });
 
-    return createSuccessResponse(result, 200);
+    return createSuccessResponse(result.data, 200, result.pagination);
   }
 
   @Get('/{id}')

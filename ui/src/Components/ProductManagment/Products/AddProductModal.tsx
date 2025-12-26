@@ -24,8 +24,11 @@ const AddProductModal: React.FC<Props> = ({
 
   const isLoading = isCreating || isUpdating;
 
-  const { data: categories } = useGetCategoriesQuery();
-  const { data: oems } = useGetOEMsQuery();
+  const { data: categoriesResponse } = useGetCategoriesQuery();
+  const { data: oemsResponse } = useGetOEMsQuery();
+  
+  const categories = categoriesResponse?.data || [];
+  const oems = oemsResponse?.data || [];
 
   useEffect(() => {
     if (initialValues) {

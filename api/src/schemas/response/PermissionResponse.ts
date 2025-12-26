@@ -10,7 +10,7 @@ export interface PermissionResponse {
 }
 
 export interface PermissionListResponse {
-  items: PermissionResponse[];
+  data: PermissionResponse[];
   pagination: {
     page: number;
     limit: number;

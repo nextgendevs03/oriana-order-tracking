@@ -32,11 +32,11 @@ export class RoleService implements IRoleService {
   }
 
   async getAllRoles(params: ListRoleRequest): Promise<RoleListResponse> {
-    const { page = 1, limit = 10 } = params;
+    const { page = 1, limit = 20 } = params;
     const { rows, count } = await this.repo.findAll(params);
 
     return {
-      items: rows,
+      data: rows,
       pagination: {
         page,
         limit,

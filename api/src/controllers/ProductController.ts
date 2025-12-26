@@ -52,19 +52,27 @@ export class ProductController implements IProductController {
   // GET ALL
   @Get('/')
   async getAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
     @Query('name') name?: string,
     @Query('isActive') isActive?: string,
     @Query('categoryId') categoryId?: string,
     @Query('oemId') oemId?: string
   ): Promise<APIGatewayProxyResult> {
     try {
-      const products = await this.productService.getAllProducts({
+      const result = await this.productService.getAllProducts({
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+        sortBy: sortBy || 'createdAt',
+        sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
         name: name || undefined,
         isActive: isActive ? isActive === 'true' : undefined,
         categoryId: categoryId || undefined,
         oemId: oemId || undefined,
       });
-      return createSuccessResponse(products);
+      return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error fetching products');
       return createErrorResponse(error);

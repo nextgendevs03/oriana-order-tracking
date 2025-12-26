@@ -32,18 +32,27 @@ export class RoleRepository implements IRoleRepository {
   }
 
   async findAll(params: ListRoleRequest): Promise<{ rows: Role[]; count: number }> {
-    const { page = 1, limit = 10, isActive } = params;
+    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'DESC', isActive } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.RoleWhereInput = {};
     if (isActive !== undefined) where.isActive = isActive;
+
+    const orderBy: Prisma.RoleOrderByWithRelationInput = {};
+    if (sortBy === 'createdAt') {
+      orderBy.createdAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'roleName') {
+      orderBy.roleName = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'updatedAt') {
+      orderBy.updatedAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    }
 
     const [rows, count] = await this.prisma.$transaction([
       this.prisma.role.findMany({
         where,
         take: limit,
         skip,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.role.count({ where }),
     ]);

@@ -100,7 +100,7 @@ export class POService implements IPOService {
     const { rows, count } = await this.poRepository.findAll(params);
 
     return {
-      items: rows.map((po) => this.mapToResponse(po)),
+      data: rows.map((po) => this.mapToResponse(po)),
       pagination: {
         page,
         limit,

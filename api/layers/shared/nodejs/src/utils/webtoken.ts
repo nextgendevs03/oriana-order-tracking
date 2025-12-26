@@ -24,10 +24,10 @@ export const initializeJwtSecrets = initSecrets;
 
 /**
  * Get access token expiry from environment variable.
- * Defaults to 15m if not set.
+ * Defaults to 45m if not set.
  */
 const getAccessTokenExpiry = (): string => {
-  return process.env.JWT_EXPIRES_IN || '15m';
+  return process.env.JWT_EXPIRES_IN || '45m';
 };
 
 /**

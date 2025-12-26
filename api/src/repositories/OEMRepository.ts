@@ -1,11 +1,11 @@
 import { injectable, inject } from 'inversify';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { TYPES } from '../types/types';
-import { CreateOEMRequest, UpdateOEMRequest } from '../schemas/request/OEMRequest';
+import { CreateOEMRequest, UpdateOEMRequest, ListOEMRequest } from '../schemas/request/OEMRequest';
 import { OEMResponse } from '../schemas/response/OEMResponse';
 
 export interface IOEMRepository {
-  findAll(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]>;
+  findAll(params?: ListOEMRequest): Promise<{ rows: OEMResponse[]; count: number }>;
   findById(id: string): Promise<OEMResponse | null>;
   create(data: CreateOEMRequest): Promise<OEMResponse>;
   update(id: string, data: UpdateOEMRequest): Promise<OEMResponse>;
@@ -16,33 +16,61 @@ export interface IOEMRepository {
 export class OEMRepository implements IOEMRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
-  async findAll(filters?: { oemName?: string; isActive?: boolean }): Promise<OEMResponse[]> {
+  async findAll(params?: ListOEMRequest): Promise<{ rows: OEMResponse[]; count: number }> {
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      oemName,
+      isActive,
+    } = params || {};
+    const skip = (page - 1) * limit;
+
     const where: Prisma.OEMWhereInput = {};
 
-    if (filters?.oemName) {
+    if (oemName) {
       where.oemName = {
-        contains: filters.oemName,
+        contains: oemName,
         mode: 'insensitive',
       };
     }
 
-    if (filters?.isActive !== undefined) {
-      where.isActive = filters.isActive;
+    if (isActive !== undefined) {
+      where.isActive = isActive;
     }
 
-    const oems = await this.prisma.oEM.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
-    return oems.map((oem) => ({
-      oemId: oem.oemId,
-      name: oem.oemName,
-      isActive: oem.isActive,
-      createdAt: oem.createdAt,
-      updatedAt: oem.updatedAt,
-      createdBy: oem.createdBy,
-      updatedBy: oem.updatedBy,
-    }));
+    const orderBy: Prisma.OEMOrderByWithRelationInput = {};
+    if (sortBy === 'createdAt') {
+      orderBy.createdAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'oemName' || sortBy === 'name') {
+      orderBy.oemName = sortOrder === 'ASC' ? 'asc' : 'desc';
+    } else if (sortBy === 'updatedAt') {
+      orderBy.updatedAt = sortOrder === 'ASC' ? 'asc' : 'desc';
+    }
+
+    const [rows, count] = await this.prisma.$transaction([
+      this.prisma.oEM.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy,
+      }),
+      this.prisma.oEM.count({ where }),
+    ]);
+
+    return {
+      rows: rows.map((oem) => ({
+        oemId: oem.oemId,
+        name: oem.oemName,
+        isActive: oem.isActive,
+        createdAt: oem.createdAt,
+        updatedAt: oem.updatedAt,
+        createdBy: oem.createdBy,
+        updatedBy: oem.updatedBy,
+      })),
+      count,
+    };
   }
 
   async findById(id: string): Promise<OEMResponse | null> {

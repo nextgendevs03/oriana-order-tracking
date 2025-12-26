@@ -9,6 +9,8 @@ import {
   Button,
   Popconfirm,
   Space,
+  Spin,
+  Alert,
 } from "antd";
 import {
   PlusOutlined,
@@ -24,6 +26,7 @@ import { motion } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { colors, shadows } from "../styles/theme";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { useGetPOByIdQuery } from "../store/api/poApi";
 import {
   deleteDispatchDetail,
   deletePreCommissioning,
@@ -33,6 +36,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type {
   POItem,
+  POData,
   DispatchDetail,
   PreCommissioning,
 } from "../store/poSlice";
@@ -49,7 +53,6 @@ import ServiceDetailsModal, {
   ServiceDetailsTab,
 } from "../Components/POManagement/ServiceDetailsModal";
 import {
-  selectPOList,
   selectDispatchDetails,
   selectPreCommissioningDetails,
   selectDispatchStatusInfo,
@@ -110,13 +113,61 @@ const PODetails: React.FC = () => {
   const [serviceDetailsTab, setServiceDetailsTab] =
     useState<ServiceDetailsTab>("precommissioning");
 
-  // Fetch PO from poList using poId from route params
-  const poList = useAppSelector(selectPOList);
+  // Fetch PO from API using poId from route params
+  const {
+    data: poResponse,
+    isLoading: isPOLoading,
+    isError: isPOError,
+    error: poError,
+  } = useGetPOByIdQuery(poId || "", {
+    skip: !poId, // Skip if poId is not available
+  });
+
   const dispatchDetails = useAppSelector(selectDispatchDetails);
   const preCommissioningDetails = useAppSelector(selectPreCommissioningDetails);
 
-  // Find the PO by ID
-  const selectedPO = poList.find((po) => po.id === poId);
+  console.log(poResponse);
+  // Map API response to POData format expected by the component
+  const selectedPO: POData | null = useMemo(() => {
+    if (!poResponse) return null;
+
+    return {
+      id: poResponse.poId,
+      date: poResponse.poReceivedDate,
+      clientName: poResponse.clientName || "",
+      osgPiNo: poResponse.osgPiNo,
+      osgPiDate: poResponse.osgPiDate,
+      clientPoNo: poResponse.clientPoNo,
+      clientPoDate: poResponse.clientPoDate,
+      poStatus: poResponse.poStatus,
+      noOfDispatch: poResponse.noOfDispatch,
+      assignDispatchTo: 0, // Not used in this component anymore
+      clientAddress: poResponse.clientAddress,
+      clientContact: poResponse.clientContact,
+      poItems: poResponse.poItems.map(
+        (item): POItem => ({
+          category: item.categoryName || "",
+          oemName: item.oemName || "",
+          product: item.productName || "",
+          quantity: item.quantity,
+          spareQuantity: item.spareQuantity,
+          totalQuantity: item.totalQuantity,
+          pricePerUnit: item.pricePerUnit,
+          totalPrice: item.totalPrice,
+          gstPercent: item.gstPercent,
+          finalPrice: item.finalPrice,
+          warranty: item.warranty,
+        })
+      ),
+      dispatchPlanDate: poResponse.dispatchPlanDate,
+      siteLocation: poResponse.siteLocation,
+      oscSupport: poResponse.oscSupport,
+      confirmDateOfDispatch: poResponse.confirmDateOfDispatch,
+      paymentStatus: poResponse.paymentStatus,
+      remarks: poResponse.remarks || "",
+      createdAt: poResponse.createdAt,
+    };
+  }, [poResponse]);
 
   // Filter dispatch details for current PO
   const currentPODispatches = dispatchDetails.filter(
@@ -1155,6 +1206,52 @@ const PODetails: React.FC = () => {
     },
   ];
 
+  // Show loading state
+  if (isPOLoading) {
+    return (
+      <div
+        style={{
+          padding: "1rem",
+          background: "#fff",
+          minHeight: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Spin size="large" tip="Loading PO details..." />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (isPOError) {
+    return (
+      <div
+        style={{
+          padding: "1rem",
+          background: "#fff",
+          minHeight: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Alert
+          message="Error loading PO details"
+          description={
+            poError && typeof poError === "object" && "data" in poError
+              ? (poError.data as any)?.message || "Failed to load PO details"
+              : "Failed to load PO details. Please try again."
+          }
+          type="error"
+          showIcon
+        />
+      </div>
+    );
+  }
+
+  // Show empty state if PO not found
   if (!selectedPO) {
     return (
       <div
@@ -1220,7 +1317,8 @@ const PODetails: React.FC = () => {
                   margin: 0,
                   fontSize: "1.5rem",
                   fontWeight: 700,
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   letterSpacing: "-0.02em",
@@ -1230,7 +1328,8 @@ const PODetails: React.FC = () => {
               </h2>
               <span
                 style={{
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                   color: "#fff",
                   padding: "4px 12px",
                   borderRadius: 8,

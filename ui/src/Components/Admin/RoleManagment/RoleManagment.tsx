@@ -11,13 +11,18 @@ import { openModal, openModalForEdit } from "../../../store/roleSlice";
 import AddRoleModal from "./AddRoleModal";
 import {
   useGetAllRolesQuery,
-  useDeleteRoleMutation
+  useDeleteRoleMutation,
 } from "../../../store/api/roleApi";
 import { RoleResponse } from "@OrianaTypes";
 
 const RoleManagement: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { data, isLoading } = useGetAllRolesQuery({ page: 1, limit: 20 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const { data, isLoading } = useGetAllRolesQuery({
+    page: currentPage,
+    limit: pageSize,
+  });
   const [deleteRole] = useDeleteRoleMutation();
   const [searchText, setSearchText] = useState("");
   const [isButtonHovered, setIsButtonHovered] = useState(false);
@@ -31,7 +36,7 @@ const RoleManagement: React.FC = () => {
     await deleteRole(id);
   };
 
-  const filteredRoles = data?.items.filter((r) =>
+  const filteredRoles = data?.data.filter((r) =>
     r.roleName.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -54,13 +59,6 @@ const RoleManagement: React.FC = () => {
       dataIndex: "permissions",
       render: (_: any, record: RoleResponse) => (
         <Tag color="blue">{record.permissions?.length || 0}</Tag>
-      ),
-    },
-    {
-      title: "Users",
-      dataIndex: "users",
-      render: (_: any, record: RoleResponse) => (
-        <Tag color="green">{record.users?.length || 0}</Tag>
       ),
     },
     {
@@ -122,10 +120,23 @@ const RoleManagement: React.FC = () => {
               <LockOutlined style={{ fontSize: 24, color: "#fff" }} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: "#92400e" }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontWeight: 700,
+                  fontSize: "1.4rem",
+                  color: "#92400e",
+                }}
+              >
                 Role Management
               </h2>
-              <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: "#a16207" }}>
+              <p
+                style={{
+                  margin: "0.2rem 0 0 0",
+                  fontSize: "0.85rem",
+                  color: "#a16207",
+                }}
+              >
                 Define roles and assign permissions
               </p>
             </div>
@@ -164,13 +175,23 @@ const RoleManagement: React.FC = () => {
           allowClear
           onChange={(e) => setSearchText(e.target.value)}
         />
-      <Table
-        columns={columns}
-        dataSource={filteredRoles}
-        rowKey="roleId"
-        loading={isLoading}
-        pagination={{ pageSize: 10 }}
-      />
+        <Table
+          columns={columns}
+          dataSource={filteredRoles}
+          rowKey="roleId"
+          loading={isLoading}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: data?.pagination?.total || 0,
+            showSizeChanger: false,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} roles`,
+            onChange: (page) => {
+              setCurrentPage(page);
+            },
+          }}
+        />
         <AddRoleModal />
       </Card>
     </div>
