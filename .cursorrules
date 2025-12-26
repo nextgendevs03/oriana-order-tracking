@@ -1,0 +1,314 @@
+# Project Rules for Cursor AI - Oriana Order Tracking
+
+## Project Overview
+
+This is a full-stack order tracking application built with:
+- **Frontend**: React 18 + TypeScript + Redux Toolkit + RTK Query + Ant Design
+- **Backend**: Node.js + TypeScript + Prisma ORM + Express + Inversify DI
+- **Database**: PostgreSQL
+- **Architecture**: Monorepo with separate `ui/` and `api/` directories
+
+## Code Style Guidelines
+
+### TypeScript
+- Use TypeScript strict mode
+- Always define proper types and interfaces
+- Use `@OrianaTypes` for shared types when available
+- Avoid `any` type - use `unknown` or proper types instead
+- Use type guards for runtime type checking
+
+### React/Frontend
+- Use functional components with hooks
+- Prefer named exports over default exports
+- Use `useAppSelector` and `useAppDispatch` from `store/hooks.ts`
+- Always handle loading and error states
+- Use Ant Design components consistently
+- Implement proper TypeScript types for all props
+
+### Backend
+- Follow Controller-Service-Repository (CSR) pattern
+- Use Inversify for dependency injection
+- Use Prisma for database operations
+- Always validate request data
+- Return proper error responses with status codes
+- Use async/await instead of promises
+
+### General
+- Follow ESLint and Prettier configurations
+- Use async/await instead of promises
+- Always handle errors with try-catch blocks
+- Add proper error messages and logging
+- Use meaningful variable and function names
+
+## Architecture Patterns
+
+### Frontend Architecture
+- **State Management**: Redux Toolkit with RTK Query
+- **API Calls**: Use RTK Query hooks (useGetXQuery, useCreateXMutation, etc.)
+- **Components**: Functional components in `src/Components/`
+- **Pages**: Page components in `src/pages/`
+- **Store**: Redux store in `src/store/`
+  - API definitions in `src/store/api/`
+  - Slices in `src/store/` (e.g., `userSlice.ts`, `poSlice.ts`)
+- **Services**: Business logic services in `src/services/`
+- **Hooks**: Custom hooks in `src/hooks/`
+- **Types**: TypeScript types in `src/types/` or `@OrianaTypes`
+
+### Backend Architecture
+- **Controllers**: Route handlers in `src/controllers/`
+- **Services**: Business logic in `src/services/`
+- **Repositories**: Data access layer in `src/repositories/`
+- **Schemas**: Request/Response schemas in `src/schemas/`
+  - Request schemas in `src/schemas/request/`
+  - Response schemas in `src/schemas/response/`
+- **Middleware**: Express middleware in `src/middleware/`
+- **Types**: TypeScript types in `src/types/`
+
+### API Response Standardization
+
+**All `getAll` APIs MUST return:**
+```typescript
+{
+  data: T[],  // Array of items (NOT 'items')
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }
+}
+```
+
+**Request Parameters for `getAll` APIs:**
+```typescript
+{
+  page?: number;        // Default: 1
+  limit?: number;       // Default: 20
+  sortBy?: string;      // Field to sort by
+  sortOrder?: 'ASC' | 'DESC';  // Default: 'DESC'
+  // ... other filters
+}
+```
+
+## Naming Conventions
+
+### Frontend
+- **Components**: PascalCase (e.g., `UserManagement.tsx`, `Dashboard.tsx`)
+- **Files**: PascalCase for components, camelCase for utilities
+- **Functions**: camelCase (e.g., `handleSubmit`, `fetchData`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `API_BASE_URL`)
+- **Types/Interfaces**: PascalCase (e.g., `UserResponse`, `PORecord`)
+- **Hooks**: camelCase starting with "use" (e.g., `useToast`, `useAuth`)
+
+### Backend
+- **Controllers**: PascalCase (e.g., `UserController.ts`)
+- **Services**: PascalCase (e.g., `UserService.ts`)
+- **Repositories**: PascalCase (e.g., `UserRepository.ts`)
+- **Interfaces**: PascalCase with "I" prefix (e.g., `IUserRepository`)
+- **Functions**: camelCase
+- **Constants**: UPPER_SNAKE_CASE
+
+## File Structure
+
+### Frontend (`ui/`)
+```
+src/
+├── Components/          # Reusable components
+│   ├── UserManagment/
+│   ├── Admin/
+│   │   ├── RoleManagment/
+│   │   └── PermissionManagment/
+│   └── ProductManagment/
+├── pages/              # Page components
+├── store/              # Redux store
+│   ├── api/            # RTK Query APIs
+│   │   ├── baseApi.ts
+│   │   ├── userApi.ts
+│   │   ├── poApi.ts
+│   │   └── ...
+│   └── slices/         # Redux slices (if any)
+├── services/           # Business logic services
+├── hooks/              # Custom React hooks
+├── types/              # TypeScript types
+└── styles/             # Global styles
+```
+
+### Backend (`api/`)
+```
+src/
+├── controllers/        # Route handlers
+├── services/           # Business logic
+├── repositories/       # Data access layer
+├── schemas/            # Request/Response schemas
+│   ├── request/
+│   └── response/
+├── middleware/         # Express middleware
+└── types/             # TypeScript types
+```
+
+## Important Patterns
+
+### RTK Query Pattern
+- Use `createApi` with `fetchBaseQuery` in `baseApi.ts`
+- Use `injectEndpoints` for feature-specific APIs
+- Always use `transformResponse` to standardize responses
+- Use `providesTags` and `invalidatesTags` for cache management
+- Export hooks: `useGetXQuery`, `useCreateXMutation`, etc.
+
+### Pagination Pattern
+- Always implement server-side pagination
+- Default page limit: 20
+- Use `currentPage` and `pageSize` state in components
+- Pass pagination params to API hooks
+- Update table pagination with API response data
+
+### Error Handling Pattern
+- Global error handling in `baseApi.ts`
+- 401 errors should redirect to login page
+- Show toast notifications for errors (when toast service is implemented)
+- Always handle loading and error states in components
+- Use try-catch blocks in async functions
+
+### Form Handling Pattern
+- Use Ant Design Form components
+- Set default values properly (especially for toggles/switches)
+- Validate all inputs
+- Show loading state during submission
+- Display success/error messages
+
+### API Integration Pattern
+When integrating a new API:
+1. Add endpoint to appropriate API file in `store/api/`
+2. Use `builder.query` for GET requests
+3. Use `builder.mutation` for POST/PUT/DELETE
+4. Add proper TypeScript types
+5. Use `transformResponse` to map to standardized format
+6. Export hook (e.g., `useGetItemsQuery`)
+7. Use hook in component with loading/error handling
+
+### Component Pattern
+When creating a new component:
+1. Create component file in appropriate directory
+2. Use Ant Design components
+3. Implement loading and error states
+4. Use typed hooks from store (`useAppSelector`, `useAppDispatch`)
+5. Follow existing component patterns
+6. Add proper TypeScript types for props
+7. Handle edge cases (empty data, errors, etc.)
+
+## Database Patterns
+
+### Prisma Schema
+- Use `@id @default(uuid())` for primary keys
+- Use `@map` for database column names (snake_case)
+- Use `@relation` for foreign keys
+- Add `@@index` for frequently queried fields
+- Use `@default(now())` for timestamps
+
+### Repository Pattern
+- Return standardized response types
+- Handle Prisma errors properly
+- Use transactions for multiple operations
+- Include relations when needed
+- Map Prisma models to response types
+
+### Service Pattern
+- Business logic goes in services
+- Services call repositories
+- Handle validation and error cases
+- Return standardized response types
+- Use dependency injection (Inversify)
+
+## Common Tasks
+
+### Adding a New API Endpoint
+1. Add endpoint to appropriate API file in `store/api/`
+2. Use `builder.query` or `builder.mutation`
+3. Add proper TypeScript types
+4. Use `transformResponse` if needed
+5. Export hook (e.g., `useGetItemsQuery`)
+6. Update response schema in backend if needed
+
+### Adding a New Component
+1. Create component file in appropriate directory
+2. Use Ant Design components
+3. Implement loading and error states
+4. Use typed hooks from store
+5. Follow existing component patterns
+6. Add proper TypeScript types
+
+### Database Changes
+1. Update Prisma schema in `api/layers/shared/nodejs/prisma/schema.prisma`
+2. Run migration: `cd api/layers/shared/nodejs && npx prisma migrate dev`
+3. Regenerate Prisma client: `cd api/layers/shared/nodejs && npx prisma generate`
+4. Update related repositories and services
+5. Update response schemas if needed
+
+### Adding Pagination
+1. Update request schema to include `page`, `limit`, `sortBy`, `sortOrder`
+2. Update repository to handle pagination params
+3. Update service to return pagination metadata
+4. Update controller to accept query params
+5. Update frontend API to pass pagination params
+6. Update component to use pagination state
+
+## Testing
+
+- Write unit tests for services
+- Test API endpoints
+- Test component rendering
+- Use proper TypeScript types in tests
+- Test error scenarios
+- Test edge cases (empty data, null values, etc.)
+
+## Security
+
+- Never commit API keys or secrets
+- Always validate user input
+- Use JWT tokens for authentication
+- Implement proper authorization checks
+- Sanitize user inputs
+- Use parameterized queries (Prisma handles this)
+
+## Performance
+
+- Implement server-side pagination for large datasets
+- Use RTK Query caching effectively
+- Limit context length for API calls
+- Optimize database queries
+- Use indexes for frequently queried fields
+- Implement proper loading states
+
+## Code Quality
+
+- Follow existing code patterns
+- Maintain consistency across the codebase
+- Add comments for complex logic
+- Use meaningful variable names
+- Keep functions focused and small
+- Avoid code duplication
+
+## When Making Changes
+
+1. **Always check existing patterns** - Look at similar implementations
+2. **Maintain consistency** - Follow existing code style
+3. **Update related files** - If changing an API, update frontend and backend
+4. **Test thoroughly** - Test all scenarios including edge cases
+5. **Handle errors** - Always implement proper error handling
+6. **Type everything** - Use proper TypeScript types
+7. **Follow standards** - Use standardized response formats
+8. **Document changes** - Add comments for complex logic
+
+## Red Flags to Avoid
+
+- ❌ Using `items` instead of `data` in API responses
+- ❌ Using `meta` instead of `pagination` in responses
+- ❌ Not handling loading/error states
+- ❌ Using `any` type
+- ❌ Not implementing server-side pagination
+- ❌ Hardcoding values that should be configurable
+- ❌ Not following existing patterns
+- ❌ Missing TypeScript types
+- ❌ Not handling edge cases
+- ❌ Breaking existing functionality
+
