@@ -20,13 +20,15 @@ interface ApiResponse<T> {
 
 export const permissionApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getPermissions: builder.query<PermissionListResponse, { page?: number; limit?: number; isActive?: boolean } | void>({
+    getPermissions: builder.query<PermissionListResponse, { page?: number; limit?: number; isActive?: boolean; searchKey?: string; searchTerm?: string } | void>({
       query: (params) => {
         const queryParams = new URLSearchParams();
         if (params) {
           if (params.page) queryParams.append("page", String(params.page));
           if (params.limit) queryParams.append("limit", String(params.limit));
           if (params.isActive !== undefined) queryParams.append("isActive", String(params.isActive));
+          if (params.searchKey) queryParams.append("searchKey", params.searchKey);
+          if (params.searchTerm) queryParams.append("searchTerm", params.searchTerm);
         }
         const queryString = queryParams.toString();
         return `/permission${queryString ? `?${queryString}` : ""}`;

@@ -3,9 +3,9 @@ import { Modal, Form, Input, Select, Button, message } from "antd";
 import {
   useCreateProductMutation,
   useUpdateProductMutation,
-} from "../../../store/api/productApi";
-import { useGetCategoriesQuery } from "../../../store/api/categoryApi";
-import { useGetOEMsQuery } from "../../../store/api/oemApi";
+} from "../../../../store/api/productApi";
+import { useGetCategoriesQuery } from "../../../../store/api/categoryApi";
+import { useGetOEMsQuery } from "../../../../store/api/oemApi";
 
 interface Props {
   open: boolean;

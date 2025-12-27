@@ -3,8 +3,8 @@ import { Modal, Form, Input, Select, Switch, message } from "antd";
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
-} from "../../store/api/userApi";
-import { useGetAllRolesQuery } from "../../store/api/roleApi";
+} from "../../../store/api/userApi";
+import { useGetAllRolesQuery } from "../../../store/api/roleApi";
 import {
   CreateUserRequest,
   UpdateUserRequest,

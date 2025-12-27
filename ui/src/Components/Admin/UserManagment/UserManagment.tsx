@@ -16,7 +16,7 @@ import {
   useGetUsersQuery,
   useDeleteUserMutation,
   useUpdateUserMutation,
-} from "../../store/api/userApi";
+} from "../../../store/api/userApi";
 import { UserResponse } from "@OrianaTypes";
 
 const { Search } = Input;
@@ -25,7 +25,6 @@ const { Option } = Select;
 const UserManagement = () => {
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [openModal, setOpenModal] = useState(false);
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
 
@@ -271,10 +270,8 @@ const UserManagement = () => {
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleAddUser}
-          onMouseEnter={() => setIsButtonHovered(true)}
-          onMouseLeave={() => setIsButtonHovered(false)}
           style={{
-            background: isButtonHovered ? "#be123c" : "#e11d48",
+            background: "#e11d48",
             border: "none",
             borderRadius: 8,
             fontWeight: 600,
@@ -282,10 +279,7 @@ const UserManagement = () => {
             padding: "0 20px",
             position: "relative",
             zIndex: 1,
-            boxShadow: isButtonHovered
-              ? "0 6px 20px rgba(225, 29, 72, 0.4)"
-              : "0 2px 8px rgba(225, 29, 72, 0.25)",
-            transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
+            boxShadow: "0 2px 8px rgba(225, 29, 72, 0.25)",
             transition: "all 0.3s ease",
           }}
         >

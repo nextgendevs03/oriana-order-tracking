@@ -10,10 +10,8 @@ export interface UpdateRoleRequest {
   isActive?: boolean;
 }
 
-export interface ListRoleRequest {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListRoleRequest extends BaseListRequest {
   isActive?: boolean;
 }

@@ -12,8 +12,8 @@ export interface UpdatePermissionRequest {
   isActive?: boolean;
 }
 
-export interface ListPermissionRequest {
-  page?: number;
-  limit?: number;
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListPermissionRequest extends BaseListRequest {
   isActive?: boolean;
 }

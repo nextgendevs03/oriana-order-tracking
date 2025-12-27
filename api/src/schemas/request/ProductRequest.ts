@@ -14,12 +14,9 @@ export interface UpdateProductRequest {
   updatedBy?: string;
 }
 
-export interface ListProductRequest {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  name?: string;
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListProductRequest extends BaseListRequest {
   isActive?: boolean;
   categoryId?: string;
   oemId?: string;

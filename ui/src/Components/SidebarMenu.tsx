@@ -9,6 +9,7 @@ import {
   SafetyCertificateOutlined,
   KeyOutlined,
   BarChartOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MenuProps } from "antd";
@@ -31,6 +32,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
     if (path === "/role-management") return "2-2";
     if (path === "/permissions") return "2-3";
     if (path.includes("/product-management")) return "2-4";
+    if (path === "/client-management") return "2-5";
     if (path === "/profile") return "3";
     return "1";
   };
@@ -54,6 +56,9 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
         break;
       case "2-4":
         navigate("/product-management");
+        break;
+      case "2-5":
+        navigate("/client-management");
         break;
       case "3":
         navigate("/profile");
@@ -84,8 +89,13 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
       children: [
         { key: "2-1", label: "User Management", icon: <UserAddOutlined /> },
         { key: "2-2", label: "Role Management", icon: <KeyOutlined /> },
-        { key: "2-3", label: "Permissions", icon: <SafetyCertificateOutlined /> },
+        {
+          key: "2-3",
+          label: "Permissions",
+          icon: <SafetyCertificateOutlined />,
+        },
         { key: "2-4", label: "Product Management", icon: <AppstoreOutlined /> },
+        { key: "2-5", label: "Client Management", icon: <TeamOutlined /> },
       ],
     },
     {

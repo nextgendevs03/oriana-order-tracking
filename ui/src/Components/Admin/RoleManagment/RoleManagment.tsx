@@ -25,7 +25,6 @@ const RoleManagement: React.FC = () => {
   });
   const [deleteRole] = useDeleteRoleMutation();
   const [searchText, setSearchText] = useState("");
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   const openAdd = () => dispatch(openModal());
   const openEdit = (role: RoleResponse) => {
@@ -145,21 +144,14 @@ const RoleManagement: React.FC = () => {
             type="primary"
             icon={<PlusOutlined />}
             onClick={openAdd}
-            onMouseEnter={() => setIsButtonHovered(true)}
-            onMouseLeave={() => setIsButtonHovered(false)}
             style={{
-              background: isButtonHovered
-                ? "linear-gradient(135deg, #d97706, #b45309)"
-                : "linear-gradient(135deg, #f59e0b, #d97706)",
+              background: "linear-gradient(135deg, #f59e0b, #d97706)",
               border: "none",
               borderRadius: 8,
               fontWeight: 600,
               height: 40,
               padding: "0 20px",
-              boxShadow: isButtonHovered
-                ? "0 6px 20px rgba(245, 158, 11, 0.45)"
-                : "0 2px 8px rgba(245, 158, 11, 0.25)",
-              transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
+              boxShadow: "0 2px 8px rgba(245, 158, 11, 0.25)",
               transition: "all 0.3s ease",
             }}
           >

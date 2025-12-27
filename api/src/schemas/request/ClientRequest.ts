@@ -1,20 +1,23 @@
 export interface CreateClientRequest {
   clientName: string;
+  clientAddress?: string;
+  clientContact?: string;
+  clientGST?: string;
   isActive: boolean;
   createdBy: string;
 }
 
 export interface UpdateClientRequest {
   clientName?: string;
+  clientAddress?: string;
+  clientContact?: string;
+  clientGST?: string;
   isActive?: boolean;
   updatedBy: string;
 }
 
-export interface ListClientRequest {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  clientName?: string;
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListClientRequest extends BaseListRequest {
   isActive?: boolean;
 }

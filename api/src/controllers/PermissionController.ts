@@ -35,12 +35,16 @@ export class PermissionController {
   async getAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('isActive') isActive?: string
+    @Query('isActive') isActive?: string,
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ): Promise<APIGatewayProxyResult> {
     const result = await this.permissionService.getAllPermissions({
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10,
       isActive: isActive ? isActive === 'true' : undefined,
+      searchKey: searchKey || undefined,
+      searchTerm: searchTerm || undefined,
     });
     return createSuccessResponse(result.data, 200, result.pagination);
   }

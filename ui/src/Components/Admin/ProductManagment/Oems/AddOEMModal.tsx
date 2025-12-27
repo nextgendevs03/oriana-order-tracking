@@ -3,7 +3,7 @@ import { Modal, Form, Input, Select, Button } from "antd";
 import {
   useCreateOEMMutation,
   useUpdateOEMMutation,
-} from "../../../store/api/oemApi";
+} from "../../../../store/api/oemApi";
 
 interface Props {
   open: boolean;

@@ -219,6 +219,9 @@ model Product {
 model Client {
   clientId       String          @id @default(uuid()) @map("client_id")
   clientName     String          @map("client_name") @db.VarChar(255)
+  clientAddress  String?         @map("client_address")
+  clientContact  String?         @map("client_contact") @db.VarChar(100)
+  clientGST      String?         @map("client_gst") @db.VarChar(50)
   isActive       Boolean         @default(true) @map("is_active")
   createdBy      String          @map("created_by") @db.VarChar(100)
   updatedBy      String          @map("updated_by") @db.VarChar(100)

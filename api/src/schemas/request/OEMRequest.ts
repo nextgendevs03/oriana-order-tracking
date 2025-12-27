@@ -10,11 +10,8 @@ export interface UpdateOEMRequest {
   updatedBy?: string;
 }
 
-export interface ListOEMRequest {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  oemName?: string;
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListOEMRequest extends BaseListRequest {
   isActive?: boolean;
 }

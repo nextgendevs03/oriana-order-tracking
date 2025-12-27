@@ -249,7 +249,7 @@ const Dashboard: React.FC = () => {
                 boxShadow: "0 4px 16px rgba(113, 162, 65, 0.35)",
               }}
             >
-              Create PO
+              Create Order
             </Button>
           </motion.div>
         </Card>

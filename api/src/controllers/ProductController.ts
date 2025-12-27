@@ -18,12 +18,7 @@ import { CreateProductRequest, UpdateProductRequest } from '../schemas/request/P
 
 export interface IProductController {
   create(data: CreateProductRequest): Promise<APIGatewayProxyResult>;
-  getAll(
-    name?: string,
-    isActive?: string,
-    categoryId?: string,
-    oemId?: string
-  ): Promise<APIGatewayProxyResult>;
+  getAll(isActive?: string, categoryId?: string, oemId?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateProductRequest): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
@@ -56,10 +51,11 @@ export class ProductController implements IProductController {
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
-    @Query('name') name?: string,
     @Query('isActive') isActive?: string,
     @Query('categoryId') categoryId?: string,
-    @Query('oemId') oemId?: string
+    @Query('oemId') oemId?: string,
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ): Promise<APIGatewayProxyResult> {
     try {
       const result = await this.productService.getAllProducts({
@@ -67,10 +63,11 @@ export class ProductController implements IProductController {
         limit: limit ? parseInt(limit, 10) : 20,
         sortBy: sortBy || 'createdAt',
         sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
-        name: name || undefined,
         isActive: isActive ? isActive === 'true' : undefined,
         categoryId: categoryId || undefined,
         oemId: oemId || undefined,
+        searchKey: searchKey || undefined,
+        searchTerm: searchTerm || undefined,
       });
       return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {

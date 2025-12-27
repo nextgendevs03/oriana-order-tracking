@@ -10,11 +10,8 @@ export interface UpdateCategoryRequest {
   updatedBy: string;
 }
 
-export interface ListCategoryRequest {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-  categoryName?: string;
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListCategoryRequest extends BaseListRequest {
   isActive?: boolean;
 }

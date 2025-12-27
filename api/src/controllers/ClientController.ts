@@ -19,7 +19,7 @@ import { CreateClientRequest, UpdateClientRequest } from '../schemas/request/Cli
 
 export interface IClientController {
   create(data: CreateClientRequest): Promise<APIGatewayProxyResult>;
-  getAll(isActive?: string, clientName?: string): Promise<APIGatewayProxyResult>;
+  getAll(isActive?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateClientRequest): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
@@ -50,7 +50,8 @@ export class ClientController implements IClientController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
     @Query('isActive') isActive?: string,
-    @Query('clientName') clientName?: string
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ) {
     try {
       const result = await this.clientService.getAllClients({
@@ -59,7 +60,8 @@ export class ClientController implements IClientController {
         sortBy: sortBy || 'createdAt',
         sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
         isActive: isActive ? isActive === 'true' : undefined,
-        clientName: clientName || undefined,
+        searchKey: searchKey || undefined,
+        searchTerm: searchTerm || undefined,
       });
       return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {

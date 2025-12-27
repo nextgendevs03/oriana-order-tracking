@@ -43,13 +43,17 @@ export class UserController implements IUserController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
-    @Query('sortOrder') sortOrder?: string
+    @Query('sortOrder') sortOrder?: string,
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ): Promise<APIGatewayProxyResult> {
     const params: ListUserRequest = {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
       sortBy: sortBy || 'createdAt',
       sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
+      searchKey: searchKey || undefined,
+      searchTerm: searchTerm || undefined,
     };
 
     const result = await this.userService.getAllUsers(params);

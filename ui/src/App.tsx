@@ -9,15 +9,16 @@ import CreatePO from "./pages/CreatePO";
 import PODetails from "./pages/PODetails";
 
 // Components
-import UserManagement from "./Components/UserManagment/UserManagment";
+import UserManagement from "./Components/Admin/UserManagment/UserManagment";
 import RoleManagement from "./Components/Admin/RoleManagment/RoleManagment";
 import PermissionsManagement from "./Components/Admin/PermissionManagment/PermissionManagment";
+import ClientManagement from "./Components/Admin/ClientManagment/ClientManagment";
 
 // Product Management Pages
-import ProductManagement from "./Components/ProductManagment/ProductManagment";
-import CategoryManagement from "./Components/ProductManagment/Categories/CategoryManagment";
-import OEMManagement from "Components/ProductManagment/Oems/OEMManagment";
-import ProductsManagmentProduct from "Components/ProductManagment/Products/ProductsManagmentProduct";
+import ProductManagement from "./Components/Admin/ProductManagment/ProductManagment";
+import CategoryManagement from "./Components/Admin/ProductManagment/Categories/CategoryManagment";
+import OEMManagement from "Components/Admin/ProductManagment/Oems/OEMManagment";
+import ProductsManagmentProduct from "Components/Admin/ProductManagment/Products/ProductsManagmentProduct";
 import SummaryDashboard from "pages/SummaryDashboard";
 
 const App: React.FC = () => {
@@ -51,6 +52,9 @@ const App: React.FC = () => {
         </Route>
         <Route path="/permissions" element={<LayoutPage />}>
           <Route index element={<PermissionsManagement />} />
+        </Route>
+        <Route path="/client-management" element={<LayoutPage />}>
+          <Route index element={<ClientManagement />} />
         </Route>
 
         {/* Product Management Routes */}

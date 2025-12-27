@@ -19,7 +19,7 @@ import { CreateCategoryRequest, UpdateCategoryRequest } from '../schemas/request
 
 export interface ICategoryController {
   create(data: CreateCategoryRequest): Promise<APIGatewayProxyResult>;
-  getAll(isActive?: string, categoryName?: string): Promise<APIGatewayProxyResult>;
+  getAll(isActive?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateCategoryRequest): Promise<APIGatewayProxyResult>;
   delete(id: string, data: { updatedBy: string }): Promise<APIGatewayProxyResult>;
@@ -49,17 +49,18 @@ export class CategoryController implements ICategoryController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
     @Query('isActive') isActive?: string,
-    @Query('categoryName') categoryName?: string
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ) {
     try {
-      const trimmedCategoryName = categoryName?.trim();
       const result = await this.categoryService.getAllCategories({
         page: page ? parseInt(page, 10) : 1,
         limit: limit ? parseInt(limit, 10) : 20,
         sortBy: sortBy || 'createdAt',
         sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
         isActive: isActive ? isActive === 'true' : undefined,
-        categoryName: trimmedCategoryName || undefined,
+        searchKey: searchKey || undefined,
+        searchTerm: searchTerm || undefined,
       });
       return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {

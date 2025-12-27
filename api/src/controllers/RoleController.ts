@@ -35,7 +35,9 @@ export class RoleController {
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
-    @Query('isActive') isActive?: string
+    @Query('isActive') isActive?: string,
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ) {
     const result = await this.service.getAllRoles({
       page: page ? parseInt(page, 10) : 1,
@@ -43,6 +45,8 @@ export class RoleController {
       sortBy: sortBy || 'createdAt',
       sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
       isActive: isActive ? isActive === 'true' : undefined,
+      searchKey: searchKey || undefined,
+      searchTerm: searchTerm || undefined,
     });
 
     return createSuccessResponse(result.data, 200, result.pagination);

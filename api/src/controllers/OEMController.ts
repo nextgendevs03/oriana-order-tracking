@@ -18,7 +18,7 @@ import { CreateOEMRequest, UpdateOEMRequest } from '../schemas/request/OEMReques
 
 export interface IOEMController {
   create(data: CreateOEMRequest): Promise<APIGatewayProxyResult>;
-  getAll(oemName?: string, isActive?: string): Promise<APIGatewayProxyResult>;
+  getAll(isActive?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(id: string, data: UpdateOEMRequest): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
@@ -46,8 +46,9 @@ export class OEMController implements IOEMController {
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
-    @Query('oemName') oemName?: string,
-    @Query('isActive') isActive?: string
+    @Query('isActive') isActive?: string,
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ): Promise<APIGatewayProxyResult> {
     try {
       const result = await this.oemService.getAllOEMs({
@@ -55,8 +56,9 @@ export class OEMController implements IOEMController {
         limit: limit ? parseInt(limit, 10) : 20,
         sortBy: sortBy || 'createdAt',
         sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
-        oemName: oemName || undefined,
         isActive: isActive ? isActive === 'true' : undefined,
+        searchKey: searchKey || undefined,
+        searchTerm: searchTerm || undefined,
       });
       return createSuccessResponse(result.data, 200, result.pagination);
     } catch (err: unknown) {

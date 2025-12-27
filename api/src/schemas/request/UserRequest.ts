@@ -20,13 +20,9 @@ export interface UpdateUserRequest extends Partial<CreateUserRequest> {
   updatedBy?: string;
 }
 
-export interface ListUserRequest {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
-  userName?: string;
-  email?: string;
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListUserRequest extends BaseListRequest {
   role?: string;
   status?: string;
 }

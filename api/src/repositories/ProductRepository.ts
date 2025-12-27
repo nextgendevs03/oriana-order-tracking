@@ -8,6 +8,13 @@ import {
 } from '../schemas/request/ProductRequest';
 import { ProductResponse } from 'src/schemas/response/ProductResponse';
 
+// Allowed searchable fields for Product model
+const ALLOWED_SEARCH_FIELDS = ['productName'] as const;
+type AllowedSearchField = (typeof ALLOWED_SEARCH_FIELDS)[number];
+
+// Default search field when searchKey is not provided
+const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'productName';
+
 export interface IProductRepository {
   findAll(params?: ListProductRequest): Promise<{ rows: ProductResponse[]; count: number }>;
   findById(id: string): Promise<ProductResponse | null>;
@@ -20,27 +27,28 @@ export interface IProductRepository {
 export class ProductRepository implements IProductRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
 
+  /**
+   * Validate if the search field is allowed
+   */
+  private isValidSearchField(field: string): field is AllowedSearchField {
+    return ALLOWED_SEARCH_FIELDS.includes(field as AllowedSearchField);
+  }
+
   async findAll(params?: ListProductRequest): Promise<{ rows: ProductResponse[]; count: number }> {
     const {
       page = 1,
       limit = 20,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      name,
       isActive,
       categoryId,
       oemId,
+      searchKey,
+      searchTerm,
     } = params || {};
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProductWhereInput = {};
-
-    if (name) {
-      where.productName = {
-        contains: name,
-        mode: 'insensitive',
-      };
-    }
 
     if (isActive !== undefined) {
       where.isActive = isActive;
@@ -52,6 +60,25 @@ export class ProductRepository implements IProductRepository {
 
     if (oemId) {
       where.oemId = oemId;
+    }
+
+    // Dynamic search implementation with default field
+    if (searchTerm) {
+      // If searchKey is provided, use it; otherwise use default
+      const fieldToSearch = searchKey || DEFAULT_SEARCH_FIELD;
+
+      // Security: Validate searchKey is in allowed list
+      if (!this.isValidSearchField(fieldToSearch)) {
+        throw new Error(
+          `Invalid search field: ${fieldToSearch}. Allowed fields: ${ALLOWED_SEARCH_FIELDS.join(', ')}`
+        );
+      }
+
+      // Build dynamic search condition (case-insensitive)
+      where[fieldToSearch] = {
+        contains: searchTerm,
+        mode: 'insensitive',
+      };
     }
 
     const orderBy: Prisma.ProductOrderByWithRelationInput = {};

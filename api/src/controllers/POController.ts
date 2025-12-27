@@ -52,7 +52,9 @@ export class POController implements IPOController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
     @Query('clientId') clientId?: string,
-    @Query('poStatus') poStatus?: string
+    @Query('poStatus') poStatus?: string,
+    @Query('searchKey') searchKey?: string,
+    @Query('searchTerm') searchTerm?: string
   ): Promise<APIGatewayProxyResult> {
     const params: ListPORequest = {
       page: page ? parseInt(page, 10) : 1,
@@ -61,6 +63,8 @@ export class POController implements IPOController {
       sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
       clientId,
       poStatus,
+      searchKey: searchKey || undefined,
+      searchTerm: searchTerm || undefined,
     };
 
     const result = await this.poService.getAllPOs(params);

@@ -3,7 +3,7 @@ import { Modal, Form, Input, Select, Button, message } from "antd";
 import {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
-} from "../../../store/api/categoryApi";
+} from "../../../../store/api/categoryApi";
 
 interface AddCategoryModalProps {
   open: boolean;

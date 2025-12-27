@@ -6,6 +6,14 @@ import {
   UpdateUserRequest,
   ListUserRequest,
 } from '../schemas/request/UserRequest';
+
+// Allowed searchable fields for User model
+const ALLOWED_SEARCH_FIELDS = ['username', 'email'] as const;
+type AllowedSearchField = (typeof ALLOWED_SEARCH_FIELDS)[number];
+
+// Default search field when searchKey is not provided
+const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'username';
+
 export interface IUserRepository {
   findAll(params?: ListUserRequest): Promise<{ rows: User[]; count: number }>;
   findById(id: string): Promise<User | null>;
@@ -17,6 +25,13 @@ export interface IUserRepository {
 @injectable()
 export class UserRepository implements IUserRepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
+
+  /**
+   * Validate if the search field is allowed
+   */
+  private isValidSearchField(field: string): field is AllowedSearchField {
+    return ALLOWED_SEARCH_FIELDS.includes(field as AllowedSearchField);
+  }
 
   async create(data: CreateUserRequest): Promise<User> {
     const { role, roleId, ...userData } = data;
@@ -89,10 +104,36 @@ export class UserRepository implements IUserRepository {
   }
 
   async findAll(params?: ListUserRequest): Promise<{ rows: User[]; count: number }> {
-    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'DESC' } = params || {};
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      searchKey,
+      searchTerm,
+    } = params || {};
     const skip = (page - 1) * limit;
 
     const where: Prisma.UserWhereInput = {};
+
+    // Dynamic search implementation with default field
+    if (searchTerm) {
+      // If searchKey is provided, use it; otherwise use default
+      const fieldToSearch = searchKey || DEFAULT_SEARCH_FIELD;
+
+      // Security: Validate searchKey is in allowed list
+      if (!this.isValidSearchField(fieldToSearch)) {
+        throw new Error(
+          `Invalid search field: ${fieldToSearch}. Allowed fields: ${ALLOWED_SEARCH_FIELDS.join(', ')}`
+        );
+      }
+
+      // Build dynamic search condition (case-insensitive)
+      where[fieldToSearch] = {
+        contains: searchTerm,
+        mode: 'insensitive',
+      };
+    }
 
     const orderBy: Prisma.UserOrderByWithRelationInput = {};
     if (sortBy === 'createdAt') {

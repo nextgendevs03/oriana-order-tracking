@@ -45,11 +45,9 @@ export interface DeletePORequest {
   poId: string;
 }
 
-export interface ListPORequest {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+import { BaseListRequest } from './BaseListRequest';
+
+export interface ListPORequest extends BaseListRequest {
   clientId?: string;
   poStatus?: string;
 }

@@ -29,7 +29,6 @@ const PermissionsManagement: React.FC = () => {
   const [filterModule, setFilterModule] = useState<string>();
   const [openModal, setOpenModal] = useState(false);
   const [permissionToEdit, setPermissionToEdit] = useState<any>();
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
   const handleDelete = async (id: string) => {
     try {
@@ -144,21 +143,14 @@ const PermissionsManagement: React.FC = () => {
               setPermissionToEdit(undefined);
               setOpenModal(true);
             }}
-            onMouseEnter={() => setIsButtonHovered(true)}
-            onMouseLeave={() => setIsButtonHovered(false)}
             style={{
-              background: isButtonHovered
-                ? "linear-gradient(135deg, #0e7490, #0891b2)"
-                : "linear-gradient(135deg, #0891b2, #06b6d4)",
+              background: "linear-gradient(135deg, #0891b2, #06b6d4)",
               border: "none",
               borderRadius: 8,
               fontWeight: 600,
               height: 40,
               padding: "0 20px",
-              boxShadow: isButtonHovered
-                ? "0 6px 20px rgba(8, 145, 178, 0.45)"
-                : "0 2px 8px rgba(8, 145, 178, 0.25)",
-              transform: isButtonHovered ? "translateY(-2px)" : "translateY(0)",
+              boxShadow: "0 2px 8px rgba(8, 145, 178, 0.25)",
               transition: "all 0.3s ease",
             }}
           >

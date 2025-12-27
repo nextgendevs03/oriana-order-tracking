@@ -19,7 +19,7 @@ import dayjs from "dayjs";
 import { colors, shadows } from "../styles/theme";
 import FileUpload from "../Components/POManagement/FileUpload";
 import POItemsTable from "../Components/POManagement/POItemsTable";
-import AddClientModal from "../Components/POManagement/AddClientModal";
+import AddClientModal from "../Components/Admin/ClientManagment/AddClientModal";
 import { useGetCategoriesQuery } from "../store/api/categoryApi";
 import { useGetOEMsQuery } from "../store/api/oemApi";
 import { useGetClientsQuery } from "../store/api/clientApi";
@@ -89,7 +89,7 @@ const CreatePO: FC = () => {
     isError: clientsError,
     isLoading: isLoadingClients,
   } = useGetClientsQuery(
-    { clientName: debouncedClientSearchTerm, isActive: true },
+    { searchTerm: debouncedClientSearchTerm, isActive: true },
     { skip: !shouldFetchClients }
   );
 

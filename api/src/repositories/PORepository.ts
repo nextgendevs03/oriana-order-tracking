@@ -13,6 +13,13 @@ import {
 import { TYPES } from '../types/types';
 import { CreatePORequest, UpdatePORequest, ListPORequest, POItemRequest } from '../schemas';
 
+// Allowed searchable fields for PO model
+const ALLOWED_SEARCH_FIELDS = ['poId', 'clientPoNo', 'osgPiNo', 'poStatus'] as const;
+type AllowedSearchField = (typeof ALLOWED_SEARCH_FIELDS)[number];
+
+// Default search field when searchKey is not provided
+const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'poId';
+
 // Type for POItem with included relations
 export type POItemWithRelations = POItem & {
   category: Category;
@@ -39,6 +46,13 @@ export interface IPORepository {
 @injectable()
 export class PORepository implements IPORepository {
   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
+
+  /**
+   * Validate if the search field is allowed
+   */
+  private isValidSearchField(field: string): field is AllowedSearchField {
+    return ALLOWED_SEARCH_FIELDS.includes(field as AllowedSearchField);
+  }
 
   /**
    * Generate a unique PO ID in format OSG-XXXXXXXX (8 digits, zero-padded)
@@ -137,6 +151,8 @@ export class PORepository implements IPORepository {
       sortOrder = 'DESC',
       clientId,
       poStatus,
+      searchKey,
+      searchTerm,
     } = params;
 
     const skip = (page - 1) * limit;
@@ -146,8 +162,28 @@ export class PORepository implements IPORepository {
     if (clientId) {
       where.clientId = clientId;
     }
-    if (poStatus) {
+    if (poStatus && !searchTerm) {
+      // Only use poStatus filter if not using dynamic search
       where.poStatus = poStatus;
+    }
+
+    // Dynamic search implementation with default field
+    if (searchTerm) {
+      // If searchKey is provided, use it; otherwise use default
+      const fieldToSearch = searchKey || DEFAULT_SEARCH_FIELD;
+
+      // Security: Validate searchKey is in allowed list
+      if (!this.isValidSearchField(fieldToSearch)) {
+        throw new Error(
+          `Invalid search field: ${fieldToSearch}. Allowed fields: ${ALLOWED_SEARCH_FIELDS.join(', ')}`
+        );
+      }
+
+      // Build dynamic search condition (case-insensitive)
+      where[fieldToSearch] = {
+        contains: searchTerm,
+        mode: 'insensitive',
+      };
     }
 
     // Build orderBy - map field names to Prisma format
