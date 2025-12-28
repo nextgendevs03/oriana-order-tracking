@@ -8,7 +8,6 @@ import {
   Row,
   Col,
   AutoComplete,
-  Spin,
 } from "antd";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -58,6 +57,8 @@ interface POItemFormValues {
 interface ClientOption {
   clientId: string;
   clientName: string;
+  clientAddress?: string | null;
+  clientContact?: string | null;
 }
 
 const CreatePO: FC = () => {
@@ -84,11 +85,7 @@ const CreatePO: FC = () => {
 
   // Fetch clients based on debounced search term (min 3 characters, with automatic retry on failure)
   const shouldFetchClients = debouncedClientSearchTerm.length >= 3;
-  const {
-    data: clientsResponse,
-    isError: clientsError,
-    isLoading: isLoadingClients,
-  } = useGetClientsQuery(
+  const { data: clientsResponse, isError: clientsError } = useGetClientsQuery(
     { searchTerm: debouncedClientSearchTerm, isActive: true },
     { skip: !shouldFetchClients }
   );
@@ -160,18 +157,30 @@ const CreatePO: FC = () => {
       value: client.clientName, // Display value in input
       label: client.clientName,
       clientId: client.clientId, // Store clientId for form submission
+      clientAddress: client.clientAddress, // Store address for auto-population
+      clientContact: client.clientContact, // Store contact for auto-population
     }));
   }, [clientsData, clientsError, shouldFetchClients]);
 
   // Handle client selection from autocomplete
   const handleClientSelect = (value: string, option: any) => {
-    // Store the selected client's ID
+    // Store the selected client's ID and details
     setSelectedClient({
       clientId: option.clientId,
       clientName: value,
+      clientAddress: option.clientAddress,
+      clientContact: option.clientContact,
     });
     // Set the hidden clientId field
     form.setFieldValue("clientId", option.clientId);
+
+    // Auto-populate client address and contact if available
+    if (option.clientAddress) {
+      form.setFieldValue("clientAddress", option.clientAddress);
+    }
+    if (option.clientContact) {
+      form.setFieldValue("clientContact", option.clientContact);
+    }
   };
 
   // Handle successful client creation
@@ -410,41 +419,49 @@ const CreatePO: FC = () => {
               label="Client Name"
               rules={textFieldRulesWithMinLength}
             >
-              <Spin spinning={isLoadingClients && shouldFetchClients}>
-                <AutoComplete
-                  options={clientOptions}
-                  onSearch={(value) => {
-                    setClientSearchTerm(value);
-                    // Clear clientId if user is typing (not selecting)
-                    if (selectedClient?.clientName !== value) {
-                      form.setFieldValue("clientId", undefined);
-                      setSelectedClient(null);
-                    }
-                  }}
-                  onSelect={handleClientSelect}
-                  placeholder="Enter client name (min 3 characters)"
-                  filterOption={false}
-                  notFoundContent={
-                    isLoadingClients && shouldFetchClients ? (
-                      "Loading clients..."
-                    ) : shouldFetchClients &&
-                      clientsData.length === 0 &&
-                      !clientsError ? (
+              <AutoComplete
+                options={clientOptions}
+                onSearch={(value) => {
+                  setClientSearchTerm(value);
+                  // Clear clientId if user is typing (not selecting)
+                  if (selectedClient?.clientName !== value) {
+                    form.setFieldValue("clientId", undefined);
+                    setSelectedClient(null);
+                    // Clear address and contact when user types
+                    form.setFieldValue("clientAddress", undefined);
+                    form.setFieldValue("clientContact", undefined);
+                  }
+                }}
+                onSelect={handleClientSelect}
+                placeholder="Enter client name (min 3 characters)"
+                filterOption={false}
+                notFoundContent={
+                  shouldFetchClients &&
+                  clientsData.length === 0 &&
+                  !clientsError ? (
+                    <Button
+                      type="link"
+                      style={{ padding: 0 }}
+                      onClick={() => setIsAddClientModalOpen(true)}
+                    >
+                      + Add Client
+                    </Button>
+                  ) : shouldFetchClients ? (
+                    <div>
+                      <div style={{ marginBottom: 8 }}>No clients found</div>
                       <Button
                         type="link"
                         style={{ padding: 0 }}
                         onClick={() => setIsAddClientModalOpen(true)}
                       >
-                        + Add Client
+                        + Add New Client
                       </Button>
-                    ) : shouldFetchClients ? (
-                      "No clients found"
-                    ) : (
-                      "Type at least 3 characters to search"
-                    )
-                  }
-                />
-              </Spin>
+                    </div>
+                  ) : (
+                    "Type at least 3 characters to search"
+                  )
+                }
+              />
             </Form.Item>
           </Col>
         </Row>

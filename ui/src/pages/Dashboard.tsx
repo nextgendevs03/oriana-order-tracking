@@ -1,14 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
-import { Table, Button, Tag, Card, Alert } from "antd";
-import { PlusOutlined, EyeOutlined, FileTextOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Button,
+  Tag,
+  Card,
+  Alert,
+  Input,
+  Select,
+  Row,
+  Col,
+  Space,
+} from "antd";
+import {
+  PlusOutlined,
+  EyeOutlined,
+  FileTextOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { useGetPOsQuery } from "../store/api/poApi";
 import type { POResponse } from "../store/api/poApi";
 import type { ColumnsType } from "antd/es/table";
-import { getPaymentStatusColor, getPoStatusColor, formatLabel } from "../utils";
+import {
+  getPaymentStatusColor,
+  getPoStatusColor,
+  formatLabel,
+  poStatusOptions,
+} from "../utils";
 import { colors, shadows } from "../styles/theme";
+import { useDebounce } from "../hooks/useDebounce";
 
 interface PORecord {
   key: string;
@@ -21,23 +43,61 @@ interface PORecord {
   poStatus: string;
 }
 
+type SearchFieldType = "poId" | "osgPiNo" | "clientPoNo" | "poStatus" | "";
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchField, setSearchField] = useState<SearchFieldType>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedPoStatus, setSelectedPoStatus] = useState<string | undefined>(
+    undefined
+  );
 
-  // Fetch POs from API
+  // Debounce search term for API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Build API query parameters
+  const queryParams = useMemo(() => {
+    const params: any = {
+      page: currentPage,
+      limit: pageSize,
+    };
+
+    // If searchField is "poStatus" and selectedPoStatus is set, use searchKey/searchTerm
+    if (searchField === "poStatus" && selectedPoStatus) {
+      params.searchKey = "poStatus";
+      params.searchTerm = selectedPoStatus;
+    }
+    // If searchField is set and searchTerm is provided, use searchKey/searchTerm
+    else if (searchField && debouncedSearchTerm) {
+      params.searchKey = searchField;
+      params.searchTerm = debouncedSearchTerm;
+    }
+    // If no search is active but poStatus filter is set, use poStatus filter
+    else if (!searchField && selectedPoStatus) {
+      params.poStatus = selectedPoStatus;
+    }
+
+    return params;
+  }, [
+    currentPage,
+    pageSize,
+    searchField,
+    debouncedSearchTerm,
+    selectedPoStatus,
+  ]);
+
+  // Fetch POs from API with search/filter parameters
   const {
     data: poListResponse,
     isLoading,
     isError,
     error,
     refetch,
-  } = useGetPOsQuery({
-    page: currentPage,
-    limit: pageSize,
-  });
+  } = useGetPOsQuery(queryParams);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -45,7 +105,7 @@ const Dashboard: React.FC = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  // Map API response to Dashboard format
+  // Map API response to Dashboard format (no client-side filtering needed)
   const dataSource: PORecord[] = useMemo(() => {
     if (!poListResponse?.data) return [];
 
@@ -70,6 +130,39 @@ const Dashboard: React.FC = () => {
   const handleCreatePO = () => {
     navigate("/create-po");
   };
+
+  // Reset to page 1 when search/filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchField, debouncedSearchTerm, selectedPoStatus]);
+
+  const handleSearchFieldChange = (value: SearchFieldType) => {
+    setSearchField(value);
+    setSearchTerm(""); // Clear search term when field changes
+    setSelectedPoStatus(undefined); // Clear status when switching fields
+  };
+
+  const handleSearchTermChange = (value: string) => {
+    setSearchTerm(value);
+  };
+
+  const handlePoStatusSearchChange = (value: string | undefined) => {
+    setSelectedPoStatus(value);
+  };
+
+  // Search field options
+  const searchFieldOptions = [
+    { value: "poId", label: "OSG Order ID" },
+    { value: "piNo", label: "OSG PI No" },
+    { value: "clientPoNo", label: "Client PO No" },
+    { value: "poStatus", label: "PO Status" },
+  ];
+
+  // PO Status options for dropdown (including closed)
+  const poStatusDropdownOptions = [
+    ...poStatusOptions,
+    { value: "closed", label: "Closed" },
+  ];
 
   const clientNameFilters = useMemo(() => {
     const uniqueNames = Array.from(
@@ -255,6 +348,58 @@ const Dashboard: React.FC = () => {
         </Card>
       </motion.div>
 
+      {/* Search and Filter Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, delay: 0.05, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <Card
+          bordered={false}
+          style={{
+            marginBottom: 16,
+            borderRadius: 12,
+            boxShadow: shadows.card,
+            border: `1px solid ${colors.gray200}`,
+          }}
+          bodyStyle={{ padding: "16px 20px" }}
+        >
+          <Row gutter={16} align="middle">
+            <Col flex="auto">
+              <Space.Compact style={{ width: "100%" }}>
+                <Select
+                  placeholder="Select field to search"
+                  value={searchField || undefined}
+                  onChange={handleSearchFieldChange}
+                  allowClear
+                  style={{ width: 200 }}
+                  options={searchFieldOptions}
+                />
+                {searchField === "poStatus" ? (
+                  <Select
+                    placeholder="Select PO Status"
+                    value={selectedPoStatus}
+                    onChange={handlePoStatusSearchChange}
+                    allowClear
+                    style={{ flex: 1 }}
+                    options={poStatusDropdownOptions}
+                  />
+                ) : searchField ? (
+                  <Input
+                    placeholder={`Search by ${searchFieldOptions.find((opt) => opt.value === searchField)?.label || searchField}`}
+                    value={searchTerm}
+                    onChange={(e) => handleSearchTermChange(e.target.value)}
+                    prefix={<SearchOutlined />}
+                    allowClear
+                    style={{ flex: 1 }}
+                  />
+                ) : null}
+              </Space.Compact>
+            </Col>
+          </Row>
+        </Card>
+      </motion.div>
+
       {/* PO Table */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -298,7 +443,7 @@ const Dashboard: React.FC = () => {
             pagination={{
               current: currentPage,
               pageSize: pageSize,
-              total: poListResponse?.pagination?.total || 0,
+              total: poListResponse?.pagination?.total || 0, // Use API pagination total
               showSizeChanger: true,
               pageSizeOptions: ["10", "20", "50", "100"],
               showTotal: (total, range) =>

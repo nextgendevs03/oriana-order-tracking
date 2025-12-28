@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/static/css/main.46733bd9.css",
-    "main.js": "/static/js/main.50ed85dd.js",
+    "main.js": "/static/js/main.c497d59c.js",
     "static/media/OSG_Logo.png": "/static/media/OSG_Logo.5391937c3b3e6079f621.png",
     "index.html": "/index.html",
     "main.46733bd9.css.map": "/static/css/main.46733bd9.css.map",
-    "main.50ed85dd.js.map": "/static/js/main.50ed85dd.js.map"
+    "main.c497d59c.js.map": "/static/js/main.c497d59c.js.map"
   },
   "entrypoints": [
     "static/css/main.46733bd9.css",
-    "static/js/main.50ed85dd.js"
+    "static/js/main.c497d59c.js"
   ]
 }
