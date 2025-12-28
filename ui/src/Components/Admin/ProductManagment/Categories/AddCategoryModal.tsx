@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button, message } from "antd";
+import { Modal, Form, Input, Select, Button } from "antd";
 import {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
 } from "../../../../store/api/categoryApi";
+import { useToast } from "../../../../hooks/useToast";
 
 interface AddCategoryModalProps {
   open: boolean;
@@ -16,6 +17,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   onCancel,
   initialValues,
 }) => {
+  const toast = useToast();
   const [form] = Form.useForm();
 
   const [createCategory, { isLoading: isCreating }] =
@@ -56,13 +58,13 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             updatedBy: "admin",
           },
         }).unwrap();
-        message.success("Category updated successfully");
+        toast.success("Category updated successfully");
       } else {
         await createCategory({
           ...dataToSend,
           createdBy: "admin",
         }).unwrap();
-        message.success("Category created successfully");
+        toast.success("Category created successfully");
       }
 
       form.resetFields();
@@ -71,7 +73,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       // If validation fails, form.validateFields() will throw and show errors automatically
       // If API call fails, show error message
       if (error?.data?.message || error?.message) {
-        message.error(
+        toast.error(
           error?.data?.message || error?.message || "Failed to save category"
         );
       }

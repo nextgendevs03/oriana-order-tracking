@@ -68,11 +68,14 @@ const baseQueryWithErrorHandling: BaseQueryFn = async (
       // Clear the auth token
       sessionStorage.removeItem("authToken");
 
-      // Show error message
+      // Show error message using static message API
+      // Note: Static methods work but may not have full ConfigProvider context
+      // This is acceptable for error handling in API middleware
       message.error(
         errorData?.message ||
           errorData?.error?.message ||
-          "Your session has expired. Please login again."
+          "Your session has expired. Please login again.",
+        5 // 5 seconds duration
       );
 
       // Redirect to login page after a short delay

@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button, message } from "antd";
+import { Modal, Form, Input, Select, Button } from "antd";
 import {
   useCreateProductMutation,
   useUpdateProductMutation,
 } from "../../../../store/api/productApi";
 import { useGetCategoriesQuery } from "../../../../store/api/categoryApi";
 import { useGetOEMsQuery } from "../../../../store/api/oemApi";
+import { useToast } from "../../../../hooks/useToast";
 
 interface Props {
   open: boolean;
@@ -18,6 +19,7 @@ const AddProductModal: React.FC<Props> = ({
   onCancel,
   initialValues,
 }) => {
+  const toast = useToast();
   const [form] = Form.useForm();
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
@@ -59,10 +61,10 @@ const AddProductModal: React.FC<Props> = ({
           id: initialValues.productId,
           data: dataToSend,
         }).unwrap();
-        message.success("Product updated successfully");
+        toast.success("Product updated successfully");
       } else {
         await createProduct(dataToSend).unwrap();
-        message.success("Product created successfully");
+        toast.success("Product created successfully");
       }
 
       form.resetFields();
@@ -71,7 +73,7 @@ const AddProductModal: React.FC<Props> = ({
       // If validation fails, form.validateFields() will throw and show errors automatically
       // If API call fails, show error message
       if (error?.data?.message || error?.message) {
-        message.error(
+        toast.error(
           error?.data?.message || error?.message || "Failed to save product"
         );
       }

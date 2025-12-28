@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, message } from "antd";
+import { Modal, Form, Input, Button } from "antd";
 import {
   useCreateClientMutation,
   useUpdateClientMutation,
 } from "../../../store/api/clientApi";
 import type { ClientResponse } from "@OrianaTypes";
+import { useToast } from "../../../hooks/useToast";
 
 interface AddClientModalProps {
   open: boolean;
@@ -21,6 +22,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   initialClientName = "",
   editingClient = null,
 }) => {
+  const toast = useToast();
   const [form] = Form.useForm();
   const [clientName, setClientName] = useState(initialClientName);
   const [createClient, { isLoading: isCreating }] = useCreateClientMutation();
@@ -72,7 +74,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             updatedBy: "admin", // TODO: Get from auth context
           },
         }).unwrap();
-        message.success("Client updated successfully");
+        toast.success("Client updated successfully");
       } else {
         // Create new client
         await createClient({
@@ -83,7 +85,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
           isActive: true,
           createdBy: "admin", // TODO: Get from auth context
         }).unwrap();
-        message.success("Client created successfully");
+        toast.success("Client created successfully");
       }
 
       form.resetFields();
@@ -91,7 +93,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
       onSuccess?.(values.clientName.trim());
       onCancel();
     } catch (error: any) {
-      message.error(
+      toast.error(
         error?.data?.message ||
           `Failed to ${isEditing ? "update" : "create"} client`
       );

@@ -8,7 +8,6 @@ import {
   Switch,
   Space,
   Popconfirm,
-  message,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import UserManagmentModal from "./UserManagmentModal";
@@ -18,11 +17,13 @@ import {
   useUpdateUserMutation,
 } from "../../../store/api/userApi";
 import { UserResponse } from "@OrianaTypes";
+import { useToast } from "../../../hooks/useToast";
 
 const { Search } = Input;
 const { Option } = Select;
 
 const UserManagement = () => {
+  const toast = useToast();
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,13 +52,13 @@ const UserManagement = () => {
       const userIdForDelete = record.userId;
 
       if (!userIdForDelete) {
-        message.error("User ID not found. Cannot delete user.");
+        toast.error("User ID not found. Cannot delete user.");
         return;
       }
 
       await deleteUser(userIdForDelete).unwrap();
 
-      message.success("User deleted successfully");
+      toast.success("User deleted successfully");
       refetch(); // Refresh the user list after deletion
     } catch (error: any) {
       console.error("Delete failed:", error);
@@ -65,7 +66,7 @@ const UserManagement = () => {
         error?.data?.error?.message ||
         error?.message ||
         "Failed to delete user. Please try again.";
-      message.error(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -114,7 +115,7 @@ const UserManagement = () => {
           onChange={async (checked) => {
             try {
               if (!record.userId) {
-                message.error("User ID not found. Cannot update status.");
+                toast.error("User ID not found. Cannot update status.");
                 return;
               }
 
@@ -126,7 +127,7 @@ const UserManagement = () => {
                 },
               }).unwrap();
 
-              message.success(
+              toast.success(
                 `User status updated to ${checked ? "Active" : "Inactive"}`
               );
               refetch(); // Refresh the user list after status update
@@ -136,7 +137,7 @@ const UserManagement = () => {
                 error?.data?.error?.message ||
                 error?.message ||
                 "Failed to update user status. Please try again.";
-              message.error(errorMessage);
+              toast.error(errorMessage);
             }
           }}
         />

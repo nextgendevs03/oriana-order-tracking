@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Input, Button, message } from "antd";
+import { Form, Input, Button } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { addAuth, setIsLoggedIn } from "store/authSlice";
 import { useDispatch } from "react-redux";
 import { GeometricBackground } from "../Components/LoginBackgrounds";
 import OSGLogo from "../OSG_Logo.png";
+import { useToast } from "../hooks/useToast";
 import "./Login.css";
 
 interface LoginData {
@@ -16,6 +17,7 @@ interface LoginData {
 }
 
 const Login: React.FC = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -37,7 +39,7 @@ const Login: React.FC = () => {
       dispatch(addAuth({ username: values.username }));
       dispatch(setIsLoggedIn(true));
 
-      message.success("Login Successful!");
+      toast.success("Login Successful!");
       navigate("/dashboard");
     } catch (error: any) {
       const errorMessage =
@@ -45,7 +47,7 @@ const Login: React.FC = () => {
         error?.data?.message ||
         error?.message ||
         "An error occurred. Please try again.";
-      message.error(errorMessage);
+      toast.error(errorMessage);
     }
   };
 

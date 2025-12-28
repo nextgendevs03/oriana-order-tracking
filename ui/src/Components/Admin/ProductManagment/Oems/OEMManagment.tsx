@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Table, Popconfirm, message, Input, Switch } from "antd";
+import { Button, Table, Popconfirm, Input, Switch } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
@@ -11,10 +11,12 @@ import {
 import type { OEMResponse } from "@OrianaTypes";
 import AddOEMModal from "./AddOEMModal";
 import { useDebounce } from "../../../../hooks";
+import { useToast } from "../../../../hooks/useToast";
 
 const { Search } = Input;
 
 const OEMManagement: React.FC = () => {
+  const toast = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -51,10 +53,10 @@ const OEMManagement: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteOEM(id).unwrap();
-      message.success("OEM deleted successfully");
+      toast.success("OEM deleted successfully");
       refetch();
     } catch (error: any) {
-      message.error(error?.data?.message || "Failed to delete OEM");
+      toast.error(error?.data?.message || "Failed to delete OEM");
     }
   };
 
@@ -90,12 +92,12 @@ const OEMManagement: React.FC = () => {
                   updatedBy: "admin", // TODO: Get from auth context
                 },
               }).unwrap();
-              message.success(
+              toast.success(
                 `OEM status updated to ${checked ? "Active" : "Inactive"}`
               );
               refetch();
             } catch (error: any) {
-              message.error(
+              toast.error(
                 error?.data?.message || "Failed to update OEM status"
               );
             }

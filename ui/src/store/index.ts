@@ -25,7 +25,7 @@ const persistConfig = {
   version: 1,
   storage,
   whitelist: ["po", "auth", "permission", "user", "role", "category", "oem", "product"], 
-  blacklist: [baseApi.reducerPath],
+  blacklist: [baseApi.reducerPath], // API cache shouldn't persist
 };
 
 const rootReducer = combineReducers({

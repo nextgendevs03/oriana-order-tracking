@@ -8,10 +8,10 @@ import {
   Space,
   Typography,
   Popconfirm,
-  message,
 } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import AddPermissionModal from "./AddPermissionModal";
+import { useToast } from "../../../hooks/useToast";
 
 // RTK Query
 import {
@@ -22,6 +22,7 @@ import {
 const { Title } = Typography;
 
 const PermissionsManagement: React.FC = () => {
+  const toast = useToast();
   const { data, isLoading } = useGetPermissionsQuery();
   const [deletePermissionApi] = useDeletePermissionMutation();
 
@@ -33,9 +34,9 @@ const PermissionsManagement: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await deletePermissionApi(id).unwrap();
-      message.success("Permission Deleted");
+      toast.success("Permission Deleted");
     } catch {
-      message.error("Delete Failed");
+      toast.error("Delete Failed");
     }
   };
 

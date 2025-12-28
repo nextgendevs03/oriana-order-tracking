@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Table, Tag, Popconfirm, message, Input, Select } from "antd";
+import { Button, Table, Tag, Popconfirm, Input, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   useGetProductsQuery,
@@ -9,11 +9,13 @@ import type { ProductResponse } from "@OrianaTypes";
 import AddProductModal from "./AddProductModal";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useDebounce } from "../../../../hooks";
+import { useToast } from "../../../../hooks/useToast";
 
 const { Search } = Input;
 const { Option } = Select;
 
 const ProductManagementProducts: React.FC = () => {
+  const toast = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -69,10 +71,10 @@ const ProductManagementProducts: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteProduct(id).unwrap();
-      message.success("Product deleted successfully");
+      toast.success("Product deleted successfully");
       refetch();
     } catch (error: any) {
-      message.error(error?.data?.message || "Failed to delete product");
+      toast.error(error?.data?.message || "Failed to delete product");
     }
   };
 

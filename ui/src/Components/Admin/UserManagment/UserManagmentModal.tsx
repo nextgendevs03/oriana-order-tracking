@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Switch, message } from "antd";
+import { Modal, Form, Input, Select, Switch } from "antd";
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
@@ -10,6 +10,7 @@ import {
   UpdateUserRequest,
   UserResponse,
 } from "@OrianaTypes";
+import { useToast } from "../../../hooks/useToast";
 
 const { Option } = Select;
 
@@ -24,6 +25,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
   onClose,
   editingUser,
 }) => {
+  const toast = useToast();
   const [form] = Form.useForm<CreateUserRequest>();
   const userId = `USER-${Date.now().toString().slice(-6)}`;
 
@@ -61,7 +63,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
         const userIdForUpdate = editingUser.userId || editingUser.id;
 
         if (!userIdForUpdate) {
-          message.error("User ID not found. Cannot update user.");
+          toast.error("User ID not found. Cannot update user.");
           return;
         }
 
@@ -77,7 +79,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           userId: userIdForUpdate,
           data: updatePayload,
         }).unwrap();
-        message.success("User updated successfully");
+        toast.success("User updated successfully");
       } else {
         const userData: CreateUserRequest = {
           username: values.username,
@@ -90,14 +92,14 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
         };
 
         await createUser(userData).unwrap();
-        message.success("User created successfully");
+        toast.success("User created successfully");
       }
 
       form.resetFields();
       onClose();
     } catch (error: any) {
       console.error("Error:", error);
-      message.error(error?.data?.error?.message || "Operation failed.");
+      toast.error(error?.data?.error?.message || "Operation failed.");
     }
   };
 

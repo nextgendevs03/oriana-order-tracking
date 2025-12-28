@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button, message } from "antd";
+import { Modal, Form, Input, Select, Button } from "antd";
+import { useToast } from "../../../hooks/useToast";
 
 import {
   useCreatePermissionMutation,
@@ -31,6 +32,7 @@ const AddPermissionModal: React.FC<Props> = ({
   onClose,
   permissionToEdit,
 }) => {
+  const toast = useToast();
   const [form] = Form.useForm();
 
   const [createPermissionApi] = useCreatePermissionMutation();
@@ -58,16 +60,16 @@ const AddPermissionModal: React.FC<Props> = ({
           ...values,
         }).unwrap();
 
-        message.success("Permission Updated Successfully!");
+        toast.success("Permission Updated Successfully!");
       } else {
         // CREATE
         await createPermissionApi(values).unwrap();
-        message.success("Permission Created Successfully!");
+        toast.success("Permission Created Successfully!");
       }
 
       onClose();
     } catch (e) {
-      message.error("Error Saving Permission!");
+      toast.error("Error Saving Permission!");
     }
   };
 

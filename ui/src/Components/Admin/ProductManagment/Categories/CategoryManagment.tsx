@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Table, Popconfirm, message, Input, Switch } from "antd";
+import { Button, Table, Popconfirm, Input, Switch } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
@@ -11,10 +11,12 @@ import {
 import type { CategoryResponse } from "@OrianaTypes";
 import AddCategoryModal from "./AddCategoryModal";
 import { useDebounce } from "../../../../hooks";
+import { useToast } from "../../../../hooks/useToast";
 
 const { Search } = Input;
 
 const CategoryManagement: React.FC = () => {
+  const toast = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -54,10 +56,10 @@ const CategoryManagement: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteCategory(id).unwrap();
-      message.success("Category deleted successfully");
+      toast.success("Category deleted successfully");
       refetch();
     } catch (error: any) {
-      message.error(error?.data?.message || "Failed to delete category");
+      toast.error(error?.data?.message || "Failed to delete category");
     }
   };
 
@@ -93,12 +95,12 @@ const CategoryManagement: React.FC = () => {
                   updatedBy: "admin", // TODO: Get from auth context
                 },
               }).unwrap();
-              message.success(
+              toast.success(
                 `Category status updated to ${checked ? "Active" : "Inactive"}`
               );
               refetch();
             } catch (error: any) {
-              message.error(
+              toast.error(
                 error?.data?.message || "Failed to update category status"
               );
             }

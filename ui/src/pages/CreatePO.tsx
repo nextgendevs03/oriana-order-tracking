@@ -9,8 +9,6 @@ import {
   Col,
   AutoComplete,
   Spin,
-  notification,
-  message,
 } from "antd";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +24,7 @@ import { useGetClientsQuery } from "../store/api/clientApi";
 import { useCreatePOMutation } from "../store/api/poApi";
 import { CreatePORequest, POItemRequest } from "@OrianaTypes";
 import { useDebounce } from "../hooks";
+import { useToast } from "../hooks/useToast";
 import {
   poStatusOptions,
   dispatchOptions,
@@ -62,6 +61,7 @@ interface ClientOption {
 }
 
 const CreatePO: FC = () => {
+  const toast = useToast();
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -101,38 +101,32 @@ const CreatePO: FC = () => {
   // Show error toast after all retries have failed (RTK Query retries 3 times automatically)
   useEffect(() => {
     if (categoriesError) {
-      notification.error({
-        key: "categories-error",
-        message: "Failed to load Categories",
+      toast.error("Failed to load Categories", {
         description:
           "Unable to fetch categories after multiple attempts. Please refresh the page.",
         duration: 0,
       });
     }
-  }, [categoriesError]);
+  }, [categoriesError, toast]);
 
   useEffect(() => {
     if (oemsError) {
-      notification.error({
-        key: "oems-error",
-        message: "Failed to load OEMs",
+      toast.error("Failed to load OEMs", {
         description:
           "Unable to fetch OEM list after multiple attempts. Please refresh the page.",
         duration: 0,
       });
     }
-  }, [oemsError]);
+  }, [oemsError, toast]);
 
   useEffect(() => {
     if (clientsError) {
-      notification.error({
-        key: "clients-error",
-        message: "Failed to load Clients",
+      toast.error("Failed to load Clients", {
         description: "Unable to search clients. Please try again later.",
-        duration: 5,
+        duration: 5000,
       });
     }
-  }, [clientsError]);
+  }, [clientsError, toast]);
 
   // Transform API data to dropdown options format
   // Filter only Active items and map to { value, label } format
@@ -218,8 +212,7 @@ const CreatePO: FC = () => {
   const onFinish = async (values: Record<string, unknown>) => {
     // Safety check: ensure client is selected
     if (!values.clientId || !selectedClient) {
-      notification.error({
-        message: "Client Required",
+      toast.error("Client Required", {
         description: "Please select a client from the dropdown list.",
       });
       return;
@@ -277,7 +270,7 @@ const CreatePO: FC = () => {
       // Call the API to create PO
       const result = await createPO(createPORequest).unwrap();
 
-      message.success(`Purchase Order ${result.poId} created successfully!`);
+      toast.success(`Purchase Order ${result.poId} created successfully!`);
 
       // Reset form and file list
       form.resetFields();
@@ -289,14 +282,15 @@ const CreatePO: FC = () => {
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Failed to create PO:", error);
-      notification.error({
-        message: "Failed to create Purchase Order",
-        description:
-          error?.data?.message ||
+      toast.error(
+        error?.data?.message ||
           error?.message ||
           "An error occurred. Please try again.",
-        duration: 5,
-      });
+        {
+          description: "Failed to create Purchase Order",
+          duration: 5000,
+        }
+      );
     }
   };
 

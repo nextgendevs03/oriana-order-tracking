@@ -1,4 +1,4 @@
-import { Upload, Button, Typography, message } from "antd";
+import { Upload, Button, Typography } from "antd";
 import {
   UploadOutlined,
   DeleteOutlined,
@@ -9,6 +9,7 @@ import {
   FileImageOutlined,
 } from "@ant-design/icons";
 import type { UploadFile, RcFile } from "antd/es/upload/interface";
+import { useToast } from "../../hooks/useToast";
 
 const { Text } = Typography;
 
@@ -61,6 +62,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
   showFileSize = true,
   disabled = false,
 }) => {
+  const toast = useToast();
+  
   // Check if minimum files requirement is met
   const isMinFilesMet = fileList.length >= minFiles;
   // Get file icon based on file extension
@@ -85,21 +88,21 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleBeforeUpload = (file: RcFile) => {
     // Check file count
     if (fileList.length >= maxFiles) {
-      message.error(`You can only upload a maximum of ${maxFiles} file${maxFiles > 1 ? "s" : ""}`);
+      toast.error(`You can only upload a maximum of ${maxFiles} file${maxFiles > 1 ? "s" : ""}`);
       return Upload.LIST_IGNORE;
     }
 
     // Validate file type
     const isValidType = DEFAULT_MIME_TYPES.includes(file.type);
     if (!isValidType) {
-      message.error("Invalid file type. Please upload images, PDF, Word, or Excel files.");
+      toast.error("Invalid file type. Please upload images, PDF, Word, or Excel files.");
       return Upload.LIST_IGNORE;
     }
 
     // Check file size
     const isWithinSize = file.size / 1024 / 1024 < maxSizeMB;
     if (!isWithinSize) {
-      message.error(`File must be smaller than ${maxSizeMB}MB`);
+      toast.error(`File must be smaller than ${maxSizeMB}MB`);
       return Upload.LIST_IGNORE;
     }
 

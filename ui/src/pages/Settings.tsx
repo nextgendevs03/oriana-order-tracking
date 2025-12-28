@@ -9,8 +9,8 @@ import {
   Divider,
   Space,
   Avatar,
-  message,
 } from "antd";
+import { useToast } from "../hooks/useToast";
 import {
   UserOutlined,
   MailOutlined,
@@ -23,13 +23,14 @@ import {
 const { Title, Text } = Typography;
 
 const Settings: React.FC = () => {
+  const toast = useToast();
   const [form] = Form.useForm();
   const [isSaveHovered, setIsSaveHovered] = useState(false);
   const username = localStorage.getItem("loggedUser") || "Guest";
 
   const onFinish = (values: any) => {
     console.log("Settings saved:", values);
-    message.success("Settings saved successfully!");
+    toast.success("Settings saved successfully!");
   };
 
   return (

@@ -3,7 +3,6 @@ import {
   Button,
   Table,
   Popconfirm,
-  message,
   Input,
   Switch,
 } from "antd";
@@ -17,10 +16,12 @@ import {
 import type { ClientResponse } from "@OrianaTypes";
 import AddClientModal from "./AddClientModal";
 import { useDebounce } from "../../../hooks";
+import { useToast } from "../../../hooks/useToast";
 
 const { Search } = Input;
 
 const ClientManagement: React.FC = () => {
+  const toast = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -61,10 +62,10 @@ const ClientManagement: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteClient(id).unwrap();
-      message.success("Client deleted successfully");
+      toast.success("Client deleted successfully");
       refetch();
     } catch (error: any) {
-      message.error(error?.data?.message || "Failed to delete client");
+      toast.error(error?.data?.message || "Failed to delete client");
     }
   };
 
@@ -123,12 +124,12 @@ const ClientManagement: React.FC = () => {
                   updatedBy: "admin", // TODO: Get from auth context
                 },
               }).unwrap();
-              message.success(
+              toast.success(
                 `Client status updated to ${checked ? "Active" : "Inactive"}`
               );
               refetch();
             } catch (error: any) {
-              message.error(
+              toast.error(
                 error?.data?.message || "Failed to update client status"
               );
             }
