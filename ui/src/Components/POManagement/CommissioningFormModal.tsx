@@ -38,7 +38,7 @@ const CommissioningFormModal: React.FC<CommissioningFormModalProps> = ({
 
   // Get serial numbers from pre-commissioning records with "Done" preCommissioningStatus
   const serialOptions = useMemo(() => {
-    return preCommissioningDetails
+    return (preCommissioningDetails ?? [])
       .filter(
         (pc: PreCommissioning) =>
           pc.poId === poId &&

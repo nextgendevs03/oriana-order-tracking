@@ -46,7 +46,7 @@ const PreCommissioningFormModal: React.FC<PreCommissioningFormModalProps> = ({
   // Exclude serials that already have pre-commissioning entries (unless editing)
   const serialOptions = useMemo((): SerialOption[] => {
     const options: SerialOption[] = [];
-    const existingSerials = preCommissioningDetails
+    const existingSerials = (preCommissioningDetails ?? [])
       .filter(
         (pc: PreCommissioning) => pc.poId === poId && pc.id !== editData?.id
       )
