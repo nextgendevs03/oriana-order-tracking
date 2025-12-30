@@ -1,4 +1,5 @@
 export interface CreatePermissionRequest {
+  permissionCode: string;
   permissionName: string;
   description?: string;
   createdBy: string;
@@ -6,6 +7,7 @@ export interface CreatePermissionRequest {
 }
 
 export interface UpdatePermissionRequest {
+  permissionCode?: string;
   permissionName?: string;
   description?: string;
   updatedBy: string;

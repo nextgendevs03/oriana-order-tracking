@@ -25,8 +25,8 @@ export class PermissionController {
 
   @Post('/')
   async create(@Body() data: CreatePermissionRequest) {
-    if (!data.permissionName)
-      throw new ValidationError('permissionName and createdBy are required');
+    if (!data.permissionCode || !data.permissionName)
+      throw new ValidationError('permissionCode, permissionName and createdBy are required');
     const permission = await this.permissionService.createPermission(data);
     return createSuccessResponse(permission, 201);
   }
@@ -51,22 +51,28 @@ export class PermissionController {
 
   @Get('/{id}')
   async getById(@Param('id') id: string) {
-    const permission = await this.permissionService.getPermissionById(id);
+    const permissionId = parseInt(id, 10);
+    if (isNaN(permissionId)) throw new ValidationError('Invalid permission ID');
+    const permission = await this.permissionService.getPermissionById(permissionId);
     if (!permission) throw new NotFoundError(`Permission with ID ${id} not found`);
     return createSuccessResponse(permission);
   }
 
   @Put('/{id}')
   async update(@Param('id') id: string, @Body() data: UpdatePermissionRequest) {
-    const permission = await this.permissionService.updatePermission(id, data);
+    const permissionId = parseInt(id, 10);
+    if (isNaN(permissionId)) throw new ValidationError('Invalid permission ID');
+    const permission = await this.permissionService.updatePermission(permissionId, data);
     if (!permission) throw new NotFoundError(`Permission with ID ${id} not found`);
     return createSuccessResponse(permission);
   }
 
   @Delete('/{id}')
   async delete(@Param('id') id: string) {
-    const deleted = await this.permissionService.deletePermission(id);
+    const permissionId = parseInt(id, 10);
+    if (isNaN(permissionId)) throw new ValidationError('Invalid permission ID');
+    const deleted = await this.permissionService.deletePermission(permissionId);
     if (!deleted) throw new NotFoundError(`Permission with ID ${id} not found`);
-    return createSuccessResponse({ permissionId: id, deleted: true });
+    return createSuccessResponse({ permissionId: permissionId, deleted: true });
   }
 }

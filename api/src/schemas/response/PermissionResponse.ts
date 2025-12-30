@@ -1,5 +1,6 @@
 export interface PermissionResponse {
-  permissionId: string;
+  permissionId: number;
+  permissionCode: string;
   permissionName: string;
   description: string | null;
   createdBy: string;

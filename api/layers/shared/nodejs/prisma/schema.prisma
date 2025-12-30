@@ -111,17 +111,16 @@ model Role {
 }
 
 model UserRole {
-  userRoleId          String               @id @default(uuid()) @map("user_role_id")
-  userId              String               @map("user_id")
-  roleId              String               @map("role_id")
-  user                User                 @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  role                Role                 @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
-  createdBy           String               @map("created_by") @db.VarChar(100)
-  updatedBy           String               @map("updated_by") @db.VarChar(100)
-  isActive            Boolean              @default(true) @map("is_active")
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  userRolePermissions UserRolePermission[] // Permissions for this user-role assignment
+  userRoleId String   @id @default(uuid()) @map("user_role_id")
+  userId     String   @map("user_id")
+  roleId     String   @map("role_id")
+  user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+  createdBy  String   @map("created_by") @db.VarChar(100)
+  updatedBy  String   @map("updated_by") @db.VarChar(100)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([roleId])
@@ -129,36 +128,19 @@ model UserRole {
   @@map("user_role_mappings")
 }
 
-model UserRolePermission {
-  userRolePermissionId String     @id @default(uuid()) @map("user_role_permission_id")
-  userRoleId           String     @map("user_role_id")
-  permissionId         String     @map("permission_id")
-  userRole             UserRole   @relation(fields: [userRoleId], references: [userRoleId], onDelete: Cascade)
-  permission           Permission @relation(fields: [permissionId], references: [permissionId], onDelete: Cascade)
-  createdBy            String     @map("created_by") @db.VarChar(100)
-  updatedBy            String     @map("updated_by") @db.VarChar(100)
-  isActive             Boolean    @default(true) @map("is_active")
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
-
-  @@index([userRoleId])
-  @@index([permissionId])
-  @@index([isActive])
-  @@map("user_role_permission_mappings")
-}
-
 model Permission {
-  permissionId        String               @id @default(uuid()) @map("permission_id")
-  permissionName      String               @map("permission_name") @db.VarChar(100)
-  description         String               @map("description") @db.VarChar(255)
-  createdBy           String               @map("created_by") @db.VarChar(100)
-  updatedBy           String               @map("updated_by") @db.VarChar(100)
-  isActive            Boolean              @default(true) @map("is_active")
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  userRolePermissions UserRolePermission[] // Which user-roles have this permission
+  permissionId   Int      @id @default(autoincrement()) @map("permission_id")
+  permissionCode  String   @map("permission_code") @db.VarChar(100)
+  permissionName  String   @map("permission_name") @db.VarChar(100)
+  description     String   @map("description") @db.VarChar(255)
+  createdBy       String   @map("created_by") @db.VarChar(100)
+  updatedBy       String   @map("updated_by") @db.VarChar(100)
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@index([permissionName])
+  @@index([permissionCode])
   @@index([isActive])
   @@map("permissions")
 }

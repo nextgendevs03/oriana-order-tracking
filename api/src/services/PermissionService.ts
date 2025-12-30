@@ -11,10 +11,10 @@ import {
 
 export interface IPermissionService {
   createPermission(data: CreatePermissionRequest): Promise<PermissionResponse>;
-  getPermissionById(id: string): Promise<PermissionResponse | null>;
+  getPermissionById(id: number): Promise<PermissionResponse | null>;
   getAllPermissions(params: ListPermissionRequest): Promise<PermissionListResponse>;
-  updatePermission(id: string, data: UpdatePermissionRequest): Promise<PermissionResponse | null>;
-  deletePermission(id: string): Promise<boolean>;
+  updatePermission(id: number, data: UpdatePermissionRequest): Promise<PermissionResponse | null>;
+  deletePermission(id: number): Promise<boolean>;
 }
 
 @injectable()
@@ -26,7 +26,7 @@ export class PermissionService implements IPermissionService {
     return this.mapToResponse(permission);
   }
 
-  async getPermissionById(id: string): Promise<PermissionResponse | null> {
+  async getPermissionById(id: number): Promise<PermissionResponse | null> {
     const permission = await this.repository.findById(id);
     return permission ? this.mapToResponse(permission) : null;
   }
@@ -41,20 +41,21 @@ export class PermissionService implements IPermissionService {
   }
 
   async updatePermission(
-    id: string,
+    id: number,
     data: UpdatePermissionRequest
   ): Promise<PermissionResponse | null> {
     const permission = await this.repository.update(id, data);
     return permission ? this.mapToResponse(permission) : null;
   }
 
-  async deletePermission(id: string): Promise<boolean> {
+  async deletePermission(id: number): Promise<boolean> {
     return this.repository.delete(id);
   }
 
   private mapToResponse(permission: any): PermissionResponse {
     return {
       permissionId: permission.permissionId,
+      permissionCode: permission.permissionCode,
       permissionName: permission.permissionName,
       description: permission.description,
       createdBy: permission.createdBy,

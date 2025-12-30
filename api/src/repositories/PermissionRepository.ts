@@ -8,7 +8,7 @@ import {
 } from '../schemas';
 
 // Allowed searchable fields for Permission model
-const ALLOWED_SEARCH_FIELDS = ['permissionName'] as const;
+const ALLOWED_SEARCH_FIELDS = ['permissionName', 'permissionCode'] as const;
 type AllowedSearchField = (typeof ALLOWED_SEARCH_FIELDS)[number];
 
 // Default search field when searchKey is not provided
@@ -16,10 +16,10 @@ const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'permissionName';
 
 export interface IPermissionRepository {
   create(data: CreatePermissionRequest): Promise<Permission>;
-  findById(id: string): Promise<Permission | null>;
+  findById(id: number): Promise<Permission | null>;
   findAll(params: ListPermissionRequest): Promise<{ rows: Permission[]; count: number }>;
-  update(id: string, data: UpdatePermissionRequest): Promise<Permission | null>;
-  delete(id: string): Promise<boolean>;
+  update(id: number, data: UpdatePermissionRequest): Promise<Permission | null>;
+  delete(id: number): Promise<boolean>;
 }
 
 @injectable()
@@ -36,6 +36,7 @@ export class PermissionRepository implements IPermissionRepository {
   async create(data: CreatePermissionRequest): Promise<Permission> {
     return this.prisma.permission.create({
       data: {
+        permissionCode: data.permissionCode,
         permissionName: data.permissionName,
         description: data.description ?? '',
         createdBy: data.createdBy,
@@ -45,7 +46,7 @@ export class PermissionRepository implements IPermissionRepository {
     });
   }
 
-  async findById(id: string): Promise<Permission | null> {
+  async findById(id: number): Promise<Permission | null> {
     return this.prisma.permission.findUnique({ where: { permissionId: id } });
   }
 
@@ -81,12 +82,13 @@ export class PermissionRepository implements IPermissionRepository {
     return { rows, count };
   }
 
-  async update(id: string, data: UpdatePermissionRequest): Promise<Permission | null> {
+  async update(id: number, data: UpdatePermissionRequest): Promise<Permission | null> {
     const existing = await this.prisma.permission.findUnique({ where: { permissionId: id } });
     if (!existing) return null;
     return this.prisma.permission.update({
       where: { permissionId: id },
       data: {
+        ...(data.permissionCode && { permissionCode: data.permissionCode }),
         ...(data.permissionName && { permissionName: data.permissionName }),
         ...(data.description && { description: data.description }),
         updatedBy: data.updatedBy,
@@ -95,7 +97,7 @@ export class PermissionRepository implements IPermissionRepository {
     });
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: number): Promise<boolean> {
     try {
       await this.prisma.permission.delete({ where: { permissionId: id } });
       return true;
