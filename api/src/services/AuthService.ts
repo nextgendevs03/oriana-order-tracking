@@ -34,7 +34,7 @@ export class AuthService implements IAuthService {
     const tokenPayload: JWTPayload = {
       username: user.username,
       email: user.email,
-      // roles: user.userRoles?.map((ur) => ur.role.roleName),
+      // role: user.role?.roleName, // User has 1-to-1 relationship with role
     };
 
     // Generate both access and refresh tokens
@@ -56,7 +56,7 @@ export class AuthService implements IAuthService {
       user: {
         username: user.username,
         email: user.email,
-        // roles: user.userRoles?.map((ur) => ur.role.roleName),
+        // role: user.role?.roleName, // User has 1-to-1 relationship with role
       },
     };
   }

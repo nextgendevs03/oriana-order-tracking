@@ -1,36 +1,51 @@
-import React, { useState } from "react";
-import {
-  Table,
-  Tag,
-  Input,
-  Button,
-  Space,
-  Popconfirm,
-} from "antd";
+import React, { useState, useEffect } from "react";
+import { Table, Input, Button, Space, Popconfirm } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import AddPermissionModal from "./AddPermissionModal";
 import { useToast } from "../../../hooks/useToast";
+import { useDebounce } from "../../../hooks/useDebounce";
 
 // RTK Query
 import {
   useGetPermissionsQuery,
   useDeletePermissionMutation,
 } from "../../../store/api/permissionApi";
+import { PermissionResponse } from "@OrianaTypes";
 
 const PermissionsManagement: React.FC = () => {
   const toast = useToast();
   const [searchText, setSearchText] = useState("");
-  const { data, isLoading } = useGetPermissionsQuery(
-    searchText ? { searchTerm: searchText } : undefined
-  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Debounce search text
+  const debouncedSearchText = useDebounce(searchText, 500);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchText]);
+
+  // Build query parameters
+  const queryParams = {
+    page: currentPage,
+    limit: pageSize,
+    ...(debouncedSearchText && {
+      searchKey: "permissionName",
+      searchTerm: debouncedSearchText,
+    }),
+  };
+
+  const { data, isLoading } = useGetPermissionsQuery(queryParams);
   const [deletePermissionApi] = useDeletePermissionMutation();
 
   const [openModal, setOpenModal] = useState(false);
-  const [permissionToEdit, setPermissionToEdit] = useState<any>();
+  const [permissionToEdit, setPermissionToEdit] =
+    useState<PermissionResponse>();
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
-      await deletePermissionApi(id).unwrap();
+      await deletePermissionApi(String(id)).unwrap();
       toast.success("Permission Deleted");
     } catch {
       toast.error("Delete Failed");
@@ -41,18 +56,8 @@ const PermissionsManagement: React.FC = () => {
     { title: "Permission Name", dataIndex: "permissionName" },
     { title: "Description", dataIndex: "description" },
     {
-      title: "Status",
-      dataIndex: "isActive",
-      render: (isActive: boolean) =>
-        isActive ? (
-          <Tag color="green">Active</Tag>
-        ) : (
-          <Tag color="red">Inactive</Tag>
-        ),
-    },
-    {
       title: "Actions",
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: PermissionResponse) => (
         <Space>
           <Button
             type="text"
@@ -65,7 +70,13 @@ const PermissionsManagement: React.FC = () => {
 
           <Popconfirm
             title="Confirm?"
-            onConfirm={() => handleDelete(record.permissionId)}
+            onConfirm={() => {
+              if (typeof record.permissionId === "number") {
+                handleDelete(record.permissionId);
+              } else {
+                handleDelete(Number(record.permissionId));
+              }
+            }}
           >
             <Button danger type="text" icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -121,10 +132,23 @@ const PermissionsManagement: React.FC = () => {
           }}
         >
           <div>
-            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: "#0e7490" }}>
+            <h2
+              style={{
+                margin: 0,
+                fontWeight: 700,
+                fontSize: "1.4rem",
+                color: "#0e7490",
+              }}
+            >
               Permission Management
             </h2>
-            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: "#64748b" }}>
+            <p
+              style={{
+                margin: "0.2rem 0 0 0",
+                fontSize: "0.85rem",
+                color: "#64748b",
+              }}
+            >
               Configure and manage system permissions
             </p>
           </div>
@@ -167,6 +191,23 @@ const PermissionsManagement: React.FC = () => {
         dataSource={data?.data}
         rowKey="permissionId"
         style={{ marginTop: 20 }}
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: data?.pagination?.total || 0,
+          showSizeChanger: true,
+          pageSizeOptions: ["10", "20", "50", "100"],
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} of ${total} items`,
+          onChange: (page, size) => {
+            setCurrentPage(page);
+            setPageSize(size);
+          },
+          onShowSizeChange: (current, size) => {
+            setCurrentPage(1);
+            setPageSize(size);
+          },
+        }}
       />
 
       <AddPermissionModal

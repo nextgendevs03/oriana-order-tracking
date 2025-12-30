@@ -152,6 +152,37 @@ export interface ListClientRequest extends BaseListRequest {
 
 **Important**: All searchable fields (like `clientName`, `categoryName`, `userName`, `email`) have been removed from request interfaces. Use `searchKey` and `searchTerm` instead.
 
+**Controller Implementation Pattern for `getAll` APIs with Pagination:**
+
+All controllers with pagination-enabled `getAll` methods must use the destructuring pattern to return the response:
+
+```typescript
+@Get('/')
+async getAll(
+  @Query('page') page?: string,
+  @Query('limit') limit?: string,
+  // ... other query parameters
+): Promise<APIGatewayProxyResult> {
+  const result = await this.service.getAllItems({
+    page: page ? parseInt(page, 10) : 1,
+    limit: limit ? parseInt(limit, 10) : 20,
+    // ... other params
+  });
+  
+  // Destructure and reconstruct the response object
+  const { data, pagination } = result;
+  return createSuccessResponse({ data, pagination }, 200);
+}
+```
+
+**Important**: 
+- ✅ **DO** use `const { data, pagination } = result;` followed by `return createSuccessResponse({ data, pagination }, 200);`
+- ❌ **DO NOT** return `createSuccessResponse(result.data, 200, result.pagination)` 
+- ❌ **DO NOT** return `createSuccessResponse(result, 200)` directly
+- This pattern ensures consistent response structure across all `getAll` APIs with pagination
+- The `createSuccessResponse` function will automatically wrap the object in the standard API response format
+- The frontend `transformResponse` will extract `data` and `pagination` from `response.data` and `response.pagination` respectively
+
 ### Redux/RTK Query Pattern
 
 **Base API Configuration** (`ui/src/store/api/baseApi.ts`):
@@ -359,7 +390,8 @@ async getAll(
     searchKey: searchKey || undefined,
     searchTerm: searchTerm || undefined,
   });
-  return createSuccessResponse(result.data, 200, result.pagination);
+  const { data, pagination } = result;
+  return createSuccessResponse({ data, pagination }, 200);
 }
 ```
 
@@ -624,7 +656,11 @@ async findAll(params?: ListRequest): Promise<{ rows: T[]; count: number }> {
 - **TypeScript**: Strict mode enabled
 - **Linting**: ESLint with TypeScript rules
 - **Formatting**: Prettier
-- **Types**: Always use proper types, avoid `any`
+- **Types**: **STRICTLY FORBIDDEN** - The use of `any` type is **NOT ALLOWED**
+  - Use `unknown` for truly unknown types, then narrow with type guards
+  - Use proper TypeScript types, interfaces, or generics
+  - Use union types when multiple types are possible
+  - Use type assertions only when absolutely necessary and with proper validation
 - **Error Handling**: Always handle errors
 - **Loading States**: Always show loading indicators
 - **Consistency**: Follow existing patterns
@@ -639,6 +675,66 @@ async findAll(params?: ListRequest): Promise<{ rows: T[]; count: number }> {
 6. **Security**: Validate inputs, use JWT, implement authorization
 7. **Maintainability**: Write clean, readable, well-documented code
 
+## Type Safety Requirements
+
+### Strict TypeScript Rules
+
+**The use of `any` type is STRICTLY FORBIDDEN in this codebase.**
+
+#### Alternatives to `any`:
+
+1. **Use `unknown` with type guards**:
+   ```typescript
+   // ❌ WRONG
+   function processData(data: any) { ... }
+   
+   // ✅ CORRECT
+   function processData(data: unknown) {
+     if (typeof data === 'string') {
+       // data is now narrowed to string
+     }
+   }
+   ```
+
+2. **Use proper interfaces/types**:
+   ```typescript
+   // ✅ CORRECT
+   interface UserData {
+     id: string;
+     name: string;
+   }
+   function processData(data: UserData) { ... }
+   ```
+
+3. **Use generics**:
+   ```typescript
+   // ✅ CORRECT
+   function processData<T>(data: T): T { ... }
+   ```
+
+4. **Use union types**:
+   ```typescript
+   // ✅ CORRECT
+   function processData(data: string | number) { ... }
+   ```
+
+5. **Use type assertions with validation**:
+   ```typescript
+   // ✅ CORRECT (with proper validation)
+   function processData(data: unknown) {
+     if (isUserData(data)) {
+       const user = data as UserData;
+       // Use user safely
+     }
+   }
+   ```
+
+#### When encountering `any`:
+- Refactor to use proper types
+- If the type is truly unknown, use `unknown` and implement type guards
+- If multiple types are possible, use union types
+- If the structure is dynamic, use generics or mapped types
+
 ## Notes
 
 - All API responses use `data` key (not `items`)
@@ -647,6 +743,7 @@ async findAll(params?: ListRequest): Promise<{ rows: T[]; count: number }> {
 - Server-side pagination is required for all list endpoints
 - All components must handle loading and error states
 - TypeScript strict mode is enabled
+- **Type Safety**: The use of `any` type is STRICTLY FORBIDDEN - always use proper types, `unknown` with type guards, or generics
 - JWT tokens expire after 45 minutes
 - Global error handler redirects to login on 401
 - **Search**: All list requests extend `BaseListRequest` with `searchKey` and `searchTerm` parameters

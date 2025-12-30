@@ -46,14 +46,12 @@ export class UserService implements IUserService {
 
     const user: User = await this.userRepository.create(userData);
 
-    // Extract role name from direct role relation or userRoles
+    // Extract role name from direct role relation (1-to-1)
     const userWithRole = user as unknown as {
       role?: { roleName: string };
-      userRoles?: Array<{ role: { roleName: string } }>;
       roleId?: string | null;
     };
-    const roleName =
-      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+    const roleName = userWithRole.role?.roleName || '';
 
     return {
       userId: user.userId,
@@ -70,14 +68,12 @@ export class UserService implements IUserService {
 
     if (!user) return null;
 
-    // Extract role name from direct role relation or userRoles
+    // Extract role name from direct role relation (1-to-1)
     const userWithRole = user as unknown as {
       role?: { roleName: string };
-      userRoles?: Array<{ role: { roleName: string } }>;
       roleId?: string | null;
     };
-    const roleName =
-      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+    const roleName = userWithRole.role?.roleName || '';
 
     return {
       userId: user.userId,
@@ -131,14 +127,12 @@ export class UserService implements IUserService {
     }
     const user: User = await this.userRepository.update(id, data);
 
-    // Extract role name from direct role relation or userRoles
+    // Extract role name from direct role relation (1-to-1)
     const userWithRole = user as unknown as {
       role?: { roleName: string };
-      userRoles?: Array<{ role: { roleName: string } }>;
       roleId?: string | null;
     };
-    const roleName =
-      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+    const roleName = userWithRole.role?.roleName || '';
 
     return {
       userId: user.userId,

@@ -63,7 +63,8 @@ export class ClientController implements IClientController {
         searchKey: searchKey || undefined,
         searchTerm: searchTerm || undefined,
       });
-      return createSuccessResponse(result.data, 200, result.pagination);
+      const { data, pagination } = result;
+      return createSuccessResponse({ data, pagination }, 200);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
     }
