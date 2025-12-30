@@ -3,10 +3,8 @@ import {
   Table,
   Tag,
   Input,
-  Select,
   Button,
   Space,
-  Typography,
   Popconfirm,
 } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
@@ -19,15 +17,14 @@ import {
   useDeletePermissionMutation,
 } from "../../../store/api/permissionApi";
 
-const { Title } = Typography;
-
 const PermissionsManagement: React.FC = () => {
   const toast = useToast();
-  const { data, isLoading } = useGetPermissionsQuery();
+  const [searchText, setSearchText] = useState("");
+  const { data, isLoading } = useGetPermissionsQuery(
+    searchText ? { searchTerm: searchText } : undefined
+  );
   const [deletePermissionApi] = useDeletePermissionMutation();
 
-  const [searchText, setSearchText] = useState("");
-  const [filterModule, setFilterModule] = useState<string>();
   const [openModal, setOpenModal] = useState(false);
   const [permissionToEdit, setPermissionToEdit] = useState<any>();
 
@@ -42,22 +39,16 @@ const PermissionsManagement: React.FC = () => {
 
   const columns = [
     { title: "Permission Name", dataIndex: "permissionName" },
-    {
-      title: "Code",
-      dataIndex: "permissionCode",
-      render: (c: string) => <Tag color="blue">{c}</Tag>,
-    },
-    { title: "Module", dataIndex: "module" },
     { title: "Description", dataIndex: "description" },
     {
-      title: "Roles",
-      dataIndex: "userRolePermissions",
-      render: (roles: any[]) =>
-        (roles || []).map((r: any) => (
-          <Tag key={r} color="geekblue">
-            {r}
-          </Tag>
-        )),
+      title: "Status",
+      dataIndex: "isActive",
+      render: (isActive: boolean) =>
+        isActive ? (
+          <Tag color="green">Active</Tag>
+        ) : (
+          <Tag color="red">Inactive</Tag>
+        ),
     },
     {
       title: "Actions",
@@ -167,17 +158,6 @@ const PermissionsManagement: React.FC = () => {
           style={{ width: 280, borderRadius: 8 }}
           allowClear
           onChange={(e) => setSearchText(e.target.value)}
-        />
-        <Select
-          placeholder="Filter by module"
-          style={{ width: 200 }}
-          allowClear
-          onChange={(value) => setFilterModule(value)}
-          options={[
-            { label: "Users", value: "users" },
-            { label: "Roles", value: "roles" },
-            { label: "Permissions", value: "permissions" },
-          ]}
         />
       </div>
 

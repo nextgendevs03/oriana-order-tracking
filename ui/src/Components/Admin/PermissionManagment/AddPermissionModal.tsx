@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button } from "antd";
+import { Modal, Form, Input, Switch, Button } from "antd";
 import { useToast } from "../../../hooks/useToast";
 
 import {
@@ -12,20 +12,6 @@ interface Props {
   onClose: () => void;
   permissionToEdit?: any;
 }
-
-const permissionNames = [
-  { label: "Create Users", value: "create_users" },
-  { label: "View Users", value: "view_users" },
-  { label: "Edit Users", value: "edit_users" },
-  { label: "Delete Users", value: "delete_users" },
-];
-
-const permissionCodes = [
-  { label: "USR_CREATE", value: "USR_CREATE" },
-  { label: "USR_VIEW", value: "USR_VIEW" },
-  { label: "USR_EDIT", value: "USR_EDIT" },
-  { label: "USR_DELETE", value: "USR_DELETE" },
-];
 
 const AddPermissionModal: React.FC<Props> = ({
   open,
@@ -43,20 +29,22 @@ const AddPermissionModal: React.FC<Props> = ({
       form.setFieldsValue({
         permissionName: permissionToEdit.permissionName,
         permissionCode: permissionToEdit.permissionCode,
-        module: permissionToEdit.module,
         description: permissionToEdit.description,
+        isActive: permissionToEdit.isActive ?? true,
       });
     } else {
       form.resetFields();
+      // Set default value for isActive
+      form.setFieldsValue({ isActive: true });
     }
-  }, [permissionToEdit]);
+  }, [permissionToEdit, form]);
 
   const handleFinish = async (values: any) => {
     try {
       if (permissionToEdit) {
         // UPDATE
         await updatePermissionApi({
-          id: permissionToEdit.permissionId, // FIXED
+          id: permissionToEdit.permissionId,
           ...values,
         }).unwrap();
 
@@ -74,40 +62,41 @@ const AddPermissionModal: React.FC<Props> = ({
   };
 
   return (
-    <Modal open={open} footer={null} onCancel={onClose} width={550}>
+    <Modal
+      open={open}
+      footer={null}
+      onCancel={onClose}
+      width={550}
+      title={permissionToEdit ? "Edit Permission" : "Add Permission"}
+    >
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Permission Name"
           name="permissionName"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Please enter permission name" }]}
         >
-          <Select
-            placeholder="Select Permission Name"
-            options={permissionNames}
-          />
+          <Input placeholder="Enter Permission Name" />
         </Form.Item>
 
         <Form.Item
-          label="Code"
+          label="Permission Code"
           name="permissionCode"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Please enter permission code" }]}
         >
-          <Select placeholder="Select Code" options={permissionCodes} />
+          <Input placeholder="Enter Permission Code (e.g., USR_CREATE)" />
         </Form.Item>
 
-        <Form.Item label="Module" name="module" rules={[{ required: true }]}>
-          <Select
-            placeholder="Select Module"
-            options={[
-              { label: "users", value: "users" },
-              { label: "roles", value: "roles" },
-              { label: "permissions", value: "permissions" },
-            ]}
-          />
+        <Form.Item label="Permission Description" name="description">
+          <Input.TextArea rows={3} placeholder="Enter permission description" />
         </Form.Item>
 
-        <Form.Item label="Description" name="description">
-          <Input.TextArea rows={3} />
+        <Form.Item
+          label="Active"
+          name="isActive"
+          valuePropName="checked"
+          initialValue={true}
+        >
+          <Switch defaultChecked />
         </Form.Item>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
