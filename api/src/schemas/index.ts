@@ -31,3 +31,8 @@ export * from './response/UserResponse';
 export * from './request/CategoryRequest';
 // Response schemas
 export * from './response/CategoryResponse';
+
+// File Request schemas
+export * from './request/FileRequest';
+// File Response schemas
+export * from './response/FileResponse';

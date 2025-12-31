@@ -36,3 +36,5 @@ export * from './OEMController';
 export * from './ProductController';
 // Client Controller
 export * from './ClientController';
+// File Controller
+export * from './FileController';

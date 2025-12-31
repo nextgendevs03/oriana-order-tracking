@@ -5,6 +5,10 @@ import * as path from "path";
 import { EnvironmentConfig } from "../config/environment";
 import { LambdaConstruct } from "../constructs/core/lambda-construct";
 import { ApiGatewayConstruct } from "../constructs/core/api-gateway-construct";
+import {
+  ScheduledLambdaConstruct,
+  ScheduledLambdaConfig,
+} from "../constructs/core/scheduled-lambda-construct";
 import { S3Construct } from "../constructs/storage/s3-construct";
 import { StaticSiteConstruct } from "../constructs/hosting/static-site-construct";
 import { RDSConstruct } from "../constructs/database/rds-construct";
@@ -95,16 +99,97 @@ export class ApiStack extends Stack {
     });
 
     // ==========================================
+    // STATIC SITE HOSTING (UI) - CREATE FIRST FOR CORS
+    // ==========================================
+
+    // Create StaticSiteConstruct first to get CloudFront URL for S3 CORS
+    // IMPORTANT: Uses RemovalPolicy.RETAIN for prod to preserve hosted files!
+    let staticSiteConstruct: StaticSiteConstruct | undefined;
+    let cloudFrontUrl: string | undefined;
+
+    if (config.features.staticSite) {
+      console.log("\n🌐 Creating static site hosting (S3 + CloudFront)...");
+      staticSiteConstruct = new StaticSiteConstruct(
+        this,
+        "StaticSiteConstruct",
+        {
+          config,
+          uiBuildPath: path.join(__dirname, "../../../ui/build"),
+        },
+      );
+      // Get CloudFront URL for S3 CORS configuration
+      cloudFrontUrl = `https://${staticSiteConstruct.distribution.distributionDomainName}`;
+      console.log(
+        `   📍 CloudFront URL will be used for S3 CORS: ${cloudFrontUrl}`,
+      );
+    }
+
+    // ==========================================
     // STORAGE CONSTRUCTS
     // ==========================================
 
     // S3 Construct (enabled via features.s3)
+    let s3BucketName: string | undefined;
     if (config.features.s3) {
       console.log("\n📦 Creating S3 buckets...");
+
+      // Pass CloudFront URL for automatic CORS configuration
+      const additionalCorsOrigins: string[] = [];
+      if (cloudFrontUrl) {
+        additionalCorsOrigins.push(cloudFrontUrl);
+      }
+
       const s3Construct = new S3Construct(this, "S3Construct", {
         config,
+        additionalCorsOrigins,
       });
       permissionProviders.push(s3Construct);
+
+      // Get the files bucket name for Lambda environment variables
+      const filesBucket = s3Construct.getBucket("files");
+      if (filesBucket) {
+        s3BucketName = filesBucket.bucketName;
+      }
+    }
+
+    // ==========================================
+    // SCHEDULED LAMBDA FUNCTIONS
+    // ==========================================
+
+    // File Cleanup Lambda - runs every 6 hours to clean orphaned uploads
+    let scheduledLambdaConstruct: ScheduledLambdaConstruct | undefined;
+
+    const scheduledLambdas: ScheduledLambdaConfig[] = [
+      {
+        name: "fileCleanup",
+        handler: "dist/lambdas/fileCleanup.lambda.handler",
+        description: "Cleanup orphaned pending file uploads",
+        // Run every 6 hours
+        scheduleExpression: "rate(6 hours)",
+        // Cleanup job needs more time
+        timeout: 300, // 5 minutes
+        memorySize: 256,
+        environment: {
+          FILE_CLEANUP_HOURS: "24",
+          FILE_CLEANUP_DRY_RUN: config.environment === "dev" ? "true" : "false",
+        },
+        enabled: true,
+      },
+    ];
+
+    if (scheduledLambdas.length > 0 && config.features.s3) {
+      console.log("\n⏰ Creating scheduled Lambda functions...");
+      scheduledLambdaConstruct = new ScheduledLambdaConstruct(
+        this,
+        "ScheduledLambdaConstruct",
+        {
+          config,
+          sharedLayer,
+          scheduledLambdas,
+          dbHost,
+          s3BucketName,
+        },
+      );
     }
 
     // DynamoDB Construct (enabled via features.dynamodb)
@@ -181,11 +266,28 @@ export class ApiStack extends Stack {
     // Apply all collected permissions to Lambda functions
     if (permissionProviders.length > 0) {
       console.log("\n🔐 Applying permissions to Lambda functions...");
+
+      // Combine API lambdas with scheduled lambdas
+      const allLambdaFunctions: Record<string, lambda.Function> = {
+        ...lambdaConstruct.functions,
+        ...(scheduledLambdaConstruct?.functions || {}),
+      };
+
       new LambdaPermissions(this, "LambdaPermissions", {
         config,
-        lambdaFunctions: lambdaConstruct.functions,
+        lambdaFunctions: allLambdaFunctions,
         permissionProviders,
       });
+
+      // Add S3_BUCKET_NAME environment variable to all API lambdas
+      if (s3BucketName) {
+        console.log(
+          `\n📦 Adding S3_BUCKET_NAME (${s3BucketName}) to Lambda environment...`,
+        );
+        Object.values(lambdaConstruct.functions).forEach((fn) => {
+          fn.addEnvironment("S3_BUCKET_NAME", s3BucketName);
+        });
+      }
     }
 
     // ==========================================
@@ -200,19 +302,8 @@ export class ApiStack extends Stack {
       manifest,
     });
 
-    // ==========================================
-    // STATIC SITE HOSTING (UI)
-    // ==========================================
-
-    // Static Site Construct (enabled via features.staticSite)
-    // IMPORTANT: Uses RemovalPolicy.RETAIN for prod to preserve hosted files!
-    if (config.features.staticSite) {
-      console.log("\n🌐 Creating static site hosting (S3 + CloudFront)...");
-      new StaticSiteConstruct(this, "StaticSiteConstruct", {
-        config,
-        uiBuildPath: path.join(__dirname, "../../../ui/build"),
-      });
-    }
+    // Note: StaticSiteConstruct is created earlier in the stack to provide
+    // CloudFront URL for S3 CORS configuration
 
     console.log(`\n✅ Stack ${config.stackName} ready\n`);
   }
