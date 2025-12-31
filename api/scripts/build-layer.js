@@ -1,18 +1,131 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 /**
  * Build script for the shared Lambda layer
  * Creates a bundled layer that eliminates problematic node_modules (inversify long paths)
  * This fixes the Windows SAM CLI "Failed to calculate hash" error
+ * 
+ * Features:
+ * - Smart caching: skips rebuild if layer source hasn't changed
+ * - Use --force flag to force rebuild
+ * - Use --check flag to only check if rebuild is needed (exit 0 = cached, exit 1 = needs rebuild)
  */
 
 const layerSrcPath = path.join(__dirname, '../layers/shared/nodejs');
 const bundledOutputPath = path.join(__dirname, '../layers/shared/bundled');
+const hashFilePath = path.join(__dirname, '../layers/shared/.layer-hash');
+
+const forceRebuild = process.argv.includes('--force');
+const checkOnly = process.argv.includes('--check');
+
+/**
+ * Calculate hash of all source files in the layer
+ * Includes: src/**/*.ts, package.json, prisma/schema.prisma
+ */
+function calculateLayerHash() {
+  const hash = crypto.createHash('sha256');
+  
+  // Hash package.json
+  const packageJsonPath = path.join(layerSrcPath, 'package.json');
+  if (fs.existsSync(packageJsonPath)) {
+    hash.update(fs.readFileSync(packageJsonPath));
+  }
+  
+  // Hash package-lock.json (dependency versions matter)
+  const packageLockPath = path.join(layerSrcPath, 'package-lock.json');
+  if (fs.existsSync(packageLockPath)) {
+    hash.update(fs.readFileSync(packageLockPath));
+  }
+  
+  // Hash prisma schema
+  const schemaPath = path.join(layerSrcPath, 'prisma/schema.prisma');
+  if (fs.existsSync(schemaPath)) {
+    hash.update(fs.readFileSync(schemaPath));
+  }
+  
+  // Hash all TypeScript source files
+  const srcDir = path.join(layerSrcPath, 'src');
+  if (fs.existsSync(srcDir)) {
+    hashDirectory(srcDir, hash);
+  }
+  
+  // Hash esbuild config
+  const esbuildConfigPath = path.join(layerSrcPath, 'esbuild.config.js');
+  if (fs.existsSync(esbuildConfigPath)) {
+    hash.update(fs.readFileSync(esbuildConfigPath));
+  }
+  
+  return hash.digest('hex');
+}
+
+function hashDirectory(dirPath, hash) {
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    
+    if (entry.isDirectory()) {
+      hashDirectory(fullPath, hash);
+    } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))) {
+      hash.update(fs.readFileSync(fullPath));
+    }
+  }
+}
+
+/**
+ * Check if cached layer is still valid
+ */
+function isCacheValid() {
+  if (!fs.existsSync(hashFilePath)) {
+    return false;
+  }
+  
+  if (!fs.existsSync(bundledOutputPath)) {
+    return false;
+  }
+  
+  const cachedHash = fs.readFileSync(hashFilePath, 'utf-8').trim();
+  const currentHash = calculateLayerHash();
+  
+  return cachedHash === currentHash;
+}
+
+/**
+ * Save the current hash to cache file
+ */
+function saveHash() {
+  const currentHash = calculateLayerHash();
+  fs.writeFileSync(hashFilePath, currentHash, 'utf-8');
+  console.log('💾 Layer hash cached for future builds');
+}
 
 async function buildLayer() {
-  console.log('🔧 Building shared Lambda layer...\n');
+  // Check-only mode: just report if rebuild is needed
+  if (checkOnly) {
+    if (isCacheValid()) {
+      console.log('✅ Layer cache is valid - no rebuild needed');
+      process.exit(0);
+    } else {
+      console.log('🔄 Layer cache is invalid - rebuild needed');
+      process.exit(1);
+    }
+  }
+
+  // Skip rebuild if cache is valid and not forcing
+  if (!forceRebuild && isCacheValid()) {
+    console.log('⚡ Layer cache is valid - skipping rebuild');
+    console.log('   Use --force to rebuild anyway\n');
+    return;
+  }
+
+  if (forceRebuild) {
+    console.log('🔧 Building shared Lambda layer (forced)...\n');
+  } else {
+    console.log('🔧 Building shared Lambda layer...\n');
+  }
 
   try {
     // Step 1: Install dependencies in the layer source
@@ -104,6 +217,9 @@ async function buildLayer() {
     console.log(`\n✅ Bundled layer created: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
     console.log(`   Output: ${bundledOutputPath}`);
 
+    // Save hash for caching
+    saveHash();
+
   } catch (error) {
     console.error('\n❌ Build failed:', error.message);
     process.exit(1);
@@ -129,4 +245,3 @@ function getFolderSize(folderPath) {
 }
 
 buildLayer();
-

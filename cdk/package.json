@@ -22,15 +22,24 @@
     "clean": "rimraf cdk.out",
     
     "======== LOCAL DEV (SAM) ========": "",
-    "sam:start": "sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers LAZY --skip-pull-image",
+    "sam:start": "sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers EAGER --skip-pull-image",
     "sam:start:port": "node scripts/sam-start.js",
     "dev": "npm run synth:dev && npm run sam:start",
     "dev:port": "npm run synth:dev && npm run sam:start:port",
     "dev:watch": "npm run synth:dev && node scripts/sam-start-watch.js",
     "dev:all": "npm run synth:dev && concurrently -n \"API,SAM\" -c \"cyan,magenta\" \"cd ../api && npm run watch\" \"node scripts/sam-start-watch.js\"",
     "dev:fresh": "npm run clean && npm run dev",
-    "dev:debug": "npm run synth:dev && sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers LAZY --skip-pull-image --debug",
+    "dev:debug": "npm run synth:dev && sam local start-api -p 4000 -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --warm-containers EAGER --skip-pull-image --debug",
     "dev:quick": "cdk synth ApiStack-dev && npm run sam:start",
+    
+    "======== OPTIMIZED LOCAL DEV ========": "",
+    "dev:fast": "node scripts/dev-fast.js",
+    "dev:fast:init": "node scripts/dev-fast.js --init",
+    "dev:hot": "node scripts/dev-hot.js",
+    
+    "======== EXPRESS DEV (NO DOCKER) ========": "",
+    "dev:express": "cd ../api && npm run dev:express",
+    "dev:express:watch": "cd ../api && npm run dev:express:watch",
     
     "======== INVOKE COMMANDS ========": "",
     "invoke:po": "npm run synth:dev && sam local invoke poFunction -t cdk.out/ApiStack-dev.template.json --env-vars env.local.json --skip-pull-image",

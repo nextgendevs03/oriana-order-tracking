@@ -644,12 +644,37 @@ async findAll(params?: ListRequest): Promise<{ rows: T[]; count: number }> {
 
 ## Development Workflow
 
+### Quick Start (Recommended)
+
+```bash
+# Daily development - uses cached builds for fast startup
+cd cdk && npm run dev:fast
+
+# Hot reload mode - for rapid iteration
+cd cdk && npm run dev:hot
+
+# After git pull or schema changes - force full rebuild
+cd cdk && npm run dev:fast:init
+```
+
+### Workflow Steps
+
 1. **Make Changes**: Edit code in appropriate directory
-2. **Test Locally**: Run frontend and backend
+2. **Test Locally**: Run frontend (`npm start` in ui/) and backend (`npm run dev:fast` in cdk/)
 3. **Check Types**: Ensure TypeScript compiles
 4. **Check Linting**: Run ESLint
 5. **Test Functionality**: Test all scenarios
 6. **Commit**: Follow commit message conventions
+
+### Optimized Development Scripts
+
+| Script | Description | When to Use |
+|--------|-------------|-------------|
+| `dev:fast` | Cached build + SAM | Daily development |
+| `dev:hot` | Watch mode + SAM | Rapid iteration |
+| `dev:fast:init` | Force rebuild | After git pull or schema changes |
+
+See `api/docs/LOCAL_DEVELOPMENT.md` for detailed documentation.
 
 ## Code Quality Standards
 
@@ -751,3 +776,5 @@ async findAll(params?: ListRequest): Promise<{ rows: T[]; count: number }> {
 - **Search**: Use `searchKey` + `searchTerm` for explicit field searches
 - **Search**: All searches are case-insensitive and use partial matching
 - **Search**: Field validation is required - only whitelisted fields can be searched
+- **Local Dev**: Use `dev:fast` for cached builds, `dev:hot` for hot reload - see `api/docs/LOCAL_DEVELOPMENT.md`
+- **Layer Caching**: Shared layer builds are cached; use `build:layer:force` to force rebuild
