@@ -1,83 +1,84 @@
-Permission name - Product Management Create
-Permission code - product_create
-Description - Permission to create products, OEM, Category, Client
+# Permission List
 
-Permission name - Product Management Read
-Permission code - product_read
-Description - Permission to Read products, OEM, Category, Client
+> **Last Updated:** December 2024  
+> **Total Permissions:** 23
 
-Permission name - Product Management Update
-Permission code - product_update
-Description - Permission to Update products, OEM, Category, Client
+## Related Documentation
 
-Permission name - Product Management Delete
-Permission code - product_delete
-Description - Permission to Delete products, OEM, Category, Client
+| Document | Description |
+|----------|-------------|
+| [ROLE_PERMISSION_MATRIX.md](./ROLE_PERMISSION_MATRIX.md) | Role definitions and permission mappings |
+| [AUTHORIZATION_IMPLEMENTATION.md](./AUTHORIZATION_IMPLEMENTATION.md) | Technical implementation guide |
 
-Permission name - Users management Create
-Permission code - users_create
-Description - Permission to Create users, roles and permissions
+## Frontend Constants
 
-Permission name - Users management Read
-Permission code - users_read
-Description - Permission to Read users, roles and permissions
+All permissions are defined in `ui/src/constants/permissions.ts`:
 
-Permission name - Users management Update
-Permission code - users_update
-Description - Permission to Update users, roles and permissions
+```typescript
+import { PERMISSIONS } from '../constants/permissions';
 
-Permission name - Users management Delete
-Permission code - users_delete
-Description - Permission to Delete users, roles and permissions
+// Example usage:
+const canCreate = usePermission(PERMISSIONS.PO_CREATE);
+```
 
-Permission name - Users management View
-Permission code - users_view
-Description - Permission to View users, roles and permissions
+---
 
-Permission name - PO management Create
-Permission code - po_create
-Description - Permission to Create POs
+## Permission Categories
 
-Permission name - PO management Read
-Permission code - po_read
-Description - Permission to Read POs
+### Product Management
 
-Permission name - PO management Update
-Permission code - po_update
-Description - Permission to Update POs
+| Permission Name | Permission Code | Description |
+|-----------------|-----------------|-------------|
+| Product Management Create | `product_create` | Create products, OEM, Category, Client |
+| Product Management Read | `product_read` | Read products, OEM, Category, Client |
+| Product Management Update | `product_update` | Update products, OEM, Category, Client |
+| Product Management Delete | `product_delete` | Delete products, OEM, Category, Client |
 
-Permission name - PO management Delete
-Permission code - po_delete
-Description - Permission to Delete POs
+### User Management
 
-Permission name - Dispatch management Create
-Permission code - dispatch_create
-Description - Permission to Create Dispatches, Delivery and documents
+| Permission Name | Permission Code | Description |
+|-----------------|-----------------|-------------|
+| Users Management Create | `users_create` | Create users, roles and permissions |
+| Users Management Read | `users_read` | Read users, roles and permissions |
+| Users Management Update | `users_update` | Update users, roles and permissions |
+| Users Management Delete | `users_delete` | Delete users, roles and permissions |
+| Users Management View | `users_view` | View users, roles and permissions |
 
-Permission name - Dispatch management Read
-Permission code - dispatch_read
-Description - Permission to Read Dispatches, Delivery and documents
+### PO (Purchase Order) Management
 
-Permission name - Dispatch management Update
-Permission code - dispatch_update
-Description - Permission to Update Dispatches, Delivery and documents
+| Permission Name | Permission Code | Description |
+|-----------------|-----------------|-------------|
+| PO Management Create | `po_create` | Create POs |
+| PO Management Read | `po_read` | Read POs |
+| PO Management Update | `po_update` | Update POs |
+| PO Management Delete | `po_delete` | Delete POs |
+| PO Pricing View Own | `po_pricing_view_own` | View pricing of own created POs only |
+| PO Pricing View All | `po_pricing_view_all` | View pricing of all POs (Admin only) |
 
-Permission name - Dispatch management Delete
-Permission code - dispatch_delete
-Description - Permission to Delete Dispatches, Delivery and documents
+### Dispatch Management
 
-Permission name - Commissioning management Create
-Permission code - commissioning_create
-Description - Permission to Create Pre-Commissioning, Commissioning, and Warranty
+| Permission Name | Permission Code | Description |
+|-----------------|-----------------|-------------|
+| Dispatch Management Create | `dispatch_create` | Create Dispatches, Delivery and documents |
+| Dispatch Management Read | `dispatch_read` | Read Dispatches, Delivery and documents |
+| Dispatch Management Update | `dispatch_update` | Update Dispatches, Delivery and documents |
+| Dispatch Management Delete | `dispatch_delete` | Delete Dispatches, Delivery and documents |
 
-Permission name - Commissioning management Read
-Permission code - commissioning_read
-Description - Permission to Read Pre-Commissioning, Commissioning, and Warranty
+### Commissioning Management
 
-Permission name - Commissioning management Update
-Permission code - commissioning_update
-Description - Permission to Update Pre-Commissioning, Commissioning, and Warranty
+| Permission Name | Permission Code | Description |
+|-----------------|-----------------|-------------|
+| Commissioning Management Create | `commissioning_create` | Create Pre-Commissioning, Commissioning, and Warranty |
+| Commissioning Management Read | `commissioning_read` | Read Pre-Commissioning, Commissioning, and Warranty |
+| Commissioning Management Update | `commissioning_update` | Update Pre-Commissioning, Commissioning, and Warranty |
+| Commissioning Management Delete | `commissioning_delete` | Delete Pre-Commissioning, Commissioning, and Warranty |
 
-Permission name - Commissioning management Delete
-Permission code - commissioning_delete
-Description - Permission to Delete Pre-Commissioning, Commissioning, and Warranty
+---
+
+## Adding New Permissions
+
+1. Add to database `permissions` table
+2. Add to `ui/src/constants/permissions.ts`
+3. Update this document
+4. Update `ROLE_PERMISSION_MATRIX.md` with role assignments
+5. Use in components with `usePermission` hook or `Can` component

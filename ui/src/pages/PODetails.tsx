@@ -11,6 +11,7 @@ import {
   Space,
   Spin,
   Alert,
+  Tooltip,
 } from "antd";
 import {
   PlusOutlined,
@@ -24,6 +25,8 @@ import {
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useParams } from "react-router-dom";
+import { usePermission, useAnyPermission } from "../hooks/usePermission";
+import { PERMISSIONS } from "../constants/permissions";
 import { colors, shadows } from "../styles/theme";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { useGetPOByIdQuery } from "../store/api/poApi";
@@ -75,6 +78,18 @@ const { Panel } = Collapse;
 const PODetails: React.FC = () => {
   const { poId } = useParams<{ poId: string }>();
   const dispatch = useAppDispatch();
+
+  // Permission checks
+  const canCreateDispatch = usePermission(PERMISSIONS.DISPATCH_CREATE);
+  const canUpdateDispatch = usePermission(PERMISSIONS.DISPATCH_UPDATE);
+  const canDeleteDispatch = usePermission(PERMISSIONS.DISPATCH_DELETE);
+  const canCreateCommissioning = usePermission(PERMISSIONS.COMMISSIONING_CREATE);
+  const canUpdateCommissioning = usePermission(PERMISSIONS.COMMISSIONING_UPDATE);
+  const canDeleteCommissioning = usePermission(PERMISSIONS.COMMISSIONING_DELETE);
+  const canViewPricingOwn = usePermission(PERMISSIONS.PO_PRICING_VIEW_OWN);
+  const canViewPricingAll = usePermission(PERMISSIONS.PO_PRICING_VIEW_ALL);
+  const canViewPricing = useAnyPermission([PERMISSIONS.PO_PRICING_VIEW_OWN, PERMISSIONS.PO_PRICING_VIEW_ALL]);
+
   const [isDispatchModalVisible, setIsDispatchModalVisible] = useState(false);
   const [editingDispatch, setEditingDispatch] = useState<DispatchDetail | null>(
     null
@@ -582,16 +597,24 @@ const PODetails: React.FC = () => {
       fixed: "right",
       width: 120,
       render: (_, record) => {
-        // Disable edit if dispatch status is "done"
+        // Disable edit if dispatch status is "done" or no permission
         const isDispatchDone = record.dispatchStatus === "done";
-        // Disable delete if dispatch status is "done" OR delivery status exists
-        const hasDeliveryStatus = !!record.deliveryStatus;
-        const isDeleteDisabled = isDispatchDone || hasDeliveryStatus;
-        const deleteDisabledReason = hasDeliveryStatus
-          ? "Delete disabled - Delivery confirmation exists"
+        const isEditDisabled = isDispatchDone || !canUpdateDispatch;
+        const editDisabledReason = !canUpdateDispatch
+          ? "You don't have permission to edit dispatches"
           : isDispatchDone
-            ? "Delete disabled - Dispatch status is Done"
-            : "Delete";
+            ? "Editing disabled - Dispatch status is Done"
+            : "Edit";
+        // Disable delete if dispatch status is "done" OR delivery status exists OR no permission
+        const hasDeliveryStatus = !!record.deliveryStatus;
+        const isDeleteDisabled = isDispatchDone || hasDeliveryStatus || !canDeleteDispatch;
+        const deleteDisabledReason = !canDeleteDispatch
+          ? "You don't have permission to delete dispatches"
+          : hasDeliveryStatus
+            ? "Delete disabled - Delivery confirmation exists"
+            : isDispatchDone
+              ? "Delete disabled - Dispatch status is Done"
+              : "Delete";
         return (
           <Space size="small">
             <Button
@@ -601,18 +624,15 @@ const PODetails: React.FC = () => {
               style={{ padding: 0, color: "#1890ff" }}
               title="View Details"
             />
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => handleEditDispatch(record)}
-              style={{ padding: 0 }}
-              disabled={isDispatchDone}
-              title={
-                isDispatchDone
-                  ? "Editing disabled - Dispatch status is Done"
-                  : "Edit"
-              }
-            />
+            <Tooltip title={editDisabledReason}>
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => handleEditDispatch(record)}
+                style={{ padding: 0 }}
+                disabled={isEditDisabled}
+              />
+            </Tooltip>
             <Popconfirm
               title="Delete Dispatch"
               description="Are you sure you want to delete this dispatch? This will remove all dispatch details data."
@@ -622,14 +642,15 @@ const PODetails: React.FC = () => {
               okButtonProps={{ danger: true }}
               disabled={isDeleteDisabled}
             >
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-                style={{ padding: 0 }}
-                disabled={isDeleteDisabled}
-                title={deleteDisabledReason}
-              />
+              <Tooltip title={deleteDisabledReason}>
+                <Button
+                  type="link"
+                  danger
+                  icon={<DeleteOutlined />}
+                  style={{ padding: 0 }}
+                  disabled={isDeleteDisabled}
+                />
+              </Tooltip>
             </Popconfirm>
           </Space>
         );
@@ -739,6 +760,18 @@ const PODetails: React.FC = () => {
       render: (_, record) => {
         const isDeliveryDone = record.deliveryStatus === "done";
         const hasDeliveryConfirmation = !!record.deliveryStatus;
+        const isEditDisabled = isDeliveryDone || !canUpdateDispatch;
+        const editDisabledReason = !canUpdateDispatch
+          ? "You don't have permission to edit documents"
+          : isDeliveryDone
+            ? "Editing disabled - Delivery is done"
+            : "Edit";
+        const isDeleteDisabled = hasDeliveryConfirmation || !canDeleteDispatch;
+        const deleteDisabledReason = !canDeleteDispatch
+          ? "You don't have permission to delete documents"
+          : hasDeliveryConfirmation
+            ? "Delete disabled - Delivery confirmation exists"
+            : "Delete";
         return (
           <Space size="small">
             <Button
@@ -748,16 +781,15 @@ const PODetails: React.FC = () => {
               style={{ padding: 0, color: "#1890ff" }}
               title="View Details"
             />
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => handleEditDocument(record)}
-              style={{ padding: 0 }}
-              disabled={isDeliveryDone}
-              title={
-                isDeliveryDone ? "Editing disabled - Delivery is done" : "Edit"
-              }
-            />
+            <Tooltip title={editDisabledReason}>
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => handleEditDocument(record)}
+                style={{ padding: 0 }}
+                disabled={isEditDisabled}
+              />
+            </Tooltip>
             <Popconfirm
               title="Delete Document Details"
               description="Are you sure you want to delete this document details? This will remove all document data."
@@ -765,20 +797,17 @@ const PODetails: React.FC = () => {
               okText="Yes"
               cancelText="No"
               okButtonProps={{ danger: true }}
-              disabled={hasDeliveryConfirmation}
+              disabled={isDeleteDisabled}
             >
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-                style={{ padding: 0 }}
-                disabled={hasDeliveryConfirmation}
-                title={
-                  hasDeliveryConfirmation
-                    ? "Delete disabled - Delivery confirmation exists"
-                    : "Delete"
-                }
-              />
+              <Tooltip title={deleteDisabledReason}>
+                <Button
+                  type="link"
+                  danger
+                  icon={<DeleteOutlined />}
+                  style={{ padding: 0 }}
+                  disabled={isDeleteDisabled}
+                />
+              </Tooltip>
             </Popconfirm>
           </Space>
         );
@@ -863,13 +892,19 @@ const PODetails: React.FC = () => {
             style={{ padding: 0, color: "#1890ff" }}
             title="View Details"
           />
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEditDeliveryConfirmation(record)}
-            style={{ padding: 0 }}
-            title="Edit"
-          />
+          <Tooltip
+            title={
+              canUpdateDispatch ? "Edit" : "You don't have permission to edit delivery"
+            }
+          >
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEditDeliveryConfirmation(record)}
+              style={{ padding: 0 }}
+              disabled={!canUpdateDispatch}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -977,13 +1012,21 @@ const PODetails: React.FC = () => {
             style={{ padding: 0, color: "#1890ff" }}
             title="View Details"
           />
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEditPreCommissioning(record)}
-            style={{ padding: 0 }}
-            title="Edit"
-          />
+          <Tooltip
+            title={
+              canUpdateCommissioning
+                ? "Edit"
+                : "You don't have permission to edit pre-commissioning"
+            }
+          >
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEditPreCommissioning(record)}
+              style={{ padding: 0 }}
+              disabled={!canUpdateCommissioning}
+            />
+          </Tooltip>
           <Popconfirm
             title="Delete Pre-Commissioning"
             description="Are you sure you want to delete this entry?"
@@ -991,14 +1034,23 @@ const PODetails: React.FC = () => {
             okText="Yes"
             cancelText="No"
             okButtonProps={{ danger: true }}
+            disabled={!canDeleteCommissioning}
           >
-            <Button
-              type="link"
-              danger
-              icon={<DeleteOutlined />}
-              style={{ padding: 0 }}
-              title="Delete"
-            />
+            <Tooltip
+              title={
+                canDeleteCommissioning
+                  ? "Delete"
+                  : "You don't have permission to delete pre-commissioning"
+              }
+            >
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+                style={{ padding: 0 }}
+                disabled={!canDeleteCommissioning}
+              />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -1107,13 +1159,21 @@ const PODetails: React.FC = () => {
             style={{ padding: 0, color: "#1890ff" }}
             title="View Details"
           />
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEditCommissioning(record)}
-            style={{ padding: 0 }}
-            title="Edit"
-          />
+          <Tooltip
+            title={
+              canUpdateCommissioning
+                ? "Edit"
+                : "You don't have permission to edit commissioning"
+            }
+          >
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEditCommissioning(record)}
+              style={{ padding: 0 }}
+              disabled={!canUpdateCommissioning}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -1194,13 +1254,21 @@ const PODetails: React.FC = () => {
             style={{ padding: 0, color: "#1890ff" }}
             title="View Details"
           />
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEditWarranty(record)}
-            style={{ padding: 0 }}
-            title="Edit"
-          />
+          <Tooltip
+            title={
+              canUpdateCommissioning
+                ? "Edit"
+                : "You don't have permission to edit warranty"
+            }
+          >
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEditWarranty(record)}
+              style={{ padding: 0 }}
+              disabled={!canUpdateCommissioning}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -1504,19 +1572,35 @@ const PODetails: React.FC = () => {
               marginBottom: "1rem",
             }}
           >
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAddDispatch}
-              style={{
-                background: colors.primary,
-                borderRadius: 8,
-                fontWeight: 600,
-                border: "none",
-              }}
-            >
-              Add Dispatch
-            </Button>
+            {canCreateDispatch ? (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAddDispatch}
+                style={{
+                  background: colors.primary,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  border: "none",
+                }}
+              >
+                Add Dispatch
+              </Button>
+            ) : (
+              <Tooltip title="You don't have permission to create dispatches">
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  disabled
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 600,
+                  }}
+                >
+                  Add Dispatch
+                </Button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Dispatch Details Table or Empty State */}
@@ -1553,19 +1637,35 @@ const PODetails: React.FC = () => {
               marginBottom: "1rem",
             }}
           >
-            <Button
-              type="primary"
-              icon={<FileTextOutlined />}
-              onClick={handleAddDocument}
-              style={{
-                background: colors.primary,
-                borderRadius: 8,
-                fontWeight: 600,
-                border: "none",
-              }}
-            >
-              Update Document Details
-            </Button>
+            {canCreateDispatch ? (
+              <Button
+                type="primary"
+                icon={<FileTextOutlined />}
+                onClick={handleAddDocument}
+                style={{
+                  background: colors.primary,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  border: "none",
+                }}
+              >
+                Update Document Details
+              </Button>
+            ) : (
+              <Tooltip title="You don't have permission to update dispatch documents">
+                <Button
+                  type="primary"
+                  icon={<FileTextOutlined />}
+                  disabled
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 600,
+                  }}
+                >
+                  Update Document Details
+                </Button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Dispatch Documents Table or Empty State */}
@@ -1605,20 +1705,36 @@ const PODetails: React.FC = () => {
               marginBottom: "1rem",
             }}
           >
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={handleAddDeliveryConfirmation}
-              disabled={dispatchesForDeliveryConfirmation.length === 0}
-              style={{
-                background: colors.primary,
-                borderRadius: 8,
-                fontWeight: 600,
-                border: "none",
-              }}
-            >
-              Update Delivery Information
-            </Button>
+            {canCreateDispatch ? (
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={handleAddDeliveryConfirmation}
+                disabled={dispatchesForDeliveryConfirmation.length === 0}
+                style={{
+                  background: colors.primary,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  border: "none",
+                }}
+              >
+                Update Delivery Information
+              </Button>
+            ) : (
+              <Tooltip title="You don't have permission to update delivery information">
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  disabled
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 600,
+                  }}
+                >
+                  Update Delivery Information
+                </Button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Delivery Confirmation Table or Empty State */}
@@ -1666,20 +1782,36 @@ const PODetails: React.FC = () => {
               marginBottom: "1rem",
             }}
           >
-            <Button
-              type="primary"
-              icon={<ToolOutlined />}
-              onClick={handleAddPreCommissioning}
-              disabled={dispatchesForPreCommissioning.length === 0}
-              style={{
-                background: colors.primary,
-                borderRadius: 8,
-                fontWeight: 600,
-                border: "none",
-              }}
-            >
-              Update Pre-Commissioning Details
-            </Button>
+            {canCreateCommissioning ? (
+              <Button
+                type="primary"
+                icon={<ToolOutlined />}
+                onClick={handleAddPreCommissioning}
+                disabled={dispatchesForPreCommissioning.length === 0}
+                style={{
+                  background: colors.primary,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  border: "none",
+                }}
+              >
+                Update Pre-Commissioning Details
+              </Button>
+            ) : (
+              <Tooltip title="You don't have permission to update pre-commissioning details">
+                <Button
+                  type="primary"
+                  icon={<ToolOutlined />}
+                  disabled
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 600,
+                  }}
+                >
+                  Update Pre-Commissioning Details
+                </Button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Pre-Commissioning Table or Empty State */}
@@ -1725,20 +1857,36 @@ const PODetails: React.FC = () => {
               marginBottom: "1rem",
             }}
           >
-            <Button
-              type="primary"
-              icon={<ToolOutlined />}
-              onClick={handleAddCommissioning}
-              disabled={preCommissioningForCommissioning.length === 0}
-              style={{
-                background: colors.primary,
-                borderRadius: 8,
-                fontWeight: 600,
-                border: "none",
-              }}
-            >
-              Update Commissioning Details
-            </Button>
+            {canCreateCommissioning ? (
+              <Button
+                type="primary"
+                icon={<ToolOutlined />}
+                onClick={handleAddCommissioning}
+                disabled={preCommissioningForCommissioning.length === 0}
+                style={{
+                  background: colors.primary,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  border: "none",
+                }}
+              >
+                Update Commissioning Details
+              </Button>
+            ) : (
+              <Tooltip title="You don't have permission to update commissioning details">
+                <Button
+                  type="primary"
+                  icon={<ToolOutlined />}
+                  disabled
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 600,
+                  }}
+                >
+                  Update Commissioning Details
+                </Button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Commissioning Table or Empty State */}
@@ -1784,20 +1932,36 @@ const PODetails: React.FC = () => {
               marginBottom: "1rem",
             }}
           >
-            <Button
-              type="primary"
-              icon={<FileTextOutlined />}
-              onClick={handleAddWarranty}
-              disabled={commissioningForWarranty.length === 0}
-              style={{
-                background: colors.primary,
-                borderRadius: 8,
-                fontWeight: 600,
-                border: "none",
-              }}
-            >
-              Update Warranty Details
-            </Button>
+            {canCreateCommissioning ? (
+              <Button
+                type="primary"
+                icon={<FileTextOutlined />}
+                onClick={handleAddWarranty}
+                disabled={commissioningForWarranty.length === 0}
+                style={{
+                  background: colors.primary,
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  border: "none",
+                }}
+              >
+                Update Warranty Details
+              </Button>
+            ) : (
+              <Tooltip title="You don't have permission to update warranty details">
+                <Button
+                  type="primary"
+                  icon={<FileTextOutlined />}
+                  disabled
+                  style={{
+                    borderRadius: 8,
+                    fontWeight: 600,
+                  }}
+                >
+                  Update Warranty Details
+                </Button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Warranty Certificate Table or Empty State */}

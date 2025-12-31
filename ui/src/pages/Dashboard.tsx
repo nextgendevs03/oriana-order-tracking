@@ -10,6 +10,7 @@ import {
   Row,
   Col,
   Space,
+  Tooltip,
 } from "antd";
 import {
   PlusOutlined,
@@ -31,6 +32,8 @@ import {
 } from "../utils";
 import { colors, shadows } from "../styles/theme";
 import { useDebounce } from "../hooks/useDebounce";
+import { usePermission } from "../hooks/usePermission";
+import { PERMISSIONS } from "../constants/permissions";
 
 interface PORecord {
   key: string;
@@ -55,6 +58,9 @@ const Dashboard: React.FC = () => {
   const [selectedPoStatus, setSelectedPoStatus] = useState<string | undefined>(
     undefined
   );
+
+  // Permission checks
+  const canCreatePO = usePermission(PERMISSIONS.PO_CREATE);
 
   // Debounce search term for API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -323,28 +329,46 @@ const Dashboard: React.FC = () => {
               </p>
             </div>
           </div>
-          <motion.div
-            whileHover={{ y: -2, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreatePO}
-              style={{
-                background: colors.primary,
-                border: "none",
-                borderRadius: 10,
-                fontWeight: 600,
-                height: 44,
-                padding: "0 24px",
-                boxShadow: "0 4px 16px rgba(113, 162, 65, 0.35)",
-              }}
+          {canCreatePO ? (
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
             >
-              Create Order
-            </Button>
-          </motion.div>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreatePO}
+                style={{
+                  background: colors.primary,
+                  border: "none",
+                  borderRadius: 10,
+                  fontWeight: 600,
+                  height: 44,
+                  padding: "0 24px",
+                  boxShadow: "0 4px 16px rgba(113, 162, 65, 0.35)",
+                }}
+              >
+                Create Order
+              </Button>
+            </motion.div>
+          ) : (
+            <Tooltip title="You don't have permission to create POs">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                disabled
+                style={{
+                  borderRadius: 10,
+                  fontWeight: 600,
+                  height: 44,
+                  padding: "0 24px",
+                }}
+              >
+                Create Order
+              </Button>
+            </Tooltip>
+          )}
         </Card>
       </motion.div>
 

@@ -46,6 +46,10 @@ interface POItemsTableProps {
   warrantyOptions: DropdownOption[];
   gstPercentOptions: DropdownOption[];
   onUpdateCalculatedFields: (index: number) => void;
+  /** Whether to show pricing columns (pricePerUnit, totalPrice, gstPercent, finalPrice). Default: true */
+  showPricing?: boolean;
+  /** Whether the form is read-only (no add/edit/delete). Default: false */
+  readOnly?: boolean;
 }
 
 // Track product options per row
@@ -65,6 +69,8 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
   warrantyOptions,
   gstPercentOptions,
   onUpdateCalculatedFields,
+  showPricing = true,
+  readOnly = false,
 }) => {
   // Track product options for each row by index
   const [rowProducts, setRowProducts] = useState<
@@ -297,7 +303,8 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
 
   const getItemColumns = (
     removeFn: (index: number | number[]) => void
-  ): ColumnsType<ItemDetail & { name: number }> => [
+  ): ColumnsType<ItemDetail & { name: number }> => {
+    const baseColumns: ColumnsType<ItemDetail & { name: number }> = [
     {
       title: "Category",
       dataIndex: "categoryId",
@@ -442,6 +449,10 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
         </Form.Item>
       ),
     },
+  ];
+
+  // Pricing columns - only shown if showPricing is true
+  const pricingColumns: ColumnsType<ItemDetail & { name: number }> = [
     {
       title: "Price per Unit",
       dataIndex: "pricePerUnit",
@@ -460,6 +471,7 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
             min={1}
             style={{ width: "100%" }}
             onChange={() => onUpdateCalculatedFields(record.name)}
+            disabled={readOnly}
           />
         </Form.Item>
       ),
@@ -490,6 +502,7 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
             placeholder="Select"
             options={gstPercentOptions}
             onChange={() => onUpdateCalculatedFields(record.name)}
+            disabled={readOnly}
           />
         </Form.Item>
       ),
@@ -505,6 +518,10 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
         </Form.Item>
       ),
     },
+  ];
+
+  // Warranty column
+  const warrantyColumn: ColumnsType<ItemDetail & { name: number }> = [
     {
       title: "Warranty",
       dataIndex: "warranty",
@@ -516,25 +533,40 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
           rules={[{ required: true, message: "Required" }]}
           style={{ margin: 0 }}
         >
-          <Select placeholder="Select" options={warrantyOptions} />
+          <Select placeholder="Select" options={warrantyOptions} disabled={readOnly} />
         </Form.Item>
       ),
     },
-    {
-      title: "Delete",
-      key: "delete",
-      fixed: "right",
-      width: 70,
-      render: (_, record) => (
-        <Button
-          type="link"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => removeFn(record.name)}
-        />
-      ),
-    },
   ];
+
+  // Delete column - only shown if not readOnly
+  const deleteColumn: ColumnsType<ItemDetail & { name: number }> = readOnly
+    ? []
+    : [
+        {
+          title: "Delete",
+          key: "delete",
+          fixed: "right",
+          width: 70,
+          render: (_, record) => (
+            <Button
+              type="link"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => removeFn(record.name)}
+            />
+          ),
+        },
+      ];
+
+  // Combine columns based on showPricing flag
+  return [
+    ...baseColumns,
+    ...(showPricing ? pricingColumns : []),
+    ...warrantyColumn,
+    ...deleteColumn,
+  ];
+};
 
   const handleAddItem = () => {
     add({
@@ -554,16 +586,18 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
 
   return (
     <>
-      <div style={{ marginBottom: "1rem" }}>
-        <Button
-          type="dashed"
-          icon={<PlusOutlined />}
-          onClick={handleAddItem}
-          style={{ width: "200px" }}
-        >
-          Add Item Details
-        </Button>
-      </div>
+      {!readOnly && (
+        <div style={{ marginBottom: "1rem" }}>
+          <Button
+            type="dashed"
+            icon={<PlusOutlined />}
+            onClick={handleAddItem}
+            style={{ width: "200px" }}
+          >
+            Add Item Details
+          </Button>
+        </div>
+      )}
 
       {fields.length > 0 && (
         <Table

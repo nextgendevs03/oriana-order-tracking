@@ -53,9 +53,12 @@ This is a full-stack order tracking application built with:
 - **Pages**: Page components in `src/pages/`
 - **Store**: Redux store in `src/store/`
   - API definitions in `src/store/api/`
-  - Slices in `src/store/` (e.g., `userSlice.ts`, `poSlice.ts`)
+  - Slices in `src/store/` (e.g., `userSlice.ts`, `poSlice.ts`, `authSlice.ts`)
 - **Services**: Business logic services in `src/services/`
 - **Hooks**: Custom hooks in `src/hooks/`
+  - Permission hooks in `src/hooks/usePermission.ts`
+- **Constants**: Application constants in `src/constants/`
+  - Permission codes in `src/constants/permissions.ts`
 - **Types**: TypeScript types in `src/types/` or `@OrianaTypes`
 
 ### Backend Architecture
@@ -180,6 +183,52 @@ src/
 - Show loading state during submission
 - Display success/error messages
 
+### Permission Handling Pattern
+- **Always use permission constants**: Import from `src/constants/permissions.ts`
+- **Never hardcode permission strings**: Use `PERMISSIONS.PO_CREATE` not `'po_create'`
+- **Use hooks for permission checks**: `usePermission`, `useAnyPermission`, `usePermissions`
+- **Use Can/Cannot components**: For conditional rendering based on permissions
+- **Disabled buttons**: Show with `Tooltip` explaining the permission requirement
+- **Hidden menu items**: Use permission checks to filter menu items (not disable)
+- **Form fields**: Disable with tooltip when user lacks permission
+
+**Permission Hook Usage:**
+```typescript
+import { usePermission, useAnyPermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+
+const canCreate = usePermission(PERMISSIONS.PO_CREATE);
+const canViewPricing = useAnyPermission([
+  PERMISSIONS.PO_PRICING_VIEW_OWN,
+  PERMISSIONS.PO_PRICING_VIEW_ALL,
+]);
+```
+
+**Disabled Button with Tooltip Pattern:**
+```tsx
+{canCreate ? (
+  <Button type="primary" onClick={handleCreate}>Create</Button>
+) : (
+  <Tooltip title="You don't have permission to create">
+    <Button type="primary" disabled>Create</Button>
+  </Tooltip>
+)}
+```
+
+**Can Component Usage:**
+```tsx
+<Can permission={PERMISSIONS.PO_CREATE}>
+  <Button>Create PO</Button>
+</Can>
+
+<Can
+  permission={PERMISSIONS.PO_DELETE}
+  fallback={<Tooltip title="No permission"><Button disabled>Delete</Button></Tooltip>}
+>
+  <Button danger>Delete</Button>
+</Can>
+```
+
 ### API Integration Pattern
 When integrating a new API:
 1. Add endpoint to appropriate API file in `store/api/`
@@ -199,6 +248,9 @@ When creating a new component:
 5. Follow existing component patterns
 6. Add proper TypeScript types for props
 7. Handle edge cases (empty data, errors, etc.)
+8. Add permission checks for action buttons (Create/Edit/Delete)
+9. Use `usePermission` hook or `Can` component for permission checks
+10. Show disabled buttons with tooltips when user lacks permission
 
 ## Database Patterns
 
@@ -315,6 +367,10 @@ When creating a new component:
 - ❌ Missing TypeScript types
 - ❌ Not handling edge cases
 - ❌ Breaking existing functionality
+- ❌ Hardcoding permission strings instead of using `PERMISSIONS` constants
+- ❌ Not adding tooltips to disabled buttons
+- ❌ Disabling menu items instead of hiding them
+- ❌ Not checking permissions before showing action buttons (Create/Edit/Delete)
 
 ## Type Safety Rules
 

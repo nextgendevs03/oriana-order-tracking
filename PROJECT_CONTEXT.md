@@ -63,12 +63,18 @@ oriana-order-tracking/
 │   │   │   │   └── clientApi.ts
 │   │   │   ├── index.ts         # Store configuration
 │   │   │   ├── hooks.ts         # Typed hooks
-│   │   │   ├── authSlice.ts
+│   │   │   ├── authSlice.ts     # Auth state + permission selectors
 │   │   │   ├── userSlice.ts
 │   │   │   ├── poSlice.ts
 │   │   │   └── ...
 │   │   ├── services/            # Business logic services
 │   │   ├── hooks/               # Custom React hooks
+│   │   │   ├── usePermission.ts # Permission check hooks
+│   │   │   ├── useDebounce.ts
+│   │   │   ├── useToast.ts
+│   │   │   └── index.ts
+│   │   ├── constants/           # Application constants
+│   │   │   └── permissions.ts   # Permission code constants
 │   │   ├── types/               # TypeScript types
 │   │   └── styles/              # Global styles
 │   └── package.json
@@ -622,6 +628,134 @@ async findAll(params?: ListRequest): Promise<{ rows: T[]; count: number }> {
 - **401 Handling**: Global error handler redirects to login
 - **Authorization**: Role-based access control (RBAC)
 
+### Permission-Based Authorization (Frontend)
+
+The application uses a UI-only permission system where permissions are fetched during login and stored in Redux. All UI access control is based on these permissions.
+
+**Key Files:**
+- `ui/src/store/authSlice.ts` - Permission selectors (`selectPermissions`, `selectHasPermission`, etc.)
+- `ui/src/hooks/usePermission.ts` - Permission hooks (`usePermission`, `usePermissions`, `useAnyPermission`, `useAllPermissions`)
+- `ui/src/constants/permissions.ts` - Permission constants (e.g., `PERMISSIONS.PO_CREATE`)
+- `ui/src/Components/Can.tsx` - Permission wrapper component
+- `ui/src/Components/Cannot.tsx` - Inverse permission wrapper component
+
+**Documentation:**
+- `api/docs/ROLE_PERMISSION_MATRIX.md` - Role definitions and permission mappings
+- `api/docs/PERMISSION_LIST.MD` - Complete list of permission codes
+- `api/docs/AUTHORIZATION_IMPLEMENTATION.md` - Technical implementation guide
+
+### Permission Flow
+
+```
+Login Response → Redux Store → Permission Hooks/Selectors → UI Components
+                     ↓
+              permissions: string[]
+```
+
+### Using Permission Hooks
+
+```typescript
+import { usePermission, useAnyPermission, usePermissions } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+
+const MyComponent = () => {
+  // Check single permission
+  const canCreatePO = usePermission(PERMISSIONS.PO_CREATE);
+  
+  // Check if user has ANY of multiple permissions
+  const canViewPricing = useAnyPermission([
+    PERMISSIONS.PO_PRICING_VIEW_OWN,
+    PERMISSIONS.PO_PRICING_VIEW_ALL,
+  ]);
+  
+  // Check if user has ALL permissions
+  const canManageUsers = usePermissions([
+    PERMISSIONS.USERS_CREATE,
+    PERMISSIONS.USERS_UPDATE,
+    PERMISSIONS.USERS_DELETE,
+  ]);
+  
+  return (
+    <div>
+      {canCreatePO && <Button>Create PO</Button>}
+    </div>
+  );
+};
+```
+
+### Using Can/Cannot Components
+
+```tsx
+import Can from '../Components/Can';
+import Cannot from '../Components/Cannot';
+import { PERMISSIONS } from '../constants/permissions';
+
+// Show element if user has permission
+<Can permission={PERMISSIONS.PO_CREATE}>
+  <Button>Create PO</Button>
+</Can>
+
+// Show element with fallback if no permission
+<Can
+  permission={PERMISSIONS.PO_DELETE}
+  fallback={
+    <Tooltip title="You don't have permission to delete">
+      <Button disabled>Delete</Button>
+    </Tooltip>
+  }
+>
+  <Button danger>Delete</Button>
+</Can>
+
+// Show element if user does NOT have permission
+<Cannot permission={PERMISSIONS.USERS_READ}>
+  <Alert message="You don't have access to this section" />
+</Cannot>
+```
+
+### Disabled Button with Tooltip Pattern
+
+When a user lacks permission, buttons should be disabled with tooltips explaining why:
+
+```tsx
+import { Tooltip, Button } from 'antd';
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+
+const ActionButton = () => {
+  const canCreate = usePermission(PERMISSIONS.DISPATCH_CREATE);
+  
+  return canCreate ? (
+    <Button type="primary" onClick={handleCreate}>
+      Create Dispatch
+    </Button>
+  ) : (
+    <Tooltip title="You don't have permission to create dispatches">
+      <Button type="primary" disabled>
+        Create Dispatch
+      </Button>
+    </Tooltip>
+  );
+};
+```
+
+### Role-Permission Matrix
+
+| Role | Admin Menu | PO CRUD | PO Pricing | Dispatch/Delivery | Commissioning |
+|------|------------|---------|------------|-------------------|---------------|
+| **Admin** | Full Access | Full CRUD | View All | Full CRUD | Full CRUD |
+| **Sales** | No Access | Full CRUD | View Own Only | View Only | View Only |
+| **SupplyChain** | No Access | View Only | No Access | Full CRUD | View Only |
+| **Service** | No Access | View Only | No Access | View Only | Full CRUD |
+
+### Adding New Permissions
+
+1. Add permission code to database (`permissions` table)
+2. Add constant to `ui/src/constants/permissions.ts`
+3. Update `api/docs/PERMISSION_LIST.MD`
+4. Update `api/docs/ROLE_PERMISSION_MATRIX.md`
+5. Use in components with hooks or Can component
+
 ## Important Files
 
 ### Frontend
@@ -629,6 +763,11 @@ async findAll(params?: ListRequest): Promise<{ rows: T[]; count: number }> {
 - `ui/src/store/api/baseApi.ts` - Base API configuration, error handling
 - `ui/src/store/index.ts` - Redux store configuration
 - `ui/src/store/hooks.ts` - Typed Redux hooks
+- `ui/src/store/authSlice.ts` - Auth state + permission selectors
+- `ui/src/hooks/usePermission.ts` - Permission check hooks
+- `ui/src/constants/permissions.ts` - Permission code constants
+- `ui/src/Components/Can.tsx` - Permission wrapper component
+- `ui/src/Components/Cannot.tsx` - Inverse permission wrapper
 - `ui/src/App.tsx` - Main app component with routing
 - `ui/src/index.tsx` - App entry point
 
@@ -778,3 +917,7 @@ See `api/docs/LOCAL_DEVELOPMENT.md` for detailed documentation.
 - **Search**: Field validation is required - only whitelisted fields can be searched
 - **Local Dev**: Use `dev:fast` for cached builds, `dev:hot` for hot reload - see `api/docs/LOCAL_DEVELOPMENT.md`
 - **Layer Caching**: Shared layer builds are cached; use `build:layer:force` to force rebuild
+- **Permissions**: Use `usePermission` hook or `Can` component for permission checks - see `api/docs/ROLE_PERMISSION_MATRIX.md`
+- **Permissions**: Always use `PERMISSIONS` constants from `ui/src/constants/permissions.ts` - never hardcode permission strings
+- **Permissions**: Disabled buttons should show tooltips explaining the permission requirement
+- **Permissions**: Menu items without permission should be hidden (not disabled)

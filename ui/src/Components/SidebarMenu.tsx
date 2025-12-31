@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Menu } from "antd";
 import {
   HomeOutlined,
@@ -14,6 +15,8 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import type { MenuProps } from "antd";
 import { motion } from "framer-motion";
+import { usePermissionUtils } from "../hooks/usePermission";
+import { PERMISSIONS } from "../constants/permissions";
 
 interface SidebarMenuProps {
   collapsed?: boolean;
@@ -22,6 +25,12 @@ interface SidebarMenuProps {
 const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasPermission } = usePermissionUtils();
+
+  // Check permissions for Admin menu visibility
+  const canViewUsers = hasPermission(PERMISSIONS.USERS_READ);
+  const canViewProducts = hasPermission(PERMISSIONS.PRODUCT_READ);
+  const showAdminMenu = canViewUsers || canViewProducts;
 
   // Determine selected key based on current path
   const getSelectedKey = () => {
@@ -71,44 +80,72 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
     }
   };
 
-  const menuItems: MenuProps["items"] = [
-    {
-      key: "1",
-      icon: <HomeOutlined />,
-      label: "Dashboard",
-    },
-    {
-      key: "1-1",
-      icon: <BarChartOutlined />,
-      label: "Summary Dashboard",
-    },
-    {
-      key: "2",
-      icon: <SettingOutlined />,
-      label: "Admin",
-      children: [
+  // Build Admin submenu items based on permissions
+  const adminChildren = useMemo(() => {
+    const children: MenuProps["items"] = [];
+
+    if (canViewUsers) {
+      children.push(
         { key: "2-1", label: "User Management", icon: <UserAddOutlined /> },
         { key: "2-2", label: "Role Management", icon: <KeyOutlined /> },
         {
           key: "2-3",
           label: "Permissions",
           icon: <SafetyCertificateOutlined />,
-        },
+        }
+      );
+    }
+
+    if (canViewProducts) {
+      children.push(
         { key: "2-4", label: "Product Management", icon: <AppstoreOutlined /> },
-        { key: "2-5", label: "Client Management", icon: <TeamOutlined /> },
-      ],
-    },
-    {
-      key: "3",
-      icon: <UserOutlined />,
-      label: "Profile",
-    },
-    {
-      key: "4",
-      icon: <LogoutOutlined />,
-      label: "Logout",
-    },
-  ];
+        { key: "2-5", label: "Client Management", icon: <TeamOutlined /> }
+      );
+    }
+
+    return children;
+  }, [canViewUsers, canViewProducts]);
+
+  // Build menu items based on permissions
+  const menuItems: MenuProps["items"] = useMemo(() => {
+    const items: MenuProps["items"] = [
+      {
+        key: "1",
+        icon: <HomeOutlined />,
+        label: "Dashboard",
+      },
+      {
+        key: "1-1",
+        icon: <BarChartOutlined />,
+        label: "Summary Dashboard",
+      },
+    ];
+
+    // Only show Admin menu if user has permission to see any admin items
+    if (showAdminMenu && adminChildren.length > 0) {
+      items.push({
+        key: "2",
+        icon: <SettingOutlined />,
+        label: "Admin",
+        children: adminChildren,
+      });
+    }
+
+    items.push(
+      {
+        key: "3",
+        icon: <UserOutlined />,
+        label: "Profile",
+      },
+      {
+        key: "4",
+        icon: <LogoutOutlined />,
+        label: "Logout",
+      }
+    );
+
+    return items;
+  }, [showAdminMenu, adminChildren]);
 
   return (
     <motion.div
@@ -121,7 +158,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
         theme="dark"
         mode="inline"
         selectedKeys={[getSelectedKey()]}
-        defaultOpenKeys={collapsed ? [] : ["2"]}
+        defaultOpenKeys={collapsed ? [] : showAdminMenu ? ["2"] : []}
         items={menuItems}
         onClick={handleMenuClick}
         className="osg-menu"

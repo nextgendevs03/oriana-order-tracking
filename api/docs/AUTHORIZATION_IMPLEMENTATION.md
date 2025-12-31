@@ -7,6 +7,14 @@
 > **Status:** Implementation Guide  
 > **Prerequisites:** [SECURITY_IMPLEMENTATION.md](./SECURITY_IMPLEMENTATION.md) (JWT Authentication)
 
+### Related Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ROLE_PERMISSION_MATRIX.md](./ROLE_PERMISSION_MATRIX.md) | Role definitions, permission mappings, SQL seed data |
+| [PERMISSION_LIST.MD](./PERMISSION_LIST.MD) | Complete list of all permission codes |
+| [PROJECT_CONTEXT.md](../../PROJECT_CONTEXT.md) | Permission usage patterns and examples |
+
 ---
 
 ## Table of Contents
@@ -183,36 +191,37 @@ We use **permission codes** (stored in `permission_code` column) for authorizati
 
 ### 2.3 Your Database Model
 
-Based on your Prisma schema, you have a flexible permission model:
+Based on your Prisma schema, you have a simple and effective permission model:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         YOUR DATABASE MODEL                                  │
 │                                                                              │
 │   ┌──────────┐      ┌──────────────┐      ┌────────────────────────┐        │
-│   │   User   │──────│   UserRole   │──────│  UserRolePermission    │        │
-│   │          │ 1  n │              │ 1  n │                        │        │
-│   │ userId   │      │ userRoleId   │      │ userRolePermissionId   │        │
-│   │ username │      │ userId       │      │ userRoleId             │        │
-│   │ email    │      │ roleId       │      │ permissionId           │        │
-│   └──────────┘      │ isActive     │      │ isActive               │        │
-│                     └──────┬───────┘      └───────────┬────────────┘        │
-│                            │                          │                      │
-│                            │ n                        │ n                    │
-│                            │                          │                      │
-│                     ┌──────▼───────┐      ┌───────────▼────────────┐        │
-│                     │    Role      │      │     Permission         │        │
-│                     │              │      │                        │        │
-│                     │ roleId       │      │ permissionId           │        │
-│                     │ roleName     │      │ permissionName         │        │
-│                     │ description  │      │ description            │        │
-│                     │ isActive     │      │ isActive               │        │
-│                     └──────────────┘      └────────────────────────┘        │
+│   │   User   │──────│    Role      │──────│   RolePermission       │        │
+│   │          │ n  1 │              │ 1  n │                        │        │
+│   │ userId   │      │ roleId       │      │ rolePermissionId       │        │
+│   │ username │      │ roleName     │      │ roleId                 │        │
+│   │ email    │      │ description  │      │ permissionId           │        │
+│   │ roleId   │      │ isActive     │      │ isActive               │        │
+│   │ isActive │      └──────────────┘      └───────────┬────────────┘        │
+│   └──────────┘                                        │                      │
+│                                                       │ n                    │
+│                                                       │                      │
+│                                           ┌───────────▼────────────┐        │
+│                                           │     Permission         │        │
+│                                           │                        │        │
+│                                           │ permissionId           │        │
+│                                           │ permissionCode         │        │
+│                                           │ permissionName         │        │
+│                                           │ description            │        │
+│                                           │ isActive               │        │
+│                                           └────────────────────────┘        │
 │                                                                              │
 │   This model allows:                                                         │
-│   • A user to have multiple roles                                            │
-│   • Each user-role assignment can have specific permissions                  │
-│   • Fine-grained control per user-role combination                           │
+│   • A user has ONE role (1-to-1 relationship via roleId)                     │
+│   • A role can have MANY permissions (via RolePermission junction table)     │
+│   • Many-to-many between Role and Permission                                 │
 │   • Soft delete with isActive flags                                          │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -392,12 +401,12 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 │  │                                                                         │ │
 │  │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────────┐ │ │
 │  │  │                 │    │                 │    │                     │ │ │
-│  │  │   Redux Store   │◀───│ permissionSlice │◀───│ GET /api/auth/      │ │ │
-│  │  │                 │    │                 │    │     permissions     │ │ │
-│  │  │ permissions: [] │    │ - permissions   │    │                     │ │ │
-│  │  │                 │    │ - isLoading     │    └─────────────────────┘ │ │
-│  │  └────────┬────────┘    │ - error         │                            │ │
-│  │           │             │                 │                            │ │
+│  │  │   Redux Store   │◀───│   authSlice     │◀───│ POST /api/login     │ │ │
+│  │  │                 │    │                 │    │ (includes perms)    │ │ │
+│  │  │ auth: {         │    │ - username      │    │                     │ │ │
+│  │  │   permissions   │    │ - permissions   │    └─────────────────────┘ │ │
+│  │  │ }               │    │ - roleName      │                            │ │
+│  │  └────────┬────────┘    │                 │                            │ │
 │  │           │             └─────────────────┘                            │ │
 │  │           │                                                            │ │
 │  │           ▼                                                            │ │
@@ -418,13 +427,14 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
 │  │                           BACKEND (Lambda)                              │ │
 │  │                                                                         │ │
-│  │  GET /api/auth/permissions                                              │ │
+│  │  POST /api/login (includes permissions in response)                     │ │
 │  │        │                                                                │ │
 │  │        ▼                                                                │ │
 │  │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────────┐ │ │
-│  │  │ @Authenticated  │───▶│ AuthController  │───▶│ PermissionService   │ │ │
-│  │  │ (from JWT)      │    │ .getPermissions │    │ .getUserPermissions │ │ │
-│  │  └─────────────────┘    └─────────────────┘    └──────────┬──────────┘ │ │
+│  │  │ AuthController  │───▶│  AuthService    │───▶│  AuthRepository     │ │ │
+│  │  │ .login()        │    │  .login()       │    │ (includes role &    │ │ │
+│  │  └─────────────────┘    └─────────────────┘    │  permissions)       │ │ │
+│  │                                                └──────────┬──────────┘ │ │
 │  │                                                            │            │ │
 │  │                                                            ▼            │ │
 │  │                                               ┌─────────────────────┐   │ │
@@ -442,28 +452,32 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 api/
 ├── src/
 │   ├── controllers/
-│   │   └── AuthController.ts        # Already includes login endpoint
+│   │   └── AuthController.ts        # ✅ Already includes login endpoint
 │   ├── services/
-│   │   └── AuthService.ts           # MODIFY: Extract permissions in login
+│   │   └── AuthService.ts           # ✅ Already extracts permissions in login
 │   ├── repositories/
-│   │   └── AuthRepository.ts        # MODIFY: Include role & permissions in query
+│   │   └── AuthRepository.ts        # ✅ Already includes role & permissions in query
 │   └── schemas/
 │       └── response/
-│           └── AuthResponse.ts      # MODIFY: UserInfo includes permissions
+│           └── AuthResponse.ts      # ✅ UserInfo includes permissions
 
 ui/
 ├── src/
 │   ├── store/
-│   │   ├── authSlice.ts             # MODIFY: Store permissions from login
+│   │   ├── authSlice.ts             # ✅ Already stores permissions from login
 │   │   ├── api/
-│   │   │   └── authApi.ts           # Already has login mutation
-│   │   └── hooks.ts                 # MODIFY: Export permission hooks
+│   │   │   └── authApi.ts           # ✅ Already has login mutation
+│   │   └── hooks.ts                 # ✅ Has useAppSelector, useAppDispatch
 │   ├── hooks/
-│   │   └── usePermission.ts         # NEW: Permission check hook
-│   ├── components/
-│   │   └── Can.tsx                  # NEW: Permission wrapper component
+│   │   ├── index.ts                 # Export all hooks
+│   │   └── usePermission.ts         # NEW: Permission check hooks
+│   ├── Components/
+│   │   ├── Can.tsx                  # NEW: Permission wrapper component
+│   │   └── Cannot.tsx               # NEW: Inverse permission wrapper (optional)
+│   ├── constants/
+│   │   └── permissions.ts           # NEW: Permission code constants
 │   └── types/
-│       └── permissions.ts           # NEW: Permission type definitions (optional)
+│       └── orianaTypes.ts           # ✅ Re-exports types from api schemas
 ```
 
 ### 4.3 Data Flow
@@ -473,59 +487,46 @@ ui/
 │                         PERMISSION DATA FLOW                                 │
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │ 1. AFTER SUCCESSFUL LOGIN                                                ││
+│  │ 1. USER LOGS IN - PERMISSIONS INCLUDED IN LOGIN RESPONSE                 ││
 │  │                                                                          ││
 │  │    Login.tsx                                                             ││
 │  │        │                                                                 ││
-│  │        ├── 1a. Login success → dispatch(setIsLoggedIn(true))             ││
+│  │        ├── 1a. Call login mutation: useLoginMutation()                   ││
 │  │        │                                                                 ││
-│  │        └── 1b. Trigger permission fetch → useGetPermissionsQuery()       ││
+│  │        ├── 1b. POST /api/login                                           ││
+│  │        │       Response includes: user.permissions = [...]               ││
+│  │        │                                                                 ││
+│  │        ├── 1c. dispatch(addAuth({ ...user, permissions }))               ││
+│  │        │                                                                 ││
+│  │        └── 1d. dispatch(setIsLoggedIn(true))                             ││
 │  │                                                                          ││
 │  └─────────────────────────────────────────────────────────────────────────┘│
 │                                      │                                       │
 │                                      ▼                                       │
 │  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │ 2. FETCH PERMISSIONS FROM API                                            ││
+│  │ 2. PERMISSIONS STORED IN REDUX (authSlice)                               ││
 │  │                                                                          ││
-│  │    GET /api/auth/permissions                                             ││
-│  │        │                                                                 ││
-│  │        ├── Cookie: accessToken=... (automatically sent)                  ││
-│  │        │                                                                 ││
-│  │        └── Response:                                                     ││
-│  │            {                                                             ││
-│  │              "success": true,                                            ││
-│  │              "permissions": [                                            ││
-│  │                "user:view", "user:create",                               ││
-│  │                "po:view", "po:create", "po:approve",                     ││
-│  │                "dashboard:view"                                          ││
-│  │              ],                                                          ││
-│  │              "roles": ["Admin", "Sales"]                                 ││
-│  │            }                                                             ││
-│  │                                                                          ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                      │                                       │
-│                                      ▼                                       │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │ 3. STORE IN REDUX                                                        ││
-│  │                                                                          ││
-│  │    permissionSlice.ts                                                    ││
+│  │    authSlice.ts                                                          ││
 │  │        │                                                                 ││
 │  │        └── State:                                                        ││
 │  │            {                                                             ││
-│  │              auth: {                                                      ││
-│  │                username: "john",                                          ││
-│  │                email: "john@example.com",                                 ││
-│  │                roleName: "Admin",                                         ││
+│  │              auth: {                                                     ││
+│  │                username: "john",                                         ││
+│  │                email: "john@example.com",                                ││
+│  │                roleName: "Admin",                                        ││
 │  │                roleId: 1,                                                ││
 │  │                permissions: ["users_create", "users_read", ...]          ││
-│  │              }                                                            ││
+│  │              },                                                          ││
+│  │              isLoggedIn: true                                            ││
 │  │            }                                                             ││
+│  │                                                                          ││
+│  │    Note: redux-persist keeps this state across page refreshes            ││
 │  │                                                                          ││
 │  └─────────────────────────────────────────────────────────────────────────┘│
 │                                      │                                       │
 │                                      ▼                                       │
 │  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │ 4. USE IN COMPONENTS                                                     ││
+│  │ 3. USE IN COMPONENTS                                                     ││
 │  │                                                                          ││
 │  │    // Using hook                                                         ││
 │  │    const canCreate = usePermission('users_create');                      ││
@@ -533,6 +534,12 @@ ui/
 │  │                                                                          ││
 │  │    // Using wrapper                                                      ││
 │  │    <Can permission="users_create">                                       ││
+│  │      <Button>Create User</Button>                                        ││
+│  │    </Can>                                                                ││
+│  │                                                                          ││
+│  │    // Using constants (recommended)                                      ││
+│  │    import { PERMISSIONS } from '../constants/permissions';               ││
+│  │    <Can permission={PERMISSIONS.USERS_CREATE}>                           ││
 │  │      <Button>Create User</Button>                                        ││
 │  │    </Can>                                                                ││
 │  │                                                                          ││
@@ -1723,39 +1730,104 @@ export default PermissionDebugger;
  * 1. Avoid typos in permission strings
  * 2. Get autocomplete in IDE
  * 3. Single source of truth
+ * 
+ * These match the permission_code values in the database.
+ * See: api/docs/PERMISSION_LIST.MD for full descriptions.
  */
 export const PERMISSIONS = {
-  // User management
-  USER_READ: 'users_read',
-  USER_CREATE: 'users_create',
-  USER_UPDATE: 'users_update',
-  USER_DELETE: 'users_delete',
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRODUCT MANAGEMENT
+  // Covers: Products, OEM, Category, Client
+  // ═══════════════════════════════════════════════════════════════════════════
+  PRODUCT_CREATE: 'product_create',
+  PRODUCT_READ: 'product_read',
+  PRODUCT_UPDATE: 'product_update',
+  PRODUCT_DELETE: 'product_delete',
 
-  // Purchase Orders
-  PO_READ: 'po_read',
+  // ═══════════════════════════════════════════════════════════════════════════
+  // USER MANAGEMENT
+  // Covers: Users, Roles, Permissions
+  // ═══════════════════════════════════════════════════════════════════════════
+  USERS_CREATE: 'users_create',
+  USERS_READ: 'users_read',
+  USERS_UPDATE: 'users_update',
+  USERS_DELETE: 'users_delete',
+  USERS_VIEW: 'users_view',
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PO (PURCHASE ORDER) MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
   PO_CREATE: 'po_create',
+  PO_READ: 'po_read',
   PO_UPDATE: 'po_update',
   PO_DELETE: 'po_delete',
-  PO_APPROVE: 'po_approve',
 
-  // Roles
-  ROLE_READ: 'role_read',
-  ROLE_MANAGE: 'role_manage',
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DISPATCH MANAGEMENT
+  // Covers: Dispatches, Delivery, Documents
+  // ═══════════════════════════════════════════════════════════════════════════
+  DISPATCH_CREATE: 'dispatch_create',
+  DISPATCH_READ: 'dispatch_read',
+  DISPATCH_UPDATE: 'dispatch_update',
+  DISPATCH_DELETE: 'dispatch_delete',
 
-  // Dashboard
-  DASHBOARD_READ: 'dashboard_read',
-
-  // Reports
-  REPORT_READ: 'report_read',
-  REPORT_EXPORT: 'report_export',
-
-  // Settings
-  SETTINGS_READ: 'settings_read',
-  SETTINGS_ADMIN: 'settings_admin',
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMMISSIONING MANAGEMENT
+  // Covers: Pre-Commissioning, Commissioning, Warranty
+  // ═══════════════════════════════════════════════════════════════════════════
+  COMMISSIONING_CREATE: 'commissioning_create',
+  COMMISSIONING_READ: 'commissioning_read',
+  COMMISSIONING_UPDATE: 'commissioning_update',
+  COMMISSIONING_DELETE: 'commissioning_delete',
 } as const;
 
 // Type for permission values
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PERMISSION GROUPS (for convenience)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** All product management permissions */
+export const PRODUCT_PERMISSIONS = [
+  PERMISSIONS.PRODUCT_CREATE,
+  PERMISSIONS.PRODUCT_READ,
+  PERMISSIONS.PRODUCT_UPDATE,
+  PERMISSIONS.PRODUCT_DELETE,
+] as const;
+
+/** All user management permissions */
+export const USERS_PERMISSIONS = [
+  PERMISSIONS.USERS_CREATE,
+  PERMISSIONS.USERS_READ,
+  PERMISSIONS.USERS_UPDATE,
+  PERMISSIONS.USERS_DELETE,
+  PERMISSIONS.USERS_VIEW,
+] as const;
+
+/** All PO management permissions */
+export const PO_PERMISSIONS = [
+  PERMISSIONS.PO_CREATE,
+  PERMISSIONS.PO_READ,
+  PERMISSIONS.PO_UPDATE,
+  PERMISSIONS.PO_DELETE,
+] as const;
+
+/** All dispatch management permissions */
+export const DISPATCH_PERMISSIONS = [
+  PERMISSIONS.DISPATCH_CREATE,
+  PERMISSIONS.DISPATCH_READ,
+  PERMISSIONS.DISPATCH_UPDATE,
+  PERMISSIONS.DISPATCH_DELETE,
+] as const;
+
+/** All commissioning management permissions */
+export const COMMISSIONING_PERMISSIONS = [
+  PERMISSIONS.COMMISSIONING_CREATE,
+  PERMISSIONS.COMMISSIONING_READ,
+  PERMISSIONS.COMMISSIONING_UPDATE,
+  PERMISSIONS.COMMISSIONING_DELETE,
+] as const;
 ```
 
 **Usage:**
@@ -1871,7 +1943,7 @@ const canCreate = usePermission(PERMISSIONS.USER_CREATE);
 ```tsx
 // Add this to any component temporarily
 import { useSelector } from 'react-redux';
-import { selectPermissions } from '../store/permissionSlice';
+import { selectPermissions } from '../store/authSlice';
 
 const Component = () => {
   const permissions = useSelector(selectPermissions);
@@ -1880,11 +1952,11 @@ const Component = () => {
 };
 ```
 
-**Step 2: Check API response**
+**Step 2: Check Login API response**
 
 1. Open DevTools → Network tab
-2. Look for `/api/auth/permissions` request
-3. Check response body has permissions array
+2. Look for `POST /api/login` request
+3. Check response body has `user.permissions` array
 
 **Step 3: Verify permission string matches**
 
@@ -1942,36 +2014,38 @@ const ProtectedContent: React.FC = () => {
 │                       IMPLEMENTATION CHECKLIST                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  Backend                                                                     │
-│  ───────                                                                     │
-│  □ Add getUserPermissions method to AuthRepository                           │
-│  □ Add getUserPermissions method to AuthService                              │
-│  □ Add GET /api/auth/permissions endpoint to AuthController                  │
-│  □ Test endpoint returns correct permissions                                 │
+│  Backend (Already Implemented ✅)                                            │
+│  ────────────────────────────────                                            │
+│  ✅ AuthRepository includes role & permissions in findByUsernameOrEmail     │
+│  ✅ AuthService extracts permission codes in login method                    │
+│  ✅ AuthResponse.ts includes permissions in UserInfo interface              │
+│  ✅ Login endpoint returns permissions array in response                     │
 │                                                                              │
-│  Frontend - Store                                                            │
-│  ────────────────                                                            │
-│  □ Create types/permissions.ts                                               │
-│  □ Create store/permissionSlice.ts                                           │
-│  □ Add permissionReducer to store                                            │
-│  □ Add getPermissions to authApi.ts                                          │
+│  Frontend - Store (Already Implemented ✅)                                   │
+│  ──────────────────────────────────────────                                  │
+│  ✅ authSlice.ts has permissions field in Auth interface                    │
+│  ✅ Login.tsx stores permissions from login response                         │
+│  ✅ logout action clears permissions                                         │
+│  ✅ redux-persist keeps auth state across refreshes                          │
 │                                                                              │
-│  Frontend - Hooks & Components                                               │
+│  Frontend - Selectors (To Add)                                               │
 │  ─────────────────────────────                                               │
-│  □ Create hooks/usePermission.ts                                             │
-│  □ Create components/Can.tsx                                                 │
-│  □ Create components/Cannot.tsx (optional)                                   │
-│  □ Create constants/permissions.ts                                           │
+│  □ Add selectPermissions selector to authSlice.ts                            │
+│  □ Add selectHasPermission selector to authSlice.ts                          │
+│  □ Add selectHasAllPermissions selector to authSlice.ts                      │
+│  □ Add selectHasAnyPermission selector to authSlice.ts                       │
 │                                                                              │
-│  Frontend - Integration                                                      │
-│  ───────────────────────                                                     │
-│  □ Update Login.tsx to store permissions from login response                  │
-│  □ Update logout logic to clear permissions                                  │
-│  □ Add permission checks to components                                       │
+│  Frontend - Hooks & Components (To Create)                                   │
+│  ─────────────────────────────────────────                                   │
+│  □ Create hooks/usePermission.ts                                             │
+│  □ Create Components/Can.tsx                                                 │
+│  □ Create Components/Cannot.tsx (optional)                                   │
+│  □ Create constants/permissions.ts                                           │
+│  □ Update hooks/index.ts to export permission hooks                          │
 │                                                                              │
 │  Testing                                                                     │
 │  ───────                                                                     │
-│  □ Test login response includes permissions                                   │
+│  □ Test login response includes permissions                                  │
 │  □ Test permissions are stored in Redux after login                          │
 │  □ Test Can component hides/shows correctly                                  │
 │  □ Test usePermission hook returns correct values                            │
@@ -1985,15 +2059,16 @@ const ProtectedContent: React.FC = () => {
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `api/src/repositories/AuthRepository.ts` | Modify | Include role & permissions in `findByUsernameOrEmail` |
-| `api/src/services/AuthService.ts` | Modify | Extract permission codes in `login` method |
-| `api/src/schemas/response/AuthResponse.ts` | Modify | Add `permissions` to `UserInfo` interface |
-| `ui/src/store/authSlice.ts` | Modify | Store permissions from login response |
+| `api/src/repositories/AuthRepository.ts` | ✅ Done | Include role & permissions in `findByUsernameOrEmail` |
+| `api/src/services/AuthService.ts` | ✅ Done | Extract permission codes in `login` method |
+| `api/src/schemas/response/AuthResponse.ts` | ✅ Done | Add `permissions` to `UserInfo` interface |
+| `ui/src/store/authSlice.ts` | Modify | Add permission selectors |
 | `ui/src/hooks/usePermission.ts` | Create | Permission check hooks |
-| `ui/src/components/Can.tsx` | Create | Permission wrapper component |
-| `ui/src/components/Cannot.tsx` | Create | Inverse permission wrapper |
-| `ui/src/constants/permissions.ts` | Create | Permission constants (optional) |
-| `ui/src/pages/Login.tsx` | Modify | Store permissions from login response |
+| `ui/src/Components/Can.tsx` | Create | Permission wrapper component |
+| `ui/src/Components/Cannot.tsx` | Create | Inverse permission wrapper |
+| `ui/src/constants/permissions.ts` | Create | Permission constants (all 21 permissions) |
+| `ui/src/hooks/index.ts` | Modify | Export permission hooks |
+| `ui/src/pages/Login.tsx` | ✅ Done | Already stores permissions from login response |
 
 ---
 
