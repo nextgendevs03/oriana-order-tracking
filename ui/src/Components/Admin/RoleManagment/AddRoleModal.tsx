@@ -73,13 +73,28 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+
+      // Get permissionIds directly from form to ensure we have the latest value
+      const permissionIds = form.getFieldValue("permissionIds") || [];
+
+      // Ensure permissionIds is always included (even if empty array)
+      const payload = {
+        roleName: values.roleName,
+        description: values.description,
+        isActive: values.isActive,
+        permissionIds: Array.isArray(permissionIds) ? permissionIds : [],
+      };
+
+      console.log("Submitting role with payload:", payload);
+      console.log("Permission IDs:", permissionIds);
+
       if (roleToEdit) {
         await updateRole({
           id: roleToEdit.roleId,
-          data: values,
+          data: payload,
         }).unwrap();
       } else {
-        await createRole(values).unwrap();
+        await createRole(payload).unwrap();
       }
       onClose();
       form.resetFields();
@@ -141,6 +156,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
           name="permissionIds"
           label="Permissions"
           rules={[{ required: false }]}
+          initialValue={[]}
         >
           <Form.Item
             noStyle
@@ -148,7 +164,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
               prevValues.permissionIds !== currentValues.permissionIds
             }
           >
-            {({ getFieldValue }) => {
+            {({ getFieldValue, setFieldValue }) => {
               const selectedIds = getFieldValue("permissionIds") || [];
               const allSelected =
                 allPermissionIds.length > 0 &&
@@ -163,6 +179,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
                   placeholder="Select permissions"
                   style={{ width: "100%" }}
                   loading={isLoadingPermissions}
+                  value={selectedIds}
                   notFoundContent={
                     isLoadingPermissions ? (
                       <Spin size="small" />
@@ -183,6 +200,11 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
                       .includes(input.toLowerCase())
                   }
                   maxTagCount="responsive"
+                  onChange={(value) => {
+                    // Explicitly set the field value
+                    const permissionIds = Array.isArray(value) ? value : [];
+                    setFieldValue("permissionIds", permissionIds);
+                  }}
                   dropdownRender={(menu) => (
                     <>
                       <div

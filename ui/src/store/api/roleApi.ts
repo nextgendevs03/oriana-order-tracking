@@ -1,5 +1,11 @@
 import { baseApi } from "./baseApi";
-import { RoleListResponse, RoleResponse, CreateRoleRequest, UpdateRoleRequest, ListRoleRequest } from "@OrianaTypes";
+import {
+  RoleListResponse,
+  RoleResponse,
+  CreateRoleRequest,
+  UpdateRoleRequest,
+  ListRoleRequest,
+} from "@OrianaTypes";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -23,13 +29,14 @@ export const roleApi = baseApi.injectEndpoints({
       transformResponse: (
         response: ApiResponse<{ data: RoleResponse[]; pagination?: any }>
       ): RoleListResponse => ({
-        data: response.data?.data || [],
-        pagination: response.data?.pagination || response.pagination || {
-          page: 1,
-          limit: 20,
-          total: response.data?.data?.length || 0,
-          totalPages: 1,
-        },
+        data: (response.data?.data ?? response.data) || [],
+        pagination: response.data?.pagination ||
+          response.pagination || {
+            page: 1,
+            limit: 20,
+            total: response.data?.data?.length || 0,
+            totalPages: 1,
+          },
       }),
       providesTags: ["Role"],
     }),

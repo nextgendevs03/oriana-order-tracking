@@ -53,7 +53,7 @@ const CategoryManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteCategory(id).unwrap();
       toast.success("Category deleted successfully");

@@ -18,9 +18,9 @@ import type {
 import { useLazyGetFilteredProductsQuery } from "../../store/api/productApi";
 
 interface ItemDetail {
-  categoryId: string;
-  oemId: string;
-  productId: string;
+  categoryId: number;
+  oemId: number;
+  productId: number;
   quantity: number;
   spareQuantity: number;
   totalQuantity: number;
@@ -83,8 +83,8 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
   const loadProductsForRow = useCallback(
     async (
       rowIndex: number,
-      categoryId: string,
-      oemId: string,
+      categoryId: number,
+      oemId: number,
       searchTerm: string = ""
     ) => {
       if (!categoryId || !oemId) {
@@ -164,7 +164,7 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
   );
 
   // Handle category change for a row
-  const handleCategoryChange = (rowIndex: number, categoryId: string) => {
+  const handleCategoryChange = (rowIndex: number, categoryId: number) => {
     const poItems = form.getFieldValue("poItems") || [];
     const currentItem = poItems[rowIndex];
     const oemId = currentItem?.oemId;
@@ -183,7 +183,7 @@ const POItemsTable: React.FC<POItemsTableProps> = ({
   };
 
   // Handle OEM change for a row
-  const handleOEMChange = (rowIndex: number, oemId: string) => {
+  const handleOEMChange = (rowIndex: number, oemId: number) => {
     const poItems = form.getFieldValue("poItems") || [];
     const currentItem = poItems[rowIndex];
     const categoryId = currentItem?.categoryId;

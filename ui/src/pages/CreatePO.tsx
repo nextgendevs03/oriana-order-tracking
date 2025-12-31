@@ -40,9 +40,9 @@ import {
 
 // Interface for PO Item form values
 interface POItemFormValues {
-  categoryId: string;
-  oemId: string;
-  productId: string;
+  categoryId: number;
+  oemId: number;
+  productId: number;
   quantity: number;
   spareQuantity: number;
   totalQuantity: number;
@@ -55,7 +55,7 @@ interface POItemFormValues {
 
 // Client option with both id and name
 interface ClientOption {
-  clientId: string;
+  clientId: number;
   clientName: string;
   clientAddress?: string | null;
   clientContact?: string | null;
@@ -184,7 +184,7 @@ const CreatePO: FC = () => {
   };
 
   // Handle successful client creation
-  const handleClientCreated = (newClientName: string, newClientId?: string) => {
+  const handleClientCreated = (newClientName: string, newClientId?: number) => {
     // Set the newly created client name in the form
     form.setFieldValue("clientName", newClientName);
     if (newClientId) {
@@ -235,9 +235,9 @@ const CreatePO: FC = () => {
     // Build PO items array with proper types
     const poItems: POItemRequest[] = (values.poItems as POItemFormValues[]).map(
       (item) => ({
-        categoryId: item.categoryId,
-        oemId: item.oemId,
-        productId: item.productId,
+        categoryId: typeof item.categoryId === 'string' ? parseInt(item.categoryId, 10) : item.categoryId,
+        oemId: typeof item.oemId === 'string' ? parseInt(item.oemId, 10) : item.oemId,
+        productId: typeof item.productId === 'string' ? parseInt(item.productId, 10) : item.productId,
         quantity: item.quantity,
         spareQuantity: item.spareQuantity || 0,
         totalQuantity: item.totalQuantity,
@@ -252,14 +252,16 @@ const CreatePO: FC = () => {
     // Build the API request payload
     const createPORequest: CreatePORequest = {
       poReceivedDate: formatDate(values.poReceivedDate as dayjs.Dayjs),
-      clientId: values.clientId as string,
+      clientId: typeof values.clientId === 'string' ? parseInt(values.clientId, 10) : (values.clientId as number),
       osgPiNo: values.osgPiNo as string,
       osgPiDate: formatDate(values.osgPiDate as dayjs.Dayjs),
       clientPoNo: values.clientPoNo as string,
       clientPoDate: formatDate(values.clientPoDate as dayjs.Dayjs),
       poStatus: values.poStatus as string,
       noOfDispatch: values.noOfDispatch as string,
-      assignDispatchTo: values.assignDispatchTo as string | undefined,
+      assignDispatchTo: values.assignDispatchTo && typeof values.assignDispatchTo !== 'object' 
+        ? (typeof values.assignDispatchTo === 'string' ? parseInt(values.assignDispatchTo, 10) : (typeof values.assignDispatchTo === 'number' ? values.assignDispatchTo : undefined))
+        : undefined,
       clientAddress: values.clientAddress as string,
       clientContact: values.clientContact as string,
       poItems,

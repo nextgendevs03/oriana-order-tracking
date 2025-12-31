@@ -25,7 +25,7 @@ export const categoryApi = baseApi.injectEndpoints({
       ListCategoryRequest | void
     >({
       query: (params) => ({
-        url: "category/",
+        url: "category",
         method: "GET",
         params: params || {},
       }),
@@ -45,7 +45,7 @@ export const categoryApi = baseApi.injectEndpoints({
 
     createCategory: builder.mutation<CategoryResponse, CreateCategoryRequest>({
       query: (body) => ({
-        url: "category/",
+        url: "category",
         method: "POST",
         body,
       }),
@@ -54,7 +54,7 @@ export const categoryApi = baseApi.injectEndpoints({
 
     updateCategory: builder.mutation<
       CategoryResponse,
-      { id: string; data: UpdateCategoryRequest }
+      { id: number; data: UpdateCategoryRequest }
     >({
       query: ({ id, data }) => ({
         url: `category/${id}`,
@@ -64,7 +64,7 @@ export const categoryApi = baseApi.injectEndpoints({
       invalidatesTags: ["Category"],
     }),
 
-    deleteCategory: builder.mutation<{ deleted: boolean }, string>({
+    deleteCategory: builder.mutation<{ deleted: boolean }, number>({
       query: (id) => ({
         url: `category/${id}`,
         method: "DELETE",

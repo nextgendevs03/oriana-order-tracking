@@ -17,7 +17,7 @@ const { Option } = Select;
 interface UserManagmentModalProps {
   open: boolean;
   onClose: () => void;
-  editingUser?: (UserResponse & { id?: string }) | null;
+  editingUser?: (UserResponse & { id?: number }) | null;
 }
 
 const UserManagementModal: React.FC<UserManagmentModalProps> = ({
@@ -43,7 +43,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
         username: editingUser.username,
         email: editingUser.email,
         password: editingUser.password,
-        role: editingUser.role,
+        roleId: editingUser.roleId,
         isActive: editingUser.isActive,
       });
     } else {
@@ -62,7 +62,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
       if (editingUser) {
         const userIdForUpdate = editingUser.userId || editingUser.id;
 
-        if (!userIdForUpdate) {
+        if (userIdForUpdate === undefined || userIdForUpdate === null) {
           toast.error("User ID not found. Cannot update user.");
           return;
         }
@@ -71,12 +71,16 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           username: editingUser.username,
           email: values.email,
           password: values.password || undefined,
+          roleId: values.roleId,
           isActive: values.isActive ?? false,
           updatedBy: userId,
         };
 
         await updateUser({
-          userId: userIdForUpdate,
+          userId:
+            typeof userIdForUpdate === "string"
+              ? parseInt(userIdForUpdate, 10)
+              : userIdForUpdate,
           data: updatePayload,
         }).unwrap();
         toast.success("User updated successfully");
@@ -85,7 +89,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           username: values.username,
           email: values.email,
           password: values.password,
-          role: values.role,
+          roleId: values.roleId,
           isActive: values.isActive ?? true,
           createdBy: userId,
           updatedBy: userId,
@@ -150,7 +154,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
 
         <Form.Item
           label="Role"
-          name="role"
+          name="roleId"
           rules={[{ required: true, message: "Please select role" }]}
         >
           <Select
@@ -166,7 +170,7 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
             {rolesData?.data
               ?.filter((role) => role.isActive) // Only show active roles
               .map((role) => (
-                <Option key={role.roleId} value={role.roleName}>
+                <Option key={role.roleId} value={role.roleId}>
                   {role.roleName}
                 </Option>
               ))}

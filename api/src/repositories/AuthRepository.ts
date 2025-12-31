@@ -25,6 +25,20 @@ export class AuthRepository implements IAuthRepository {
         OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
         isActive: true,
       },
+      include: {
+        role: {
+          include: {
+            rolePermissions: {
+              where: {
+                isActive: true,
+              },
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return user;

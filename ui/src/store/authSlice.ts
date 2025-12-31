@@ -3,6 +3,10 @@ import { RootState } from ".";
 
 export interface Auth {
   username: string;
+  email?: string;
+  roleName?: string | null;
+  roleId?: number | null;
+  permissions?: string[];
 }
 
 export interface AuthState {
@@ -13,6 +17,10 @@ export interface AuthState {
 const initialState: AuthState = {
   auth: {
     username: "",
+    email: "",
+    roleName: null,
+    roleId: null,
+    permissions: [],
   },
   isLoggedIn: false,
 };
@@ -28,6 +36,10 @@ const authSlice = createSlice({
     logout: (state) => {
       state.auth = {
         username: "",
+        email: "",
+        roleName: null,
+        roleId: null,
+        permissions: [],
       };
     },
 

@@ -30,11 +30,34 @@ export class AuthService implements IAuthService {
       throw new AppError('Invalid username or password', 401, 'UNAUTHORIZED');
     }
 
+    // Extract role and permissions
+    const userWithRole = user as unknown as {
+      role?: {
+        roleId: number;
+        roleName: string;
+        rolePermissions?: Array<{
+          permission: {
+            permissionCode: string;
+            isActive: boolean;
+          };
+        }>;
+      } | null;
+    };
+
+    const role = userWithRole.role;
+
+    // Extract permission codes from role permissions (only active permissions)
+    const permissionCodes: string[] =
+      role?.rolePermissions
+        ?.filter((rp) => rp.permission.isActive)
+        .map((rp) => rp.permission.permissionCode)
+        .filter((code): code is string => Boolean(code)) || [];
+
     // Generate JWT tokens after successful password validation
     const tokenPayload: JWTPayload = {
       username: user.username,
       email: user.email,
-      // role: user.role?.roleName, // User has 1-to-1 relationship with role
+      role: role?.roleName,
     };
 
     // Generate both access and refresh tokens
@@ -56,7 +79,9 @@ export class AuthService implements IAuthService {
       user: {
         username: user.username,
         email: user.email,
-        // role: user.role?.roleName, // User has 1-to-1 relationship with role
+        roleName: role?.roleName || null,
+        roleId: role?.roleId || null,
+        permissions: permissionCodes,
       },
     };
   }

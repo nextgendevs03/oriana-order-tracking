@@ -43,10 +43,10 @@ const ProductManagementProducts: React.FC = () => {
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
   interface EditingProduct {
-    productId: string;
+    productId: number;
     productName: string;
-    category?: { categoryId: string };
-    oem?: { oemId: string };
+    category?: { categoryId: number };
+    oem?: { oemId: number };
     isActive: boolean;
   }
 
@@ -68,7 +68,7 @@ const ProductManagementProducts: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteProduct(id).unwrap();
       toast.success("Product deleted successfully");

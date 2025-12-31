@@ -56,7 +56,7 @@ export const permissionApi = baseApi.injectEndpoints({
           };
         }>
       ): PermissionListResponse => ({
-        data: response.data?.data ?? [],
+        data: response.data?.data ?? response.data ?? [],
         pagination: response.data?.pagination ??
           response.pagination ?? {
             page: 1,

@@ -22,11 +22,13 @@ export const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<ProductListResponse, ListProductRequest | void>({
       query: (params) => ({
-        url: "product/",
+        url: "product",
         method: "GET",
         params: params || {},
       }),
-      transformResponse: (response: ApiResponse<ProductResponse[]>): ProductListResponse => ({
+      transformResponse: (
+        response: ApiResponse<ProductResponse[]>
+      ): ProductListResponse => ({
         data: response.data || [],
         pagination: response.pagination || {
           page: 1,
@@ -41,7 +43,7 @@ export const productApi = baseApi.injectEndpoints({
     // Get filtered products by categoryId and/or oemId (backward compatibility)
     getFilteredProducts: builder.query<ProductResponse[], ListProductRequest>({
       query: (params) => ({
-        url: "product/",
+        url: "product",
         method: "GET",
         params,
       }),
@@ -53,14 +55,17 @@ export const productApi = baseApi.injectEndpoints({
 
     createProduct: builder.mutation<ProductResponse, CreateProductRequest>({
       query: (body) => ({
-        url: "product/",
+        url: "product",
         method: "POST",
         body,
       }),
       invalidatesTags: ["Product"],
     }),
 
-    updateProduct: builder.mutation<ProductResponse, { id: string; data: UpdateProductRequest }>({
+    updateProduct: builder.mutation<
+      ProductResponse,
+      { id: number; data: UpdateProductRequest }
+    >({
       query: ({ id, data }) => ({
         url: `product/${id}`,
         method: "PUT",
@@ -69,7 +74,7 @@ export const productApi = baseApi.injectEndpoints({
       invalidatesTags: ["Product"],
     }),
 
-    deleteProduct: builder.mutation<void, string>({
+    deleteProduct: builder.mutation<void, number>({
       query: (id) => ({
         url: `product/${id}`,
         method: "DELETE",

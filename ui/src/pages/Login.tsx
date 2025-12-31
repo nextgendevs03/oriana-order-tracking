@@ -36,7 +36,16 @@ const Login: React.FC = () => {
         sessionStorage.setItem("authToken", response.accessToken);
       }
 
-      dispatch(addAuth({ username: values.username }));
+      // Store user info in Redux state
+      dispatch(
+        addAuth({
+          username: response.user.username,
+          email: response.user.email,
+          roleName: response.user.roleName || null,
+          roleId: response.user.roleId || null,
+          permissions: response.user.permissions || [],
+        })
+      );
       dispatch(setIsLoggedIn(true));
 
       toast.success("Login Successful!");

@@ -150,31 +150,17 @@ export class UserRepository implements IUserRepository {
       throw new Error('User not found');
     }
 
-    const { role, roleId, ...updateFields } = data;
+    const { roleId, ...updateFields } = data;
     const userUpdateData: Record<string, any> = {};
     if (updateFields.email !== undefined) userUpdateData.email = updateFields.email;
     if (updateFields.password !== undefined) userUpdateData.password = updateFields.password;
     if (updateFields.isActive !== undefined) userUpdateData.isActive = updateFields.isActive;
     if (updateFields.updatedBy !== undefined) userUpdateData.updatedBy = updateFields.updatedBy;
 
-    // Handle roleId: if roleId is provided, use it directly; if role name is provided, find the roleId
-    let finalRoleId: number | undefined | null = roleId;
-    if (finalRoleId === undefined && role !== undefined) {
-      const roleRecord = await this.prisma.role.findFirst({
-        where: {
-          roleName: role,
-          isActive: true,
-        },
-      });
-
-      if (roleRecord) {
-        finalRoleId = roleRecord.roleId;
-      }
-    }
-
+    // Always use roleId for updates (ignore role name for updates)
     // Update roleId if provided (1-to-1 relationship)
-    if (finalRoleId !== undefined) {
-      userUpdateData.roleId = finalRoleId;
+    if (roleId !== undefined) {
+      userUpdateData.roleId = roleId;
     }
 
     // Actually update the user record in database

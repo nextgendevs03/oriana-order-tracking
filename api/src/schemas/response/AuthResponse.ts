@@ -1,7 +1,9 @@
 export interface UserInfo {
   username: string;
   email: string;
-  // roles: string[];
+  roleName?: string | null;
+  roleId?: number | null;
+  permissions: string[]; // Array of permission codes
 }
 export interface LoginResponse {
   success: boolean;

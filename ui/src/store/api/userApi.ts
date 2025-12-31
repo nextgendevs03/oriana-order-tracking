@@ -45,8 +45,8 @@ export const userApi = baseApi.injectEndpoints({
     }),
 
     updateUser: builder.mutation<
-      { userId: string; username: string; email: string; role: string; isActive: boolean },
-      { userId: string; data: UpdateUserRequest }
+      { userId: number; username: string; email: string; role: string; isActive: boolean },
+      { userId: number; data: UpdateUserRequest }
     >({
       query: ({ userId, data }) => ({
         url: `/user/${userId}`,
@@ -55,7 +55,7 @@ export const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
-    deleteUser: builder.mutation<void, string>({
+    deleteUser: builder.mutation<void, number>({
       query: (id) => ({
         url: `/user/${id}`,
         method: "DELETE",

@@ -22,11 +22,13 @@ export const oemApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getOEMs: builder.query<OEMListResponse, ListOEMRequest | void>({
       query: (params) => ({
-        url: "oem/",
+        url: "oem",
         method: "GET",
         params: params || {},
       }),
-      transformResponse: (response: ApiResponse<OEMResponse[]>): OEMListResponse => ({
+      transformResponse: (
+        response: ApiResponse<OEMResponse[]>
+      ): OEMListResponse => ({
         data: (response.data || []).map((item: any) => ({
           ...item,
           isActive:
@@ -46,26 +48,26 @@ export const oemApi = baseApi.injectEndpoints({
 
     createOEM: builder.mutation<OEMResponse, CreateOEMRequest>({
       query: (body) => ({
-        url: "oem/",
+        url: "oem",
         method: "POST",
-        body, 
+        body,
       }),
       invalidatesTags: ["OEM"],
     }),
 
     updateOEM: builder.mutation<
       OEMResponse,
-      { id: string; data: UpdateOEMRequest }
+      { id: number; data: UpdateOEMRequest }
     >({
       query: ({ id, data }) => ({
         url: `oem/${id}`,
         method: "PUT",
-        body: data, 
+        body: data,
       }),
       invalidatesTags: ["OEM"],
     }),
 
-    deleteOEM: builder.mutation<{ deleted: boolean }, string>({
+    deleteOEM: builder.mutation<{ deleted: boolean }, number>({
       query: (id) => ({
         url: `oem/${id}`,
         method: "DELETE",

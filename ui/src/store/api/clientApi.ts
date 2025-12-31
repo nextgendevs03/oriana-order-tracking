@@ -22,11 +22,13 @@ export const clientApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getClients: builder.query<ClientListResponse, ListClientRequest | void>({
       query: (params) => ({
-        url: "client/",
+        url: "client",
         method: "GET",
         params: params || {},
       }),
-      transformResponse: (response: ApiResponse<ClientResponse[]>): ClientListResponse => ({
+      transformResponse: (
+        response: ApiResponse<ClientResponse[]>
+      ): ClientListResponse => ({
         data: response.data || [],
         pagination: response.pagination || {
           page: 1,
@@ -40,7 +42,7 @@ export const clientApi = baseApi.injectEndpoints({
 
     createClient: builder.mutation<ClientResponse, CreateClientRequest>({
       query: (body) => ({
-        url: "client/",
+        url: "client",
         method: "POST",
         body,
       }),
@@ -49,7 +51,7 @@ export const clientApi = baseApi.injectEndpoints({
 
     updateClient: builder.mutation<
       ClientResponse,
-      { id: string; data: UpdateClientRequest }
+      { id: number; data: UpdateClientRequest }
     >({
       query: ({ id, data }) => ({
         url: `client/${id}`,
@@ -59,7 +61,7 @@ export const clientApi = baseApi.injectEndpoints({
       invalidatesTags: ["Client"],
     }),
 
-    deleteClient: builder.mutation<{ deleted: boolean }, string>({
+    deleteClient: builder.mutation<{ deleted: boolean }, number>({
       query: (id) => ({
         url: `client/${id}`,
         method: "DELETE",

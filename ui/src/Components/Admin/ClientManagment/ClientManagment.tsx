@@ -59,7 +59,7 @@ const ClientManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteClient(id).unwrap();
       toast.success("Client deleted successfully");

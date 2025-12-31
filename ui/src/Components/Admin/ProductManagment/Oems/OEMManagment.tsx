@@ -50,7 +50,7 @@ const OEMManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteOEM(id).unwrap();
       toast.success("OEM deleted successfully");
