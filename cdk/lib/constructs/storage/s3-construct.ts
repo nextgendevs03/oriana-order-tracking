@@ -11,6 +11,12 @@ import { S3BucketConfig, getS3Config } from "../../../config/s3.config";
 export interface S3ConstructProps {
   /** Environment configuration */
   config: EnvironmentConfig;
+  /**
+   * Additional CORS origins to allow (e.g., CloudFront distribution URL).
+   * These are merged with origins defined in s3.config.ts.
+   * Any "__AUTO__" placeholder in config will be replaced with these origins.
+   */
+  additionalCorsOrigins?: string[];
 }
 
 /**
@@ -36,15 +42,24 @@ export class S3Construct extends Construct {
   /** List of bucket ARNs for reference */
   public readonly bucketArns: string[] = [];
 
+  private additionalCorsOrigins: string[];
+
   constructor(scope: Construct, id: string, props: S3ConstructProps) {
     super(scope, id);
 
-    const { config } = props;
+    const { config, additionalCorsOrigins = [] } = props;
+    this.additionalCorsOrigins = additionalCorsOrigins;
     const s3EnvConfig = getS3Config(config.environment);
 
     console.log(
       `   📦 Creating ${s3EnvConfig.buckets.length} S3 bucket(s) for ${config.environment}...`,
     );
+
+    if (additionalCorsOrigins.length > 0) {
+      console.log(
+        `   🌐 Additional CORS origins will be added: CloudFront URL (resolved at deploy)`,
+      );
+    }
 
     // Create buckets from configuration
     for (const bucketConfig of s3EnvConfig.buckets) {
@@ -75,6 +90,23 @@ export class S3Construct extends Construct {
   ): s3.Bucket {
     const bucketName = `${bucketConfig.bucketNamePrefix}-${envConfig.environment}`;
 
+    // Build CORS origins: filter out __AUTO__ placeholder and add additional origins
+    let corsOrigins: string[] = [];
+    if (bucketConfig.corsAllowedOrigins) {
+      // Filter out __AUTO__ placeholder and add actual origins from config
+      corsOrigins = bucketConfig.corsAllowedOrigins.filter(
+        (origin) => origin !== "__AUTO__",
+      );
+    }
+    // Add additional CORS origins (e.g., CloudFront URL)
+    if (this.additionalCorsOrigins.length > 0) {
+      corsOrigins = [...corsOrigins, ...this.additionalCorsOrigins];
+    }
+    // Fallback to wildcard if no origins specified
+    if (corsOrigins.length === 0) {
+      corsOrigins = ["*"];
+    }
+
     const corsRules: s3.CorsRule[] = bucketConfig.enableCors
       ? [
           {
@@ -82,7 +114,7 @@ export class S3Construct extends Construct {
             allowedMethods: this.mapCorsMethodsToEnum(
               bucketConfig.corsAllowedMethods || [],
             ),
-            allowedOrigins: bucketConfig.corsAllowedOrigins || ["*"],
+            allowedOrigins: corsOrigins,
             exposedHeaders: ["ETag"],
             maxAge: 3600,
           },

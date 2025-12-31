@@ -203,13 +203,16 @@ export class RDSConstruct extends Construct implements IPermissionProvider {
   /**
    * Create a VPC for the database
    * COST OPTIMIZATION: Only creates NAT Gateway if private access is required
+   *
+   * NOTE: AWS RDS requires DB subnet groups to span at least 2 AZs,
+   * regardless of whether Multi-AZ is enabled. This is an AWS requirement.
    */
   private createVpc(
     config: EnvironmentConfig,
     rdsConfig: RDSEnvironmentConfig,
   ): ec2.Vpc {
-    // Only need 2 AZs if Multi-AZ is enabled, otherwise 1 AZ is sufficient
-    const requiredAzs = rdsConfig.multiAz ? 2 : 1;
+    // AWS RDS requires at least 2 AZs for DB subnet groups, even for single-AZ deployments
+    const requiredAzs = 2;
 
     return new ec2.Vpc(this, "DatabaseVpc", {
       vpcName: `oriana-vpc-${config.environment}`,

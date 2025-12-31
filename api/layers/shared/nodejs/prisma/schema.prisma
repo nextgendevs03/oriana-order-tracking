@@ -36,6 +36,7 @@ model PurchaseOrder {
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
   poItems               POItem[]
+  fileUploads           FileUpload[] // Files uploaded for this PO
 
   @@index([clientId])
   @@index([poStatus])
@@ -85,6 +86,7 @@ model User {
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
   assignedPOs PurchaseOrder[] // POs assigned to this user for dispatch
+  fileUploads FileUpload[]    // Files uploaded by this user
 
   @@index([email])
   @@index([username])
@@ -215,4 +217,34 @@ model Client {
   @@index([clientName])
   @@index([isActive])
   @@map("clients")
+}
+
+// File Upload model for S3 file management
+// Supports staged upload workflow: pending -> confirmed -> deleted
+model FileUpload {
+  fileId           Int            @id @default(autoincrement()) @map("file_id")
+  originalFileName String         @map("original_file_name") @db.VarChar(255)
+  storedFileName   String         @map("stored_file_name") @db.VarChar(255)
+  mimeType         String         @map("mime_type") @db.VarChar(100)
+  fileSize         Int            @map("file_size") // Size in bytes
+  s3Key            String         @map("s3_key") @db.VarChar(500)
+  s3Bucket         String         @map("s3_bucket") @db.VarChar(100)
+  status           String         @default("pending") @map("status") @db.VarChar(20) // pending, confirmed, deleted
+  entityType       String?        @map("entity_type") @db.VarChar(50) // dispatch, delivery, ppm, commissioning, warranty
+  entityId         String?        @map("entity_id") @db.VarChar(50)
+  poId             String?        @map("po_id") @db.VarChar(20)
+  purchaseOrder    PurchaseOrder? @relation(fields: [poId], references: [poId], onDelete: SetNull)
+  uploadedBy       Int            @map("uploaded_by")
+  uploader         User           @relation(fields: [uploadedBy], references: [userId], onDelete: Restrict)
+  confirmedAt      DateTime?      @map("confirmed_at")
+  deletedAt        DateTime?      @map("deleted_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at") // Auto-updated on every modification
+
+  @@index([status])
+  @@index([entityType, entityId])
+  @@index([poId])
+  @@index([uploadedBy])
+  @@index([createdAt])
+  @@map("file_uploads")
 }

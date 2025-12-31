@@ -57,6 +57,7 @@ import './lambdas/role.lambda';
 import './lambdas/permission.lambda';
 import './lambdas/productManagement.lambda';
 import './lambdas/CreatePO.lambda';
+import './lambdas/file.lambda';
 
 // Import shared utilities
 import { lambdaRegistry, routeRegistry, Router, createRouter } from '@oriana/shared';

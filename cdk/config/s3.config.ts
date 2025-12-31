@@ -57,23 +57,32 @@ const defaultBucketConfig: Partial<S3BucketConfig> = {
  *
  * Add or modify buckets as needed. Each environment can have
  * different bucket configurations.
+ *
+ * The "files" bucket is used for all file uploads (dispatch documents,
+ * delivery proofs, commissioning docs, warranty certificates, etc.)
+ *
+ * CORS Origins:
+ * - Use "__AUTO__" to automatically include the CloudFront distribution URL
+ * - Additional origins can be specified alongside "__AUTO__"
+ * - For dev, localhost origins are used for local development
  */
 export const s3Config: Record<Environment, S3EnvironmentConfig> = {
   dev: {
     buckets: [
       {
         ...defaultBucketConfig,
-        id: "uploads",
-        bucketNamePrefix: "oriana-uploads",
+        id: "files",
+        bucketNamePrefix: "oriana-files",
         versioned: false,
         removalPolicy: RemovalPolicy.DESTROY,
-      },
-      {
-        ...defaultBucketConfig,
-        id: "documents",
-        bucketNamePrefix: "oriana-documents",
-        versioned: false,
-        removalPolicy: RemovalPolicy.DESTROY,
+        enableCors: true,
+        // Dev: Include localhost for local development + __AUTO__ for CloudFront
+        corsAllowedOrigins: [
+          "__AUTO__", // Will be replaced with CloudFront URL
+          "http://localhost:3000",
+          "http://localhost:4000",
+        ],
+        corsAllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],
       },
     ],
   },
@@ -81,17 +90,14 @@ export const s3Config: Record<Environment, S3EnvironmentConfig> = {
     buckets: [
       {
         ...defaultBucketConfig,
-        id: "uploads",
-        bucketNamePrefix: "oriana-uploads",
+        id: "files",
+        bucketNamePrefix: "oriana-files",
         versioned: true,
         removalPolicy: RemovalPolicy.DESTROY,
-      },
-      {
-        ...defaultBucketConfig,
-        id: "documents",
-        bucketNamePrefix: "oriana-documents",
-        versioned: true,
-        removalPolicy: RemovalPolicy.DESTROY,
+        enableCors: true,
+        // QA: CloudFront URL is automatically added via __AUTO__
+        corsAllowedOrigins: ["__AUTO__"],
+        corsAllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],
       },
     ],
   },
@@ -99,25 +105,15 @@ export const s3Config: Record<Environment, S3EnvironmentConfig> = {
     buckets: [
       {
         ...defaultBucketConfig,
-        id: "uploads",
-        bucketNamePrefix: "oriana-uploads",
+        id: "files",
+        bucketNamePrefix: "oriana-files",
         versioned: true,
         removalPolicy: RemovalPolicy.RETAIN,
-        corsAllowedOrigins: [
-          "https://oriana.example.com",
-          "https://app.oriana.example.com",
-        ],
-      },
-      {
-        ...defaultBucketConfig,
-        id: "documents",
-        bucketNamePrefix: "oriana-documents",
-        versioned: true,
-        removalPolicy: RemovalPolicy.RETAIN,
-        corsAllowedOrigins: [
-          "https://oriana.example.com",
-          "https://app.oriana.example.com",
-        ],
+        enableCors: true,
+        // Prod: CloudFront URL is automatically added via __AUTO__
+        // Add custom domains here if you have them (e.g., "https://app.oriana.com")
+        corsAllowedOrigins: ["__AUTO__"],
+        corsAllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],
       },
     ],
   },

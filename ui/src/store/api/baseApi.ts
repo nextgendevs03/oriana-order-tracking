@@ -115,6 +115,7 @@ export const baseApi = createApi({
     "OEM", // OEMs
     "Product", // Products
     "Client", // Clients
+    "File", // File uploads
   ],
 
   // Base endpoints - empty, will be extended by feature APIs
