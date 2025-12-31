@@ -28,12 +28,12 @@ export class POService implements IPOService {
 
   private mapItemToResponse(item: POItemWithRelations): POItemResponse {
     return {
-      id: item.id,
-      categoryId: item.categoryId,
+      id: String(item.id),
+      categoryId: String(item.categoryId),
       categoryName: item.category?.categoryName,
-      oemId: item.oemId,
+      oemId: String(item.oemId),
       oemName: item.oem?.oemName,
-      productId: item.productId,
+      productId: String(item.productId),
       productName: item.product?.productName,
       quantity: item.quantity,
       spareQuantity: item.spareQuantity,
@@ -61,7 +61,7 @@ export class POService implements IPOService {
     return {
       poId: po.poId,
       poReceivedDate: formatDate(po.poReceivedDate),
-      clientId: po.clientId,
+      clientId: String(po.clientId),
       clientName: po.client?.clientName,
       osgPiNo: po.osgPiNo,
       osgPiDate: formatDate(po.osgPiDate),
@@ -69,7 +69,7 @@ export class POService implements IPOService {
       clientPoDate: formatDate(po.clientPoDate),
       poStatus: po.poStatus,
       noOfDispatch: po.noOfDispatch,
-      assignDispatchTo: po.assignDispatchTo,
+      assignDispatchTo: po.assignDispatchTo ? String(po.assignDispatchTo) : null,
       assignedUserName: po.assignedUser?.username || null,
       clientAddress: po.clientAddress,
       clientContact: po.clientContact,
