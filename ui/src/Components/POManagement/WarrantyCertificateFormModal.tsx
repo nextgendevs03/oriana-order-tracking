@@ -35,7 +35,7 @@ const WarrantyCertificateFormModal: React.FC<
 
   // Get serial numbers from records with commissioningStatus === "Done"
   const serialOptions = useMemo(() => {
-    return preCommissioningDetails
+    return (preCommissioningDetails ?? [])
       .filter(
         (pc: PreCommissioning) =>
           pc.poId === poId &&

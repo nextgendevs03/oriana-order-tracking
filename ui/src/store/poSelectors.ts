@@ -45,27 +45,27 @@ export const selectDispatchesForPreCommissioning = (poId: string) =>
 
 export const selectPreCommissioningByPOId = (poId: string) =>
   createSelector([selectPreCommissioningDetails], (pcDetails) =>
-    pcDetails.filter((pc) => pc.poId === poId)
+    pcDetails?.filter((pc) => pc.poId === poId)
   );
 
 export const selectPreCommissioningForCommissioning = (poId: string) =>
   createSelector([selectPreCommissioningDetails], (pcDetails) =>
-    pcDetails.filter((pc) => pc.poId === poId && pc.preCommissioningStatus === "Done")
+    pcDetails?.filter((pc) => pc.poId === poId && pc.preCommissioningStatus === "Done")
   );
 
 export const selectCommissionedEntries = (poId: string) =>
   createSelector([selectPreCommissioningDetails], (pcDetails) =>
-    pcDetails.filter((pc) => pc.poId === poId && pc.commissioningStatus)
+    pcDetails?.filter((pc) => pc.poId === poId && pc.commissioningStatus)
   );
 
 export const selectCommissioningForWarranty = (poId: string) =>
   createSelector([selectPreCommissioningDetails], (pcDetails) =>
-    pcDetails.filter((pc) => pc.poId === poId && pc.commissioningStatus === "Done")
+    pcDetails?.filter((pc) => pc.poId === poId && pc.commissioningStatus === "Done")
   );
 
 export const selectWarrantyEntries = (poId: string) =>
   createSelector([selectPreCommissioningDetails], (pcDetails) =>
-    pcDetails.filter((pc) => pc.poId === poId && pc.warrantyStatus)
+    pcDetails?.filter((pc) => pc.poId === poId && pc.warrantyStatus)
   );
 
 // ============= ACCORDION STATUS SELECTORS =============
@@ -161,8 +161,8 @@ export const selectPreCommissioningStatusInfo = (poId: string) =>
       });
 
       if (totalSerials === 0) return "Not Started";
-      if (pcEntries.length === 0) return "Not Started";
-      if (pcEntries.length >= totalSerials) return "Done";
+      if (pcEntries?.length === 0) return "Not Started";
+      if (pcEntries?.length >= totalSerials) return "Done";
       return "In-Progress";
     }
   );
@@ -172,9 +172,9 @@ export const selectCommissioningStatusInfo = (poId: string) =>
   createSelector(
     [selectPreCommissioningForCommissioning(poId), selectCommissionedEntries(poId)],
     (forCommissioning, commissioned): AccordionStatus => {
-      if (forCommissioning.length === 0) return "Not Started";
-      if (commissioned.length === 0) return "Not Started";
-      if (commissioned.length >= forCommissioning.length) return "Done";
+      if (forCommissioning?.length === 0) return "Not Started";
+      if (commissioned?.length === 0) return "Not Started";
+      if (commissioned?.length >= forCommissioning?.length) return "Done";
       return "In-Progress";
     }
   );
@@ -184,9 +184,9 @@ export const selectWarrantyStatusInfo = (poId: string) =>
   createSelector(
     [selectCommissioningForWarranty(poId), selectWarrantyEntries(poId)],
     (forWarranty, warrantyEntries): AccordionStatus => {
-      if (forWarranty.length === 0) return "Not Started";
-      if (warrantyEntries.length === 0) return "Not Started";
-      if (warrantyEntries.length >= forWarranty.length) return "Done";
+      if (forWarranty?.length === 0) return "Not Started";
+      if (warrantyEntries?.length === 0) return "Not Started";
+      if (warrantyEntries?.length >= forWarranty?.length) return "Done";
       return "In-Progress";
     }
   );

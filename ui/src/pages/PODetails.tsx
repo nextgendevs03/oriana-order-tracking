@@ -308,12 +308,12 @@ const PODetails: React.FC = () => {
 
   // Get dispatches eligible for pre-commissioning (deliveryStatus === "done")
   const dispatchesForPreCommissioning = useMemo(() => {
-    return currentPODispatches.filter((d) => d.deliveryStatus === "done");
+    return currentPODispatches?.filter((d) => d.deliveryStatus === "done");
   }, [currentPODispatches]);
 
   // Get pre-commissioning entries for current PO
   const currentPOPreCommissioning = useMemo(() => {
-    return preCommissioningDetails.filter((pc) => pc.poId === poId);
+    return preCommissioningDetails?.filter((pc) => pc.poId === poId);
   }, [preCommissioningDetails, poId]);
 
   // Pre-commissioning modal handlers
@@ -338,14 +338,14 @@ const PODetails: React.FC = () => {
 
   // Get pre-commissioning entries with "Done" preCommissioningStatus for commissioning
   const preCommissioningForCommissioning = useMemo(() => {
-    return preCommissioningDetails.filter(
+    return preCommissioningDetails?.filter(
       (pc) => pc.poId === poId && pc.preCommissioningStatus === "Done"
     );
   }, [preCommissioningDetails, poId]);
 
   // Get commissioned entries (those with commissioningStatus)
   const commissionedEntries = useMemo(() => {
-    return preCommissioningDetails.filter(
+    return preCommissioningDetails?.filter(
       (pc) => pc.poId === poId && pc.commissioningStatus
     );
   }, [preCommissioningDetails, poId]);
@@ -368,14 +368,14 @@ const PODetails: React.FC = () => {
 
   // Get records with commissioningStatus === "Done" for warranty
   const commissioningForWarranty = useMemo(() => {
-    return preCommissioningDetails.filter(
+    return preCommissioningDetails?.filter(
       (pc) => pc.poId === poId && pc.commissioningStatus === "Done"
     );
   }, [preCommissioningDetails, poId]);
 
   // Get warranty entries (those with warrantyStatus)
   const warrantyEntries = useMemo(() => {
-    return preCommissioningDetails.filter(
+    return preCommissioningDetails?.filter(
       (pc) => pc.poId === poId && pc.warrantyStatus
     );
   }, [preCommissioningDetails, poId]);
@@ -1683,7 +1683,7 @@ const PODetails: React.FC = () => {
           </div>
 
           {/* Pre-Commissioning Table or Empty State */}
-          {currentPOPreCommissioning.length > 0 ? (
+          {currentPOPreCommissioning?.length > 0 ? (
             <div style={{ overflowX: "auto" }}>
               <Table
                 columns={preCommissioningColumns}
@@ -1729,7 +1729,7 @@ const PODetails: React.FC = () => {
               type="primary"
               icon={<ToolOutlined />}
               onClick={handleAddCommissioning}
-              disabled={preCommissioningForCommissioning.length === 0}
+              disabled={preCommissioningForCommissioning?.length === 0}
               style={{
                 background: colors.primary,
                 borderRadius: 8,
@@ -1742,7 +1742,7 @@ const PODetails: React.FC = () => {
           </div>
 
           {/* Commissioning Table or Empty State */}
-          {commissionedEntries.length > 0 ? (
+          {commissionedEntries?.length > 0 ? (
             <div style={{ overflowX: "auto" }}>
               <Table
                 columns={commissioningColumns}
@@ -1760,7 +1760,7 @@ const PODetails: React.FC = () => {
           ) : (
             <Empty
               description={
-                preCommissioningForCommissioning.length === 0
+                preCommissioningForCommissioning?.length === 0
                   ? "No pre-commissioning entries with 'Done' status available for commissioning"
                   : "No commissioning details available"
               }
@@ -1788,7 +1788,7 @@ const PODetails: React.FC = () => {
               type="primary"
               icon={<FileTextOutlined />}
               onClick={handleAddWarranty}
-              disabled={commissioningForWarranty.length === 0}
+              disabled={commissioningForWarranty?.length === 0}
               style={{
                 background: colors.primary,
                 borderRadius: 8,
@@ -1801,7 +1801,7 @@ const PODetails: React.FC = () => {
           </div>
 
           {/* Warranty Certificate Table or Empty State */}
-          {warrantyEntries.length > 0 ? (
+          {warrantyEntries?.length > 0 ? (
             <div style={{ overflowX: "auto" }}>
               <Table
                 columns={warrantyColumns}
@@ -1819,7 +1819,7 @@ const PODetails: React.FC = () => {
           ) : (
             <Empty
               description={
-                commissioningForWarranty.length === 0
+                commissioningForWarranty?.length === 0
                   ? "No commissioning entries with 'Done' status available for warranty"
                   : "No warranty details available"
               }
