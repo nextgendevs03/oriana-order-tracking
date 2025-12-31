@@ -35,7 +35,7 @@ export class UserRepository implements IUserRepository {
 
   async create(data: CreateUserRequest): Promise<User> {
     const { role, roleId, ...userData } = data;
-    let finalRoleId: string | undefined = roleId;
+    let finalRoleId: number | undefined = roleId;
 
     // If roleId is not provided but role name is, find the role by name
     if (!finalRoleId && role) {
@@ -158,7 +158,7 @@ export class UserRepository implements IUserRepository {
     if (updateFields.updatedBy !== undefined) userUpdateData.updatedBy = updateFields.updatedBy;
 
     // Handle roleId: if roleId is provided, use it directly; if role name is provided, find the roleId
-    let finalRoleId: string | undefined | null = roleId;
+    let finalRoleId: number | undefined | null = roleId;
     if (finalRoleId === undefined && role !== undefined) {
       const roleRecord = await this.prisma.role.findFirst({
         where: {

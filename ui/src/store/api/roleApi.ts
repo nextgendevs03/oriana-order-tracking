@@ -20,12 +20,14 @@ export const roleApi = baseApi.injectEndpoints({
         method: "GET",
         params: params || {},
       }),
-      transformResponse: (response: ApiResponse<RoleResponse[]>): RoleListResponse => ({
-        data: response.data || [],
-        pagination: response.pagination || {
+      transformResponse: (
+        response: ApiResponse<{ data: RoleResponse[]; pagination?: any }>
+      ): RoleListResponse => ({
+        data: response.data?.data || [],
+        pagination: response.data?.pagination || response.pagination || {
           page: 1,
           limit: 20,
-          total: response.data?.length || 0,
+          total: response.data?.data?.length || 0,
           totalPages: 1,
         },
       }),
@@ -43,9 +45,9 @@ export const roleApi = baseApi.injectEndpoints({
 
     updateRole: builder.mutation<
       RoleResponse,
-      { id: string; data: UpdateRoleRequest }
+      { id: number; data: UpdateRoleRequest }
     >({
-      query: ({ id, data }: { id: string; data: UpdateRoleRequest }) => ({
+      query: ({ id, data }: { id: number; data: UpdateRoleRequest }) => ({
         url: `role/${id}`,
         method: "PUT",
         body: data,
@@ -53,8 +55,8 @@ export const roleApi = baseApi.injectEndpoints({
       invalidatesTags: ["Role"],
     }),
 
-    deleteRole: builder.mutation<{ id: string; deleted: boolean }, string>({
-      query: (id: string) => ({ url: `role/${id}`, method: "DELETE" }),
+    deleteRole: builder.mutation<{ id: number; deleted: boolean }, number>({
+      query: (id: number) => ({ url: `role/${id}`, method: "DELETE" }),
       invalidatesTags: ["Role"],
     }),
   }),

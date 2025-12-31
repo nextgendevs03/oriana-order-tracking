@@ -13,10 +13,10 @@ import { Role } from '@prisma/client';
 
 export interface IRoleService {
   createRole(data: CreateRoleRequest): Promise<RoleResponse>;
-  getRoleById(id: string): Promise<RoleResponse | null>;
+  getRoleById(id: number): Promise<RoleResponse | null>;
   getAllRoles(params: ListRoleRequest): Promise<RoleListResponse>;
-  updateRole(id: string, data: UpdateRoleRequest): Promise<RoleResponse | null>;
-  deleteRole(id: string): Promise<boolean>;
+  updateRole(id: number, data: UpdateRoleRequest): Promise<RoleResponse | null>;
+  deleteRole(id: number): Promise<boolean>;
 }
 
 @injectable()
@@ -71,7 +71,7 @@ export class RoleService implements IRoleService {
     return this.mapToResponse(role);
   }
 
-  async getRoleById(id: string): Promise<RoleResponse | null> {
+  async getRoleById(id: number): Promise<RoleResponse | null> {
     const role = await this.repo.findById(id);
     if (!role) return null;
     return this.mapToResponse(role);
@@ -92,13 +92,13 @@ export class RoleService implements IRoleService {
     };
   }
 
-  async updateRole(id: string, data: UpdateRoleRequest): Promise<RoleResponse | null> {
+  async updateRole(id: number, data: UpdateRoleRequest): Promise<RoleResponse | null> {
     const role = await this.repo.update(id, data);
     if (!role) return null;
     return this.mapToResponse(role);
   }
 
-  async deleteRole(id: string): Promise<boolean> {
+  async deleteRole(id: number): Promise<boolean> {
     return this.repo.delete(id);
   }
 }

@@ -1,64 +1,72 @@
-import React, { useEffect } from "react";
-import { Modal, Form, Checkbox, Button, Divider, Input } from "antd";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../../store";
-import { closeModal } from "../../../store/roleSlice";
+import React, { useEffect, useMemo } from "react";
+import { Modal, Form, Button, Input, Select, Spin, Checkbox } from "antd";
 import {
   useCreateRoleMutation,
-  useUpdateRoleMutation
+  useUpdateRoleMutation,
 } from "../../../store/api/roleApi";
+import { PermissionResponse, RoleResponse } from "@OrianaTypes";
 
-type PermissionItem = { key: string; label: string; desc?: string };
-type PermissionGroup = { group: string; items: PermissionItem[] };
+interface AddRoleModalProps {
+  open: boolean;
+  onClose: () => void;
+  roleToEdit?: RoleResponse | null;
+  permissions: PermissionResponse[];
+  isLoadingPermissions: boolean;
+}
 
-const permissionsData: PermissionGroup[] = [
-  {
-    group: "Users",
-    items: [
-      {
-        key: "user.view",
-        label: "View Users",
-        desc: "Can view user list and details",
-      },
-      {
-        key: "user.create",
-        label: "Create Users",
-        desc: "Can create new users",
-      },
-      {
-        key: "user.edit",
-        label: "Edit Users",
-        desc: "Can edit existing users",
-      },
-      { key: "user.delete", label: "Delete Users", desc: "Can delete users" },
-      {
-        key: "user.toggle",
-        label: "Toggle User Status",
-        desc: "Can activate/deactivate users",
-      },
-    ],
-  },
-];
-
-const AddRoleModal: React.FC = () => {
+const AddRoleModal: React.FC<AddRoleModalProps> = ({
+  open,
+  onClose,
+  roleToEdit,
+  permissions,
+  isLoadingPermissions,
+}) => {
   const [form] = Form.useForm();
-  const dispatch = useDispatch();
 
-  const isModalOpen = useSelector((state: RootState) => state.role.isModalOpen);
-  const roleToEdit = useSelector((state: RootState) => state.role.roleToEdit);
+  const [createRole, { isLoading: isCreating }] = useCreateRoleMutation();
+  const [updateRole, { isLoading: isUpdating }] = useUpdateRoleMutation();
 
-  const [createRole] = useCreateRoleMutation();
-  const [updateRole] = useUpdateRoleMutation();
+  const isLoading = isCreating || isUpdating;
+
+  // Map permissions to Select options
+  const permissionOptions = useMemo(() => {
+    if (!permissions || permissions.length === 0) return [];
+    return permissions.map((permission: PermissionResponse) => ({
+      label: permission.permissionName,
+      value: permission.permissionId,
+      description: permission.description,
+    }));
+  }, [permissions]);
+
+  // Get all permission IDs
+  const allPermissionIds = useMemo(() => {
+    return permissionOptions.map((option) => option.value);
+  }, [permissionOptions]);
+
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      form.setFieldValue("permissionIds", allPermissionIds);
+    } else {
+      form.setFieldValue("permissionIds", []);
+    }
+  };
 
   useEffect(() => {
     if (roleToEdit) {
+      // Extract permissionIds from roleToEdit.permissions array
+      const permissionIds = roleToEdit.permissions
+        ? roleToEdit.permissions.map((p: PermissionResponse) => p.permissionId)
+        : [];
+
       form.setFieldsValue({
         roleName: roleToEdit.roleName,
         description: roleToEdit.description,
-        permissions: roleToEdit.permissions || []
+        permissionIds: permissionIds,
       });
     } else {
       form.resetFields();
+      form.setFieldsValue({ permissionIds: [] });
     }
   }, [roleToEdit, form]);
 
@@ -66,11 +74,14 @@ const AddRoleModal: React.FC = () => {
     try {
       const values = await form.validateFields();
       if (roleToEdit) {
-        await updateRole({ id: roleToEdit.roleId, data: values }).unwrap();
+        await updateRole({
+          id: roleToEdit.roleId,
+          data: values,
+        }).unwrap();
       } else {
         await createRole(values).unwrap();
       }
-      dispatch(closeModal());
+      onClose();
       form.resetFields();
     } catch (err) {
       console.error("Error creating/updating role:", err);
@@ -78,35 +89,35 @@ const AddRoleModal: React.FC = () => {
   };
 
   const handleCancel = () => {
-    dispatch(closeModal());
+    onClose();
     form.resetFields();
-  };
-
-  const getSelected = (): string[] => {
-    const v = form.getFieldValue("permissions");
-    return Array.isArray(v) ? v : [];
   };
 
   return (
     <Modal
       title={roleToEdit ? "Edit Role" : "Add Role"}
-      open={isModalOpen}
+      open={open}
       onCancel={handleCancel}
       width={500}
       centered
       bodyStyle={{ maxHeight: "70vh", overflowY: "auto", padding: "20px 24px" }}
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
+        <Button key="cancel" onClick={handleCancel} disabled={isLoading}>
           Cancel
         </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit}>
+        <Button
+          key="submit"
+          type="primary"
+          onClick={handleSubmit}
+          loading={isLoading}
+          disabled={isLoading}
+        >
           {roleToEdit ? "Update" : "Create"}
         </Button>,
       ]}
       destroyOnClose
     >
       <Form layout="vertical" form={form}>
-
         {/* ROLE NAME Input */}
         <Form.Item
           name="roleName"
@@ -125,79 +136,78 @@ const AddRoleModal: React.FC = () => {
           <Input placeholder="Enter Description" />
         </Form.Item>
 
-        <Divider>Permissions</Divider>
-
-        <Form.Item name="permissions" initialValue={[]}>
-          <Checkbox.Group
-            value={form.getFieldValue("permissions") || []}
-            onChange={(checkedValues: any[]) =>
-              form.setFieldsValue({ permissions: checkedValues })
+        {/* PERMISSIONS Multi-Select */}
+        <Form.Item
+          name="permissionIds"
+          label="Permissions"
+          rules={[{ required: false }]}
+        >
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) =>
+              prevValues.permissionIds !== currentValues.permissionIds
             }
           >
-            {permissionsData.map((group) => {
-              const selected = getSelected();
-              const groupKeys = group.items.map((i) => i.key);
-              const allChecked = group.items.every((i) =>
-                selected.includes(i.key)
-              );
-              const someChecked =
-                !allChecked &&
-                group.items.some((i) => selected.includes(i.key));
+            {({ getFieldValue }) => {
+              const selectedIds = getFieldValue("permissionIds") || [];
+              const allSelected =
+                allPermissionIds.length > 0 &&
+                allPermissionIds.every((id) => selectedIds.includes(id));
+              const indeterminate =
+                selectedIds.length > 0 &&
+                selectedIds.length < allPermissionIds.length;
 
               return (
-                <div
-                  key={group.group}
-                  style={{
-                    marginBottom: 12,
-                    border: "1px solid #f0f0f0",
-                    borderRadius: 8,
-                    background: "#fff",
-                    padding: 10,
-                  }}
-                >
-                  <Checkbox
-                    indeterminate={someChecked}
-                    checked={allChecked}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      const current = getSelected();
-                      const newValues = checked
-                        ? Array.from(new Set([...current, ...groupKeys]))
-                        : current.filter((v) => !groupKeys.includes(v));
-                      form.setFieldsValue({ permissions: newValues });
-                    }}
-                    style={{ fontWeight: 600, marginBottom: 8 }}
-                  >
-                    {group.group} ({group.items.length})
-                  </Checkbox>
-
-                  {group.items.map((item) => (
-                    <div
-                      key={item.key}
-                      style={{ marginLeft: 20, marginBottom: 6 }}
-                    >
-                      <Checkbox value={item.key}>
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                          <span style={{ fontWeight: 500 }}>{item.label}</span>
-                          {item.desc && (
-                            <span
-                              style={{
-                                fontSize: 12,
-                                color: "#8c8c8c",
-                                marginTop: 2,
-                              }}
-                            >
-                              {item.desc}
-                            </span>
-                          )}
-                        </div>
-                      </Checkbox>
-                    </div>
-                  ))}
-                </div>
+                <Select
+                  mode="multiple"
+                  placeholder="Select permissions"
+                  style={{ width: "100%" }}
+                  loading={isLoadingPermissions}
+                  notFoundContent={
+                    isLoadingPermissions ? (
+                      <Spin size="small" />
+                    ) : (
+                      "No permissions found"
+                    )
+                  }
+                  optionLabelProp="label"
+                  options={permissionOptions.map((option) => ({
+                    label: option.label,
+                    value: option.value,
+                    title: option.description || option.label,
+                  }))}
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  maxTagCount="responsive"
+                  dropdownRender={(menu) => (
+                    <>
+                      <div
+                        style={{
+                          padding: "8px 12px",
+                          borderBottom: "1px solid #f0f0f0",
+                          background: "#fafafa",
+                        }}
+                      >
+                        <Checkbox
+                          checked={allSelected}
+                          indeterminate={indeterminate}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          style={{ fontWeight: 500 }}
+                        >
+                          Select All ({allPermissionIds.length} permissions)
+                        </Checkbox>
+                      </div>
+                      {menu}
+                    </>
+                  )}
+                />
               );
-            })}
-          </Checkbox.Group>
+            }}
+          </Form.Item>
         </Form.Item>
       </Form>
     </Modal>

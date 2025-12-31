@@ -54,23 +54,29 @@ export class RoleController {
 
   @Get('/{id}')
   async getById(@Param('id') id: string) {
-    const role = await this.service.getRoleById(id);
+    const roleId = parseInt(id, 10);
+    if (isNaN(roleId)) throw new ValidationError('Invalid role ID');
+    const role = await this.service.getRoleById(roleId);
     if (!role) throw new NotFoundError(`Role ${id} not found`);
     return createSuccessResponse(role, 200);
   }
 
   @Put('/{id}')
   async update(@Param('id') id: string, @Body() data: UpdateRoleRequest) {
-    const role = await this.service.updateRole(id, data);
+    const roleId = parseInt(id, 10);
+    if (isNaN(roleId)) throw new ValidationError('Invalid role ID');
+    const role = await this.service.updateRole(roleId, data);
     if (!role) throw new NotFoundError(`Role ${id} not found`);
     return createSuccessResponse(role);
   }
 
   @Delete('/{id}')
   async delete(@Param('id') id: string) {
-    const deleted = await this.service.deleteRole(id);
+    const roleId = parseInt(id, 10);
+    if (isNaN(roleId)) throw new ValidationError('Invalid role ID');
+    const deleted = await this.service.deleteRole(roleId);
     if (!deleted) throw new NotFoundError(`Role ${id} not found`);
 
-    return createSuccessResponse({ id, deleted: true });
+    return createSuccessResponse({ id: roleId, deleted: true });
   }
 }

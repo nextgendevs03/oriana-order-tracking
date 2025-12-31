@@ -12,13 +12,13 @@ const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'roleName';
 
 export interface IRoleRepository {
   create(data: CreateRoleRequest): Promise<Role>;
-  findById(id: string): Promise<Role | null>;
+  findById(id: number): Promise<Role | null>;
   findAll(params: ListRoleRequest): Promise<{ rows: Role[]; count: number }>;
-  update(id: string, data: UpdateRoleRequest): Promise<Role | null>;
-  delete(id: string): Promise<boolean>;
-  assignPermissions(roleId: string, permissionIds: number[], createdBy: string): Promise<void>;
-  removePermissions(roleId: string, permissionIds: number[]): Promise<void>;
-  syncPermissions(roleId: string, permissionIds: number[], updatedBy: string): Promise<void>;
+  update(id: number, data: UpdateRoleRequest): Promise<Role | null>;
+  delete(id: number): Promise<boolean>;
+  assignPermissions(roleId: number, permissionIds: number[], createdBy: string): Promise<void>;
+  removePermissions(roleId: number, permissionIds: number[]): Promise<void>;
+  syncPermissions(roleId: number, permissionIds: number[], updatedBy: string): Promise<void>;
 }
 
 @injectable()
@@ -52,7 +52,7 @@ export class RoleRepository implements IRoleRepository {
     return this.findById(role.roleId) as Promise<Role>;
   }
 
-  async findById(id: string): Promise<Role | null> {
+  async findById(id: number): Promise<Role | null> {
     return this.prisma.role.findUnique({
       where: { roleId: id },
       include: {
@@ -130,7 +130,7 @@ export class RoleRepository implements IRoleRepository {
     return { rows, count };
   }
 
-  async update(id: string, data: UpdateRoleRequest): Promise<Role | null> {
+  async update(id: number, data: UpdateRoleRequest): Promise<Role | null> {
     const existing = await this.prisma.role.findUnique({
       where: { roleId: id },
     });
@@ -157,7 +157,7 @@ export class RoleRepository implements IRoleRepository {
   }
 
   async assignPermissions(
-    roleId: string,
+    roleId: number,
     permissionIds: number[],
     createdBy: string
   ): Promise<void> {
@@ -174,7 +174,7 @@ export class RoleRepository implements IRoleRepository {
     });
   }
 
-  async removePermissions(roleId: string, permissionIds: number[]): Promise<void> {
+  async removePermissions(roleId: number, permissionIds: number[]): Promise<void> {
     // Soft delete by setting isActive to false
     await this.prisma.rolePermission.updateMany({
       where: {
@@ -188,7 +188,7 @@ export class RoleRepository implements IRoleRepository {
     });
   }
 
-  async syncPermissions(roleId: string, permissionIds: number[], updatedBy: string): Promise<void> {
+  async syncPermissions(roleId: number, permissionIds: number[], updatedBy: string): Promise<void> {
     // Get current active permissions
     const currentPermissions = await this.prisma.rolePermission.findMany({
       where: {
@@ -213,7 +213,7 @@ export class RoleRepository implements IRoleRepository {
     }
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: number): Promise<boolean> {
     try {
       await this.prisma.role.delete({ where: { roleId: id } });
       return true;

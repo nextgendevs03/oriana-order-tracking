@@ -46,15 +46,24 @@ export const permissionApi = baseApi.injectEndpoints({
         return `/permission${queryString ? `?${queryString}` : ""}`;
       },
       transformResponse: (
-        response: ApiResponse<PermissionResponse[]>
+        response: ApiResponse<{
+          data: PermissionResponse[];
+          pagination?: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
+        }>
       ): PermissionListResponse => ({
-        data: response.data,
-        pagination: response.pagination || {
-          page: 1,
-          limit: 20,
-          total: 0,
-          totalPages: 0,
-        },
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ??
+          response.pagination ?? {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+          },
       }),
       providesTags: ["Permission"],
     }),
