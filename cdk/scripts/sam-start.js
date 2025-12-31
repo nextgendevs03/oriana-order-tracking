@@ -20,7 +20,7 @@ const args = [
   '-p', port,
   '-t', template,
   '--env-vars', envVars,
-  '--warm-containers', 'LAZY',
+  '--warm-containers', 'EAGER',  // EAGER keeps containers warm for faster subsequent requests
   '--skip-pull-image'
 ];
 

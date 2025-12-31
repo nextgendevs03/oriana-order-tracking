@@ -150,33 +150,49 @@ Edit `cdk/env.local.json` with your database and JWT credentials:
 
 ### Step 2: Start Development Server
 
-**Option A: Single Command (Recommended)**
+**Option A: Fast Development (Recommended for Daily Work)**
 ```bash
 cd cdk
-npm run dev:all
+npm run dev:fast
 ```
-This runs both API watch mode and SAM Local in one terminal with automatic hot reload.
+Uses smart caching to skip unnecessary rebuilds. Startup time: ~10-20 seconds.
 
-**Option B: Two Terminals (More Control)**
+**Option B: Hot Reload Mode (Best for Active Coding)**
 ```bash
-# Terminal 1 - API Watch Mode
-cd api
-npm run watch
-
-# Terminal 2 - SAM with Hot Reload
 cd cdk
-npm run dev:watch
+npm run dev:hot
 ```
+Combines esbuild watch + SAM for instant code updates (~100ms rebuild).
 
-**Option C: Manual Mode**
+**Option C: Full Rebuild (After Git Pull or Schema Changes)**
 ```bash
 cd cdk
-npm run dev          # Full build + synth + start (manual restart required)
+npm run dev:fast:init
+```
+Forces complete rebuild of layer, handlers, and CDK template.
+
+**Option D: Legacy Commands**
+```bash
+cd cdk
+npm run dev          # Full build + synth + start
+npm run dev:all      # Concurrent watch + SAM
 npm run dev:quick    # Quick start (skip API build)
 npm run dev:debug    # Debug mode
 ```
 
 The API will be available at: `http://localhost:4000`
+
+### Which Script Should I Use?
+
+| Situation | Command |
+|-----------|---------|
+| **Fastest development (no Docker)** | `npm run dev:express:watch` |
+| **Daily development (SAM)** | `npm run dev:fast` |
+| **Active coding/testing** | `npm run dev:hot` or `dev:express:watch` |
+| **First time / fresh setup** | `npm run dev:fast:init` |
+| **After git pull** | `npm run dev:fast` (or `dev:fast:init` if layer changed) |
+| **After schema changes** | `npm run dev:fast:init` |
+| **Testing Lambda behavior** | `npm run dev:fast` |
 
 ### How Hot Reload Works
 
@@ -216,15 +232,22 @@ npm run synth:dev && sam local start-api -p 5000 -t cdk.out/ApiStack-dev.templat
 
 ## NPM Scripts
 
-### Development
+### Optimized Development (Recommended)
+| Script | Description | Startup Time |
+|--------|-------------|--------------|
+| `npm run dev:express:watch` | **Express server (no Docker)** - Fastest, instant responses | ~3-5s |
+| `npm run dev:fast` | **Smart cached build** - Skips layer/synth if cached | ~10-20s |
+| `npm run dev:fast:init` | **Force full rebuild** - Use after git pull or schema changes | ~1-2 min |
+| `npm run dev:hot` | **Hot reload mode** - Watch + SAM with instant updates | ~10-20s |
+
+### Legacy Development
 | Script | Description |
 |--------|-------------|
-| `npm run dev:all` | **Single command** - Runs API watch + SAM with hot reload (recommended) |
-| `npm run dev:watch` | **Hot reload mode** - Synth + Start SAM with auto-restart on code changes |
+| `npm run dev:all` | Runs API watch + SAM with hot reload |
+| `npm run dev:watch` | Synth + Start SAM with auto-restart on code changes |
 | `npm run dev` | Build API + Synth + Start local API on port 4000 |
 | `npm run dev:port` | Same as dev, but uses `API_PORT` env var (default: 4000) |
 | `npm run dev:quick` | Synth + Start (skip API build) |
-| `npm run dev:eager` | Eager container mode |
 | `npm run dev:debug` | Debug mode with verbose logging |
 | `npm run invoke:po` | Invoke PO Lambda locally |
 | `npm run invoke:po:event` | Invoke with test event |
@@ -352,6 +375,29 @@ Production resources use `RemovalPolicy.RETAIN` or `RemovalPolicy.SNAPSHOT`:
 - **Connection Reuse**: `AWS_NODEJS_CONNECTION_REUSE_ENABLED=1`
 - **esbuild**: ~100x faster builds
 - **Manifest-based routing**: No runtime route scanning
+- **Layer caching**: Shared layer builds are cached (hash-based) to skip unnecessary rebuilds
+- **EAGER warm containers**: Keeps Lambda containers warm for fast subsequent requests (~100ms vs 5-10s cold start)
+
+### Layer Caching
+
+The shared layer build is cached based on file content hashes. Rebuilds are skipped when:
+- Source files (`api/layers/shared/nodejs/src/**`) haven't changed
+- `package.json` and `package-lock.json` are unchanged
+- `prisma/schema.prisma` is unchanged
+
+**Cache location:** `api/layers/shared/.layer-hash`
+
+**Force rebuild:**
+```bash
+cd api
+npm run build:layer:force
+```
+
+**Check cache status:**
+```bash
+cd api
+npm run build:layer:check  # Exit 0 = cached, Exit 1 = needs rebuild
+```
 
 ## UI Deployment (Static Site Hosting)
 

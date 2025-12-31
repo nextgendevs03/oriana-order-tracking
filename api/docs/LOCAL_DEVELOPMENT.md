@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to run the Oriana Order Tracking API locally using AWS SAM CLI.
+This guide explains how to run the Oriana Order Tracking API locally using AWS SAM CLI with optimized development workflows.
 
 ## Configuration Architecture
 
@@ -66,21 +66,215 @@ Edit `env.local.json` with your database and JWT credentials:
 
 For local development, you can use simple strings. For production, use strong random secrets (64+ characters).
 
-### 2. Build the Project
+---
 
-```bash
-cd api
-npm run build:all
-```
+## Development Workflows
 
-### 3. Start Local API
+### Recommended: Fast Development Mode (dev:fast)
+
+**Best for daily development** - Skips unnecessary rebuilds using smart caching.
 
 ```bash
 cd cdk
-npm run dev
+npm run dev:fast
 ```
 
-The API will be available at `http://127.0.0.1:3000`
+**What it does:**
+1. Checks if shared layer needs rebuild (skips if cached)
+2. Builds Lambda handlers with esbuild
+3. Uses cached CDK template if available
+4. Starts SAM with EAGER warm containers
+
+**Expected startup time:** ~10-20 seconds (vs 2+ minutes for full build)
+
+### Hot Reload Mode (dev:hot)
+
+**Best for rapid iteration** - Combines esbuild watch with SAM for instant updates.
+
+```bash
+cd cdk
+npm run dev:hot
+```
+
+**What it does:**
+1. Starts esbuild in watch mode (rebuilds on file change in ~100ms)
+2. Starts SAM with EAGER warm containers
+3. Code changes are reflected on next API request
+
+**When to use:** When actively editing Lambda code and testing frequently.
+
+### Full Build Mode (dev:fast --init)
+
+**Use when:** Starting fresh, after pulling changes, or after layer/schema changes.
+
+```bash
+cd cdk
+npm run dev:fast:init
+```
+
+This forces a complete rebuild of everything.
+
+### Express Development Server (Fastest - No Docker)
+
+**Best for maximum speed** - Bypasses Docker/SAM entirely for instant responses.
+
+```bash
+# From cdk directory
+cd cdk
+npm run dev:express:watch
+
+# Or from api directory
+cd api
+npm run dev:express:watch
+```
+
+**What it does:**
+1. Runs the API directly in Node.js (no Docker)
+2. Auto-restarts on code changes (with ts-node-dev)
+3. Provides instant responses (~10-50ms vs 5-10s cold starts)
+
+**Startup time:** ~3-5 seconds
+
+**Trade-offs:**
+- ✅ Instant responses (no cold starts)
+- ✅ Auto-restart on code changes
+- ✅ No Docker required
+- ⚠️ Doesn't test Lambda-specific behavior
+- ⚠️ Uses different runtime than production
+
+**When to use Express vs SAM:**
+| Scenario | Use Express | Use SAM |
+|----------|-------------|---------|
+| Rapid API development | ✅ | |
+| Testing business logic | ✅ | |
+| Testing Lambda cold starts | | ✅ |
+| Testing Lambda timeouts | | ✅ |
+| Final integration testing | | ✅ |
+
+---
+
+## NPM Scripts Reference
+
+### Optimized Development Scripts (Recommended)
+
+| Script | Description | Startup Time |
+|--------|-------------|--------------|
+| `npm run dev:express:watch` | **Express server (no Docker)** | ~3-5s |
+| `npm run dev:fast` | Smart cached build + SAM start | ~10-20s |
+| `npm run dev:fast:init` | Force full rebuild + SAM start | ~1-2 min |
+| `npm run dev:hot` | Watch mode + SAM (hot reload) | ~10-20s |
+
+### Legacy Development Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Full synth + SAM start (always rebuilds) |
+| `npm run dev:fresh` | Clean + full build + start |
+| `npm run dev:debug` | Start with debug logging |
+| `npm run dev:quick` | Quick synth + SAM start |
+| `npm run dev:port` | Start with custom port (set `API_PORT` env var) |
+| `npm run dev:watch` | Start with file watcher for restarts |
+| `npm run dev:all` | Concurrent watch + SAM |
+
+### API Build Scripts (in api/ directory)
+
+| Script | Description |
+|--------|-------------|
+| `npm run build` | Build Lambda handlers (esbuild) |
+| `npm run build:layer` | Build shared layer (cached) |
+| `npm run build:layer:force` | Force rebuild shared layer |
+| `npm run build:layer:check` | Check if layer rebuild needed |
+| `npm run build:all` | Full build (layer + handlers + manifest) |
+| `npm run build:fast` | Layer (cached) + handlers only |
+| `npm run watch` | Watch mode for handlers |
+
+---
+
+## Layer Caching
+
+The shared layer build is cached to avoid unnecessary rebuilds. The cache is invalidated when:
+
+- `api/layers/shared/nodejs/src/**/*.ts` files change
+- `api/layers/shared/nodejs/package.json` changes
+- `api/layers/shared/nodejs/package-lock.json` changes
+- `api/layers/shared/nodejs/prisma/schema.prisma` changes
+- `api/layers/shared/nodejs/esbuild.config.js` changes
+
+**Cache location:** `api/layers/shared/.layer-hash`
+
+**Force rebuild:**
+```bash
+cd api
+npm run build:layer:force
+```
+
+---
+
+## Performance Tips
+
+### 1. Use Warm Containers
+
+All dev scripts now use `--warm-containers EAGER` which keeps Lambda containers warm between requests. This means:
+- First request: ~5-10s (cold start)
+- Subsequent requests: ~100-200ms (warm)
+
+### 2. Use Watch Mode for Rapid Iteration
+
+When actively coding:
+```bash
+# Terminal 1 (optional - if not using dev:hot)
+cd api && npm run watch
+
+# Terminal 2
+cd cdk && npm run dev:fast
+```
+
+Changes to Lambda code (~100ms rebuild) are picked up on next request.
+
+### 3. Avoid Full Rebuilds
+
+Only run `dev:fast:init` or `build:all` when:
+- First time setup
+- After `git pull` with layer changes
+- After modifying `prisma/schema.prisma`
+- After adding new dependencies to shared layer
+
+### 4. Custom Port
+
+```bash
+# Windows PowerShell
+$env:API_PORT=5000; npm run dev:fast
+
+# Unix/Mac
+API_PORT=5000 npm run dev:fast
+```
+
+---
+
+## Typical Development Session
+
+```bash
+# Morning: Start fresh session
+cd cdk
+npm run dev:fast     # Uses cached layer, fast startup
+
+# During development: Active coding
+cd cdk
+npm run dev:hot      # Hot reload for rapid iteration
+
+# After pulling changes with layer updates
+cd cdk
+npm run dev:fast:init  # Force full rebuild
+
+# After modifying Prisma schema
+cd api
+npm run db:migrate     # Run migration
+npm run build:layer:force  # Rebuild layer with new schema
+cd ../cdk
+npm run dev:fast
+```
+
+---
 
 ## Database Setup with Supabase
 
@@ -88,17 +282,7 @@ The API will be available at `http://127.0.0.1:3000`
 2. Go to **Settings > Database** to find connection info
 3. Copy the connection details to `env.local.json`
 
-## NPM Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start SAM local API |
-| `npm run dev:fresh` | Clean build and start |
-| `npm run dev:debug` | Start with debug logging |
-| `npm run dev:quick` | Quick start (no API rebuild) |
-| `npm run dev:port` | Start with custom port (set `API_PORT` env var) |
-| `npm run dev:watch` | Start with hot reload on code changes |
-| `npm run dev:all` | Start with both API watch and SAM hot reload |
+---
 
 ## Troubleshooting
 
@@ -113,6 +297,26 @@ Database connection failed. Check:
 
 The key must match SAM's logical ID. Find it in `cdk.out/ApiStack-dev.template.json` or SAM output.
 
+### Layer Cache Not Working
+
+If layer keeps rebuilding:
+1. Check if `api/layers/shared/.layer-hash` exists
+2. Run `npm run build:layer:check` to verify cache status
+3. Force rebuild with `npm run build:layer:force`
+
+### Cold Start Too Slow
+
+First request after container restart takes 5-10s. This is normal for Lambda cold starts. Subsequent requests use warm containers (~100ms).
+
+### Changes Not Reflected
+
+If code changes aren't picked up:
+1. Ensure you're using `dev:hot` or running `npm run watch` in api/
+2. Check that esbuild finished rebuilding (look for build output)
+3. Make a new request - SAM picks up changes on next invocation
+
+---
+
 ## Security
 
 - **Never commit** `env.local.json` to Git (it's in `.gitignore`)
@@ -123,3 +327,25 @@ The key must match SAM's logical ID. Find it in `cdk.out/ApiStack-dev.template.j
 - **JWT secrets are automatically generated** during CDK deployment - no manual setup needed!
 - Secrets are fetched at runtime with 5-minute caching to minimize API calls
 - Production enforces that secrets must be present (throws error if missing)
+
+---
+
+## Summary: Which Script to Use?
+
+| Situation | Command | Response Time |
+|-----------|---------|---------------|
+| **Fastest development** | `npm run dev:express:watch` | ~10-50ms |
+| **Daily development (SAM)** | `npm run dev:fast` | ~100ms (warm) |
+| **Active coding/testing** | `npm run dev:hot` | ~100ms (warm) |
+| **First time / fresh setup** | `npm run dev:fast:init` | ~5-10s (cold) |
+| **After git pull** | `npm run dev:fast` | ~100ms (warm) |
+| **After schema changes** | `npm run dev:fast:init` | ~5-10s (cold) |
+| **Lambda-specific testing** | `npm run dev:fast` | ~100ms (warm) |
+
+### Quick Decision Guide
+
+```
+Need instant responses? → npm run dev:express:watch
+Need Lambda environment? → npm run dev:fast
+Need to test cold starts? → npm run dev (legacy)
+```

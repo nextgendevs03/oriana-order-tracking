@@ -10,7 +10,10 @@
     "watch": "node esbuild.config.js --watch",
     "watch:tsc": "tsc -w",
     "build:layer": "node scripts/build-layer.js",
+    "build:layer:force": "node scripts/build-layer.js --force",
+    "build:layer:check": "node scripts/build-layer.js --check",
     "build:all": "npm run build:layer && npm run build && npm run build:manifest",
+    "build:fast": "npm run build:layer && npm run build",
     "clean": "rimraf dist app-manifest.json",
     "rebuild": "npm run clean && npm run build:all",
     "db:generate": "cd layers/shared/nodejs && npx prisma generate",
@@ -25,7 +28,10 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    
+    "dev:express": "ts-node -r tsconfig-paths/register src/dev-server.ts",
+    "dev:express:watch": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/dev-server.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -37,10 +43,15 @@
     "@prisma/client": "^5.7.0",
     "@types/aws-lambda": "^8.10.130",
     "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.11",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.10.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "ts-node-dev": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
     "dotenv": "^16.3.1",
