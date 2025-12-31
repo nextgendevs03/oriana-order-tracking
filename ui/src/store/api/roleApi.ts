@@ -16,7 +16,7 @@ export const roleApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllRoles: builder.query<RoleListResponse, ListRoleRequest | void>({
       query: (params: ListRoleRequest | void) => ({
-        url: "role/",
+        url: "role",
         method: "GET",
         params: params || {},
       }),
@@ -36,7 +36,7 @@ export const roleApi = baseApi.injectEndpoints({
 
     createRole: builder.mutation<RoleResponse, CreateRoleRequest>({
       query: (body: CreateRoleRequest) => ({
-        url: "role/",
+        url: "role",
         method: "POST",
         body: { ...body },
       }),
