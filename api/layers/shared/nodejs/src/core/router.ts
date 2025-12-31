@@ -137,26 +137,61 @@ export class Router {
   private matchRoute(method: HttpMethod, path: string): MatchedRoute | null {
     const controllerData = routeRegistry.getRoutesForLambda(this.lambdaName);
 
+    logger.debug('Matching route', {
+      lambdaName: this.lambdaName,
+      method,
+      path,
+      controllerCount: controllerData.length,
+    });
+
     for (const { controller, routes, basePath } of controllerData) {
+      logger.debug('Checking controller', {
+        controllerName: controller.name,
+        basePath,
+        routeCount: routes.length,
+      });
+
       for (const route of routes) {
         if (route.method !== method) {
           continue;
         }
 
         const fullPath = this.joinPaths(basePath, route.path);
+        logger.debug('Trying to match route', {
+          fullPath,
+          actualPath: path,
+          routeMethod: route.method,
+        });
+
         const pathParams = this.matchPath(fullPath, path);
 
         if (pathParams !== null) {
+          logger.debug('Route matched', { fullPath, path, pathParams });
           return { controller, route, pathParams, basePath };
         }
       }
     }
 
+    logger.warn('No route matched', {
+      lambdaName: this.lambdaName,
+      method,
+      path,
+      availableRoutes: controllerData.flatMap(({ routes, basePath }) =>
+        routes.map((r) => `${r.method} ${this.joinPaths(basePath, r.path)}`)
+      ),
+    });
+
     return null;
   }
   private matchPath(pattern: string, actualPath: string): Record<string, string> | null {
-    const patternParts = pattern.split('/').filter(Boolean);
-    const actualParts = actualPath.split('/').filter(Boolean);
+    // Normalize paths by removing trailing slashes (except root)
+    const normalizePath = (p: string): string =>
+      p.endsWith('/') && p !== '/' ? p.slice(0, -1) : p;
+    const normalizedPattern = normalizePath(pattern);
+    const normalizedActual = normalizePath(actualPath);
+
+    const patternParts = normalizedPattern.split('/').filter(Boolean);
+    const actualParts = normalizedActual.split('/').filter(Boolean);
 
     if (patternParts.length !== actualParts.length) {
       return null;

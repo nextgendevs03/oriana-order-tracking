@@ -168,7 +168,7 @@ export class PORepository implements IPORepository {
     // Build where clause
     const where: Prisma.PurchaseOrderWhereInput = {};
     if (clientId) {
-      where.clientId = clientId;
+      where.clientId = typeof clientId === 'string' ? parseInt(clientId, 10) : clientId;
     }
     if (poStatus && !searchTerm) {
       // Only use poStatus filter if not using dynamic search

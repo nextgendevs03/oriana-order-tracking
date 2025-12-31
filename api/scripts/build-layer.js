@@ -23,7 +23,7 @@ const checkOnly = process.argv.includes('--check');
 
 /**
  * Calculate hash of all source files in the layer
- * Includes: src/**/*.ts, package.json, prisma/schema.prisma
+ * Includes: all TypeScript files in src/, package.json, prisma/schema.prisma
  */
 function calculateLayerHash() {
   const hash = crypto.createHash('sha256');
