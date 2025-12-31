@@ -46,21 +46,19 @@ export class UserService implements IUserService {
 
     const user: User = await this.userRepository.create(userData);
 
-    // Extract role name from direct role relation or userRoles
+    // Extract role name from direct role relation (1-to-1)
     const userWithRole = user as unknown as {
       role?: { roleName: string };
-      userRoles?: Array<{ role: { roleName: string } }>;
-      roleId?: string | null;
+      roleId?: number | null;
     };
-    const roleName =
-      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+    const roleName = userWithRole.role?.roleName || '';
 
     return {
       userId: user.userId,
       username: user.username,
       email: user.email,
       role: roleName,
-      roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
+      roleId: userWithRole.roleId || undefined,
       isActive: user.isActive,
     };
   }
@@ -70,21 +68,19 @@ export class UserService implements IUserService {
 
     if (!user) return null;
 
-    // Extract role name from direct role relation or userRoles
+    // Extract role name from direct role relation (1-to-1)
     const userWithRole = user as unknown as {
       role?: { roleName: string };
-      userRoles?: Array<{ role: { roleName: string } }>;
-      roleId?: string | null;
+      roleId?: number | null;
     };
-    const roleName =
-      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+    const roleName = userWithRole.role?.roleName || '';
 
     return {
       userId: user.userId,
       username: user.username,
       email: user.email,
       role: roleName,
-      roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
+      roleId: userWithRole.roleId || undefined,
       isActive: user.isActive,
     };
   }
@@ -98,16 +94,15 @@ export class UserService implements IUserService {
     const modifiedUsers = rows.map((user: User) => {
       const userWithRole = user as unknown as {
         role?: { roleName: string };
-        userRoles?: Array<{ role: { roleName: string } }>;
+        roleId?: number | null;
       };
-      const roleName =
-        userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+      const roleName = userWithRole.role?.roleName || '';
       return {
         userId: user.userId,
         username: user.username,
         email: user.email,
         role: roleName,
-        roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
+        roleId: userWithRole.roleId || undefined,
         isActive: user.isActive,
         createdAt: user.createdAt.toISOString(),
       };
@@ -131,21 +126,19 @@ export class UserService implements IUserService {
     }
     const user: User = await this.userRepository.update(id, data);
 
-    // Extract role name from direct role relation or userRoles
+    // Extract role name from direct role relation (1-to-1)
     const userWithRole = user as unknown as {
       role?: { roleName: string };
-      userRoles?: Array<{ role: { roleName: string } }>;
-      roleId?: string | null;
+      roleId?: number | null;
     };
-    const roleName =
-      userWithRole.role?.roleName || userWithRole.userRoles?.[0]?.role?.roleName || '';
+    const roleName = userWithRole.role?.roleName || '';
 
     return {
       userId: user.userId,
       username: user.username,
       email: user.email,
       role: roleName,
-      roleId: (user as unknown as { roleId?: string | null }).roleId || undefined,
+      roleId: userWithRole.roleId || undefined,
       isActive: user.isActive,
     };
   }

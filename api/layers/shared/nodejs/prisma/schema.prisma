@@ -77,14 +77,13 @@ model User {
   username    String          @unique @db.VarChar(100)
   email       String          @unique @db.VarChar(255)
   password    String          @db.VarChar(255)
-  roleId      String?         @map("role_id") // Foreign key to roles table
+  roleId      Int?            @map("role_id") // Foreign key to roles table (1-to-1 relationship)
   role        Role?           @relation(fields: [roleId], references: [roleId], onDelete: SetNull)
   isActive    Boolean         @default(true) @map("is_active")
   createdBy   String          @map("created_by") @db.VarChar(100)
   updatedBy   String          @map("updated_by") @db.VarChar(100)
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
-  userRoles   UserRole[] // A user can have multiple roles
   assignedPOs PurchaseOrder[] // POs assigned to this user for dispatch
 
   @@index([email])
@@ -94,55 +93,57 @@ model User {
 }
 
 model Role {
-  roleId      String     @id @default(uuid()) @map("role_id")
-  roleName    String     @map("role_name") @db.VarChar(100)
-  description String     @map("description") @db.VarChar(255)
-  createdBy   String     @map("created_by") @db.VarChar(100)
-  updatedBy   String     @map("updated_by") @db.VarChar(100)
-  isActive    Boolean    @default(true) @map("is_active")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  users       User[]     // Users with this role as primary role
-  userRoles   UserRole[] // A role can be assigned to multiple users
+  roleId      Int             @id @default(autoincrement()) @map("role_id")
+  roleName    String          @map("role_name") @db.VarChar(100)
+  description String          @map("description") @db.VarChar(255)
+  createdBy   String          @map("created_by") @db.VarChar(100)
+  updatedBy   String          @map("updated_by") @db.VarChar(100)
+  isActive    Boolean         @default(true) @map("is_active")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  users       User[]          // Users with this role as primary role (1-to-1)
+  rolePermissions RolePermission[] // A role can have multiple permissions (one-to-many)
 
   @@index([roleName])
   @@index([isActive])
   @@map("roles")
 }
 
-model UserRole {
-  userRoleId String   @id @default(uuid()) @map("user_role_id")
-  userId     String   @map("user_id")
-  roleId     String   @map("role_id")
-  user       User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  role       Role     @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
-  createdBy  String   @map("created_by") @db.VarChar(100)
-  updatedBy  String   @map("updated_by") @db.VarChar(100)
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  @@index([userId])
-  @@index([roleId])
-  @@index([isActive])
-  @@map("user_role_mappings")
-}
-
 model Permission {
   permissionId   Int      @id @default(autoincrement()) @map("permission_id")
-  permissionCode  String   @map("permission_code") @db.VarChar(100)
-  permissionName  String   @map("permission_name") @db.VarChar(100)
-  description     String   @map("description") @db.VarChar(255)
-  createdBy       String   @map("created_by") @db.VarChar(100)
-  updatedBy       String   @map("updated_by") @db.VarChar(100)
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  permissionCode String   @unique @map("permission_code") @db.VarChar(100)
+  permissionName String   @map("permission_name") @db.VarChar(100)
+  description    String   @map("description") @db.VarChar(255)
+  createdBy      String   @map("created_by") @db.VarChar(100)
+  updatedBy      String   @map("updated_by") @db.VarChar(100)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  rolePermissions RolePermission[] // A permission can belong to multiple roles (many-to-many)
 
   @@index([permissionName])
   @@index([permissionCode])
   @@index([isActive])
   @@map("permissions")
+}
+
+model RolePermission {
+  rolePermissionId String   @id @default(uuid()) @map("role_permission_id")
+  roleId           Int      @map("role_id")
+  permissionId     Int      @map("permission_id")
+  role             Role     @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+  permission       Permission @relation(fields: [permissionId], references: [permissionId], onDelete: Cascade)
+  createdBy        String   @map("created_by") @db.VarChar(100)
+  updatedBy        String   @map("updated_by") @db.VarChar(100)
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@index([isActive])
+  @@map("role_permissions")
 }
 
 model Category {

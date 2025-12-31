@@ -6,11 +6,12 @@ import {
   useCreatePermissionMutation,
   useUpdatePermissionMutation,
 } from "../../../store/api/permissionApi";
+import { PermissionResponse } from "@OrianaTypes";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  permissionToEdit?: any;
+  permissionToEdit?: PermissionResponse;
 }
 
 const AddPermissionModal: React.FC<Props> = ({
@@ -39,19 +40,28 @@ const AddPermissionModal: React.FC<Props> = ({
     }
   }, [permissionToEdit, form]);
 
-  const handleFinish = async (values: any) => {
+  const handleFinish = async (values: {
+    permissionCode: string;
+    permissionName: string;
+    description?: string;
+    isActive?: boolean;
+  }) => {
     try {
       if (permissionToEdit) {
         // UPDATE
         await updatePermissionApi({
-          id: permissionToEdit.permissionId,
+          id: String(permissionToEdit.permissionId),
           ...values,
+          updatedBy: "admin", // TODO: Get from auth context
         }).unwrap();
 
         toast.success("Permission Updated Successfully!");
       } else {
         // CREATE
-        await createPermissionApi(values).unwrap();
+        await createPermissionApi({
+          ...values,
+          createdBy: "admin", // TODO: Get from auth context
+        }).unwrap();
         toast.success("Permission Created Successfully!");
       }
 
@@ -83,7 +93,10 @@ const AddPermissionModal: React.FC<Props> = ({
           name="permissionCode"
           rules={[{ required: true, message: "Please enter permission code" }]}
         >
-          <Input placeholder="Enter Permission Code (e.g., USR_CREATE)" />
+          <Input
+            placeholder="Enter Permission Code (e.g., USR_CREATE)"
+            disabled={!!permissionToEdit}
+          />
         </Form.Item>
 
         <Form.Item label="Permission Description" name="description">

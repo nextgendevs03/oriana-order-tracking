@@ -35,7 +35,7 @@ export class UserRepository implements IUserRepository {
 
   async create(data: CreateUserRequest): Promise<User> {
     const { role, roleId, ...userData } = data;
-    let finalRoleId: string | undefined = roleId;
+    let finalRoleId: number | undefined = roleId;
 
     // If roleId is not provided but role name is, find the role by name
     if (!finalRoleId && role) {
@@ -51,7 +51,7 @@ export class UserRepository implements IUserRepository {
       }
     }
 
-    // Create user with roleId
+    // Create user with roleId (1-to-1 relationship)
     const user = await this.prisma.user.create({
       data: {
         ...userData,
@@ -59,46 +59,14 @@ export class UserRepository implements IUserRepository {
       } as any,
       include: {
         role: true,
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
       } as any,
     });
 
-    // If role is provided and roleId wasn't set, create UserRole relationship for backward compatibility
-    if (role && !finalRoleId) {
-      const roleRecord = await this.prisma.role.findFirst({
-        where: {
-          roleName: role,
-          isActive: true,
-        },
-      });
-
-      if (roleRecord) {
-        await this.prisma.userRole.create({
-          data: {
-            userId: user.userId,
-            roleId: roleRecord.roleId,
-            createdBy: data.createdBy,
-            updatedBy: data.updatedBy,
-            isActive: true,
-          },
-        });
-      }
-    }
-
-    // Fetch user again with all relations
+    // Fetch user again with role relation
     return this.prisma.user.findUnique({
       where: { userId: user.userId },
       include: {
         role: true,
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
       } as any,
     }) as Promise<User>;
   }
@@ -152,11 +120,6 @@ export class UserRepository implements IUserRepository {
         orderBy,
         include: {
           role: true,
-          userRoles: {
-            include: {
-              role: true,
-            },
-          },
         } as any,
       }),
       this.prisma.user.count({ where }),
@@ -172,11 +135,6 @@ export class UserRepository implements IUserRepository {
       },
       include: {
         role: true,
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
       } as any,
     });
     return user;
@@ -200,7 +158,7 @@ export class UserRepository implements IUserRepository {
     if (updateFields.updatedBy !== undefined) userUpdateData.updatedBy = updateFields.updatedBy;
 
     // Handle roleId: if roleId is provided, use it directly; if role name is provided, find the roleId
-    let finalRoleId: string | undefined | null = roleId;
+    let finalRoleId: number | undefined | null = roleId;
     if (finalRoleId === undefined && role !== undefined) {
       const roleRecord = await this.prisma.role.findFirst({
         where: {
@@ -214,7 +172,7 @@ export class UserRepository implements IUserRepository {
       }
     }
 
-    // Update roleId if provided
+    // Update roleId if provided (1-to-1 relationship)
     if (finalRoleId !== undefined) {
       userUpdateData.roleId = finalRoleId;
     }
@@ -227,71 +185,11 @@ export class UserRepository implements IUserRepository {
       });
     }
 
-    // If role is provided (for backward compatibility with UserRole table), update the UserRole relationship
-    if (role !== undefined && !roleId) {
-      // Find the role
-      const roleRecord = await this.prisma.role.findFirst({
-        where: {
-          roleName: role,
-          isActive: true,
-        },
-      });
-
-      if (roleRecord) {
-        // Delete existing active user roles
-        await this.prisma.userRole.updateMany({
-          where: {
-            userId: id,
-            isActive: true,
-          },
-          data: {
-            isActive: false,
-            updatedBy: data.updatedBy || user.updatedBy,
-          },
-        });
-
-        // Check if this role is already assigned (even if inactive)
-        const existingUserRole = await this.prisma.userRole.findFirst({
-          where: {
-            userId: id,
-            roleId: roleRecord.roleId,
-          },
-        });
-
-        if (existingUserRole) {
-          // Reactivate and update
-          await this.prisma.userRole.update({
-            where: { userRoleId: existingUserRole.userRoleId },
-            data: {
-              isActive: true,
-              updatedBy: data.updatedBy || user.updatedBy,
-            },
-          });
-        } else {
-          // Create new UserRole
-          await this.prisma.userRole.create({
-            data: {
-              userId: id,
-              roleId: roleRecord.roleId,
-              createdBy: data.updatedBy || user.updatedBy,
-              updatedBy: data.updatedBy || user.updatedBy,
-              isActive: true,
-            },
-          });
-        }
-      }
-    }
-
-    // Fetch user again with all relations
+    // Fetch user again with role relation
     return this.prisma.user.findUnique({
       where: { userId: id },
       include: {
         role: true,
-        userRoles: {
-          include: {
-            role: true,
-          },
-        },
       } as any,
     }) as Promise<User>;
   }

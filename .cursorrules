@@ -14,7 +14,11 @@ This is a full-stack order tracking application built with:
 - Use TypeScript strict mode
 - Always define proper types and interfaces
 - Use `@OrianaTypes` for shared types when available
-- Avoid `any` type - use `unknown` or proper types instead
+- **STRICTLY FORBIDDEN**: The use of `any` type is **NOT ALLOWED** in this codebase
+  - Use `unknown` for truly unknown types, then narrow with type guards
+  - Use proper TypeScript types, interfaces, or generics
+  - Use type assertions only when absolutely necessary and with proper type guards
+  - If you encounter a situation where `any` seems necessary, refactor to use proper types instead
 - Use type guards for runtime type checking
 
 ### React/Frontend
@@ -304,11 +308,57 @@ When creating a new component:
 - ❌ Using `items` instead of `data` in API responses
 - ❌ Using `meta` instead of `pagination` in responses
 - ❌ Not handling loading/error states
-- ❌ Using `any` type
+- ❌ **STRICTLY FORBIDDEN**: Using `any` type - This is a critical violation. Always use proper types, `unknown` with type guards, or generics
 - ❌ Not implementing server-side pagination
 - ❌ Hardcoding values that should be configurable
 - ❌ Not following existing patterns
 - ❌ Missing TypeScript types
 - ❌ Not handling edge cases
 - ❌ Breaking existing functionality
+
+## Type Safety Rules
+
+### Strict TypeScript Requirements
+
+1. **`any` Type is FORBIDDEN**
+   - ❌ **NEVER** use `any` type
+   - ✅ Use `unknown` for truly unknown types, then narrow with type guards
+   - ✅ Use proper interfaces, types, or generics
+   - ✅ Use union types when multiple types are possible
+   - ✅ Use type assertions only when necessary and with proper validation
+
+2. **Type Definitions**
+   - Always define explicit types for function parameters and return values
+   - Use interfaces for object shapes
+   - Use type aliases for unions, intersections, or complex types
+   - Leverage TypeScript's type inference where appropriate, but be explicit for public APIs
+
+3. **Type Guards**
+   - Use type guards to narrow `unknown` types
+   - Implement proper runtime validation before type assertions
+   - Use `instanceof`, `typeof`, or custom type guard functions
+
+4. **Examples of Correct Alternatives to `any`**
+   ```typescript
+   // ❌ WRONG - Using any
+   function processData(data: any) { ... }
+   
+   // ✅ CORRECT - Using unknown with type guard
+   function processData(data: unknown) {
+     if (typeof data === 'string') { ... }
+   }
+   
+   // ✅ CORRECT - Using proper interface
+   interface UserData {
+     id: string;
+     name: string;
+   }
+   function processData(data: UserData) { ... }
+   
+   // ✅ CORRECT - Using generics
+   function processData<T>(data: T): T { ... }
+   
+   // ✅ CORRECT - Using union types
+   function processData(data: string | number) { ... }
+   ```
 

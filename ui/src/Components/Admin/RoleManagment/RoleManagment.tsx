@@ -1,37 +1,75 @@
 import React, { useState } from "react";
-import { Table, Card, Input, Space, Button, Popconfirm, Tag } from "antd";
+import { Table, Card, Input, Space, Button, Popconfirm } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   LockOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
-import { useAppDispatch } from "../../../store/hooks";
-import { openModal, openModalForEdit } from "../../../store/roleSlice";
 import AddRoleModal from "./AddRoleModal";
+import ViewRoleModal from "./ViewRoleModal";
 import {
   useGetAllRolesQuery,
   useDeleteRoleMutation,
 } from "../../../store/api/roleApi";
+import { useGetPermissionsQuery } from "../../../store/api/permissionApi";
 import { RoleResponse } from "@OrianaTypes";
 
 const RoleManagement: React.FC = () => {
-  const dispatch = useAppDispatch();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
+  const [searchText, setSearchText] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [roleToEdit, setRoleToEdit] = useState<RoleResponse | null>(null);
+  const [roleToView, setRoleToView] = useState<RoleResponse | null>(null);
+
   const { data, isLoading } = useGetAllRolesQuery({
     page: currentPage,
     limit: pageSize,
   });
   const [deleteRole] = useDeleteRoleMutation();
-  const [searchText, setSearchText] = useState("");
 
-  const openAdd = () => dispatch(openModal());
-  const openEdit = (role: RoleResponse) => {
-    dispatch(openModalForEdit(role));
+  // Fetch all active permissions
+  const { data: permissionsData, isLoading: isLoadingPermissions } =
+    useGetPermissionsQuery({
+      isActive: true,
+      limit: 1000, // Fetch all permissions
+    });
+
+  const openAdd = () => {
+    setRoleToEdit(null);
+    setIsAddModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const openEdit = (role: RoleResponse) => {
+    setRoleToEdit(role);
+    setIsEditModalOpen(true);
+  };
+
+  const openView = (role: RoleResponse) => {
+    setRoleToView(role);
+    setIsViewModalOpen(true);
+  };
+
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    setRoleToEdit(null);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setRoleToEdit(null);
+  };
+
+  const closeViewModal = () => {
+    setIsViewModalOpen(false);
+    setRoleToView(null);
+  };
+
+  const handleDelete = async (id: number) => {
     await deleteRole(id);
   };
 
@@ -54,26 +92,28 @@ const RoleManagement: React.FC = () => {
     },
     { title: "Description", dataIndex: "description" },
     {
-      title: "Permissions",
-      dataIndex: "permissions",
-      render: (_: any, record: RoleResponse) => (
-        <Tag color="blue">{record.permissions?.length || 0}</Tag>
-      ),
-    },
-    {
       title: "Actions",
       render: (_: any, record: RoleResponse) => (
         <Space>
+          <EyeOutlined
+            style={{ cursor: "pointer", color: "#1890ff" }}
+            onClick={() => openView(record)}
+            title="View"
+          />
           <EditOutlined
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", color: "#52c41a" }}
             onClick={() => openEdit(record)}
+            title="Edit"
           />
           {record.roleName !== "Super Admin" && (
             <Popconfirm
               title="Are you sure to delete this role?"
               onConfirm={() => handleDelete(record.roleId)}
             >
-              <DeleteOutlined style={{ color: "red", cursor: "pointer" }} />
+              <DeleteOutlined
+                style={{ color: "red", cursor: "pointer" }}
+                title="Delete"
+              />
             </Popconfirm>
           )}
         </Space>
@@ -184,7 +224,25 @@ const RoleManagement: React.FC = () => {
             },
           }}
         />
-        <AddRoleModal />
+        <AddRoleModal
+          open={isAddModalOpen}
+          onClose={closeAddModal}
+          roleToEdit={null}
+          permissions={permissionsData?.data || []}
+          isLoadingPermissions={isLoadingPermissions}
+        />
+        <AddRoleModal
+          open={isEditModalOpen}
+          onClose={closeEditModal}
+          roleToEdit={roleToEdit}
+          permissions={permissionsData?.data || []}
+          isLoadingPermissions={isLoadingPermissions}
+        />
+        <ViewRoleModal
+          open={isViewModalOpen}
+          onClose={closeViewModal}
+          role={roleToView}
+        />
       </Card>
     </div>
   );

@@ -33,7 +33,14 @@ export class Router {
   }
 
   private isPublicRoute(method: HttpMethod, path: string): boolean {
-    return PUBLIC_ROUTES.some((route) => route.method === method && route.path === path);
+    // Normalize paths by removing trailing slashes for comparison
+    const normalizePath = (p: string): string =>
+      p.endsWith('/') && p !== '/' ? p.slice(0, -1) : p;
+    const normalizedPath = normalizePath(path);
+
+    return PUBLIC_ROUTES.some(
+      (route) => route.method === method && normalizePath(route.path) === normalizedPath
+    );
   }
   async handleRequest(
     event: APIGatewayProxyEvent,

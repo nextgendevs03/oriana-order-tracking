@@ -4,7 +4,7 @@ export interface UserResponse {
   email: string;
   password?: string;
   role: string; // Role name (for backward compatibility)
-  roleId?: string; // Role ID (foreign key)
+  roleId?: number; // Role ID (foreign key)
   isActive: boolean;
 
   // add other fields needed for response here

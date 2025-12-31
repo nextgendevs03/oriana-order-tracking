@@ -57,7 +57,8 @@ export class UserController implements IUserController {
     };
 
     const result = await this.userService.getAllUsers(params);
-    return createSuccessResponse(result.data, 200, result.pagination);
+    const { data, pagination } = result;
+    return createSuccessResponse({ data, pagination }, 200);
   }
 
   @Get('/{id}')

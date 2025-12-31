@@ -46,7 +46,8 @@ export class PermissionController {
       searchKey: searchKey || undefined,
       searchTerm: searchTerm || undefined,
     });
-    return createSuccessResponse(result.data, 200, result.pagination);
+    const { data, pagination } = result;
+    return createSuccessResponse({ data, pagination }, 200);
   }
 
   @Get('/{id}')

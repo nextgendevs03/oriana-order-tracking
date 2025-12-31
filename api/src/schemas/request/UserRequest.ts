@@ -3,7 +3,7 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   role?: string; // Role name (for backward compatibility)
-  roleId?: string; // Role ID (foreign key)
+  roleId?: number; // Role ID (foreign key)
   isActive: boolean;
   createdBy: string;
   updatedBy: string;
@@ -14,7 +14,7 @@ export interface UpdateUserRequest extends Partial<CreateUserRequest> {
   email?: string;
   password?: string;
   role?: string; // Role name (for backward compatibility)
-  roleId?: string; // Role ID (foreign key)
+  roleId?: number; // Role ID (foreign key)
   isActive?: boolean;
   createdBy?: string;
   updatedBy?: string;

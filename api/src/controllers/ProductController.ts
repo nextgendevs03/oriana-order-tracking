@@ -69,7 +69,8 @@ export class ProductController implements IProductController {
         searchKey: searchKey || undefined,
         searchTerm: searchTerm || undefined,
       });
-      return createSuccessResponse(result.data, 200, result.pagination);
+      const { data, pagination } = result;
+      return createSuccessResponse({ data, pagination }, 200);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error fetching products');
       return createErrorResponse(error);
