@@ -11,9 +11,9 @@ import { CategoryResponse, CategoryListResponse } from '../schemas/response/Cate
 export interface ICategoryService {
   createCategory(data: CreateCategoryRequest): Promise<CategoryResponse>;
   getAllCategories(params?: ListCategoryRequest): Promise<CategoryListResponse>;
-  getCategoryById(id: string): Promise<CategoryResponse | null>;
-  updateCategory(id: string, data: UpdateCategoryRequest): Promise<CategoryResponse>;
-  deleteCategory(id: string): Promise<void>;
+  getCategoryById(id: number): Promise<CategoryResponse | null>;
+  updateCategory(id: number, data: UpdateCategoryRequest): Promise<CategoryResponse>;
+  deleteCategory(id: number): Promise<void>;
 }
 
 @injectable()
@@ -43,17 +43,17 @@ export class CategoryService implements ICategoryService {
     };
   }
 
-  async getCategoryById(id: string): Promise<CategoryResponse | null> {
+  async getCategoryById(id: number): Promise<CategoryResponse | null> {
     const category = await this.categoryRepository.findById(id);
     return category;
   }
 
-  async updateCategory(id: string, data: UpdateCategoryRequest): Promise<CategoryResponse> {
+  async updateCategory(id: number, data: UpdateCategoryRequest): Promise<CategoryResponse> {
     const updatedCategory = await this.categoryRepository.update(id, data);
     return updatedCategory;
   }
 
-  async deleteCategory(id: string) {
+  async deleteCategory(id: number) {
     await this.categoryRepository.delete(id);
   }
 }

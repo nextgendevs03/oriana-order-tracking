@@ -11,6 +11,7 @@ import {
   Query,
   createSuccessResponse,
   createErrorResponse,
+  ValidationError,
 } from '@oriana/shared';
 
 import { TYPES } from '../types/types';
@@ -72,7 +73,9 @@ export class CategoryController implements ICategoryController {
   @Get('/{id}')
   async getById(@Param('id') id: string) {
     try {
-      const category = await this.categoryService.getCategoryById(id);
+      const categoryId = parseInt(id, 10);
+      if (isNaN(categoryId)) throw new ValidationError('Invalid category ID');
+      const category = await this.categoryService.getCategoryById(categoryId);
       return createSuccessResponse(category);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
@@ -82,7 +85,9 @@ export class CategoryController implements ICategoryController {
   @Put('/{id}')
   async update(@Param('id') id: string, @Body() data: UpdateCategoryRequest) {
     try {
-      const updated = await this.categoryService.updateCategory(id, data);
+      const categoryId = parseInt(id, 10);
+      if (isNaN(categoryId)) throw new ValidationError('Invalid category ID');
+      const updated = await this.categoryService.updateCategory(categoryId, data);
       return createSuccessResponse(updated);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
@@ -92,7 +97,9 @@ export class CategoryController implements ICategoryController {
   @Delete('/{id}')
   async delete(@Param('id') id: string) {
     try {
-      await this.categoryService.deleteCategory(id);
+      const categoryId = parseInt(id, 10);
+      if (isNaN(categoryId)) throw new ValidationError('Invalid category ID');
+      await this.categoryService.deleteCategory(categoryId);
       return createSuccessResponse({ deleted: true });
     } catch (err: unknown) {
       return createErrorResponse(err as Error);

@@ -11,9 +11,9 @@ import { ProductResponse, ProductListResponse } from '../schemas/response/Produc
 export interface IProductService {
   createProduct(data: CreateProductRequest): Promise<ProductResponse | null>;
   getAllProducts(params?: ListProductRequest): Promise<ProductListResponse>;
-  getProductById(id: string): Promise<ProductResponse | null>;
-  updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse | null>;
-  deleteProduct(id: string): Promise<void>;
+  getProductById(id: number): Promise<ProductResponse | null>;
+  updateProduct(id: number, data: UpdateProductRequest): Promise<ProductResponse | null>;
+  deleteProduct(id: number): Promise<void>;
 }
 
 @injectable()
@@ -40,17 +40,17 @@ export class ProductService implements IProductService {
     };
   }
 
-  async getProductById(id: string): Promise<ProductResponse | null> {
+  async getProductById(id: number): Promise<ProductResponse | null> {
     const p = await this.repo.findById(id);
     return p ?? null;
   }
 
-  async updateProduct(id: string, data: UpdateProductRequest): Promise<ProductResponse | null> {
+  async updateProduct(id: number, data: UpdateProductRequest): Promise<ProductResponse | null> {
     await this.repo.update(id, data);
     return await this.repo.findById(id);
   }
 
-  async deleteProduct(id: string): Promise<void> {
+  async deleteProduct(id: number): Promise<void> {
     await this.repo.delete(id);
   }
 }

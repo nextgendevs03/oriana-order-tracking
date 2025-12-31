@@ -11,6 +11,7 @@ import {
   Query,
   createSuccessResponse,
   createErrorResponse,
+  ValidationError,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IOEMService } from '../services/OEMService';
@@ -71,7 +72,9 @@ export class OEMController implements IOEMController {
   @Get('/{id}')
   async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     try {
-      const oem = await this.oemService.getOEMById(id);
+      const oemId = parseInt(id, 10);
+      if (isNaN(oemId)) throw new ValidationError('Invalid OEM ID');
+      const oem = await this.oemService.getOEMById(oemId);
       return createSuccessResponse(oem);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error fetching OEM');
@@ -85,7 +88,9 @@ export class OEMController implements IOEMController {
     @Body() data: UpdateOEMRequest
   ): Promise<APIGatewayProxyResult> {
     try {
-      const oem = await this.oemService.updateOEM(id, data);
+      const oemId = parseInt(id, 10);
+      if (isNaN(oemId)) throw new ValidationError('Invalid OEM ID');
+      const oem = await this.oemService.updateOEM(oemId, data);
       return createSuccessResponse(oem);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error updating OEM');
@@ -96,7 +101,9 @@ export class OEMController implements IOEMController {
   @Delete('/{id}')
   async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     try {
-      await this.oemService.deleteOEM(id);
+      const oemId = parseInt(id, 10);
+      if (isNaN(oemId)) throw new ValidationError('Invalid OEM ID');
+      await this.oemService.deleteOEM(oemId);
       return createSuccessResponse({ deleted: true });
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error deleting OEM');

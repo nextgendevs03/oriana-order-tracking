@@ -15,7 +15,7 @@ datasource db {
 model PurchaseOrder {
   poId                  String   @id @map("po_id") @db.VarChar(20) // Format: OSG-00000001 (auto-generated)
   poReceivedDate        DateTime @map("po_received_date") @db.Date
-  clientId              String   @map("client_id")
+  clientId              Int      @map("client_id")
   client                Client   @relation(fields: [clientId], references: [clientId], onDelete: Restrict)
   osgPiNo               String   @map("osg_pi_no") @db.VarChar(50) // Alphanumeric
   osgPiDate             DateTime @map("osg_pi_date") @db.Date
@@ -23,7 +23,7 @@ model PurchaseOrder {
   clientPoDate          DateTime @map("client_po_date") @db.Date
   poStatus              String   @map("po_status") @db.VarChar(50)
   noOfDispatch          String   @map("no_of_dispatch") @db.VarChar(20)
-  assignDispatchTo      String?  @map("assign_dispatch_to") // FK to users table (nullable)
+  assignDispatchTo      Int?     @map("assign_dispatch_to") // FK to users table (nullable)
   assignedUser          User?    @relation(fields: [assignDispatchTo], references: [userId], onDelete: SetNull)
   clientAddress         String   @map("client_address")
   clientContact         String   @map("client_contact") @db.VarChar(100)
@@ -45,14 +45,14 @@ model PurchaseOrder {
 }
 
 model POItem {
-  id            String        @id @default(uuid())
+  id            Int           @id @default(autoincrement())
   poId          String        @map("po_id")
   purchaseOrder PurchaseOrder @relation(fields: [poId], references: [poId], onDelete: Cascade)
-  categoryId    String        @map("category_id")
+  categoryId    Int           @map("category_id")
   category      Category      @relation(fields: [categoryId], references: [categoryId], onDelete: Restrict)
-  oemId         String        @map("oem_id")
+  oemId         Int           @map("oem_id")
   oem           OEM           @relation(fields: [oemId], references: [oemId], onDelete: Restrict)
-  productId     String        @map("product_id")
+  productId     Int           @map("product_id")
   product       Product       @relation(fields: [productId], references: [productId], onDelete: Restrict)
   quantity      Int
   spareQuantity Int           @default(0) @map("spare_quantity")
@@ -73,7 +73,7 @@ model POItem {
 }
 
 model User {
-  userId      String          @id @default(uuid()) @map("user_id")
+  userId      Int             @id @default(autoincrement()) @map("user_id")
   username    String          @unique @db.VarChar(100)
   email       String          @unique @db.VarChar(255)
   password    String          @db.VarChar(255)
@@ -128,16 +128,16 @@ model Permission {
 }
 
 model RolePermission {
-  rolePermissionId String   @id @default(uuid()) @map("role_permission_id")
-  roleId           Int      @map("role_id")
-  permissionId     Int      @map("permission_id")
-  role             Role     @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
+  rolePermissionId Int        @id @default(autoincrement()) @map("role_permission_id")
+  roleId           Int        @map("role_id")
+  permissionId     Int        @map("permission_id")
+  role             Role       @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
   permission       Permission @relation(fields: [permissionId], references: [permissionId], onDelete: Cascade)
-  createdBy        String   @map("created_by") @db.VarChar(100)
-  updatedBy        String   @map("updated_by") @db.VarChar(100)
-  isActive         Boolean  @default(true) @map("is_active")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  createdBy        String    @map("created_by") @db.VarChar(100)
+  updatedBy        String    @map("updated_by") @db.VarChar(100)
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -147,7 +147,7 @@ model RolePermission {
 }
 
 model Category {
-  categoryId   String    @id @default(uuid()) @map("category_id")
+  categoryId   Int       @id @default(autoincrement()) @map("category_id")
   categoryName String    @map("category_name") @db.VarChar(100)
   isActive     Boolean   @default(true) @map("is_active")
   createdBy    String    @map("created_by") @db.VarChar(100)
@@ -163,7 +163,7 @@ model Category {
 }
 
 model OEM {
-  oemId     String    @id @default(uuid()) @map("oem_id")
+  oemId     Int       @id @default(autoincrement()) @map("oem_id")
   oemName   String    @map("oem_name") @db.VarChar(100)
   isActive  Boolean   @default(true) @map("is_active")
   createdBy String    @map("created_by") @db.VarChar(100)
@@ -179,12 +179,12 @@ model OEM {
 }
 
 model Product {
-  productId   String   @id @default(uuid()) @map("product_id")
+  productId   Int      @id @default(autoincrement()) @map("product_id")
   productName String   @map("product_name") @db.VarChar(100)
   isActive    Boolean  @default(true) @map("is_active")
-  categoryId  String   @map("category_id")
+  categoryId  Int      @map("category_id")
   category    Category @relation(fields: [categoryId], references: [categoryId])
-  oemId       String   @map("oem_id")
+  oemId       Int      @map("oem_id")
   oem         OEM      @relation(fields: [oemId], references: [oemId])
   createdBy   String   @map("created_by") @db.VarChar(100)
   updatedBy   String   @map("updated_by") @db.VarChar(100)
@@ -200,7 +200,7 @@ model Product {
 }
 
 model Client {
-  clientId       String          @id @default(uuid()) @map("client_id")
+  clientId       Int             @id @default(autoincrement()) @map("client_id")
   clientName     String          @map("client_name") @db.VarChar(255)
   clientAddress  String?         @map("client_address")
   clientContact  String?         @map("client_contact") @db.VarChar(100)

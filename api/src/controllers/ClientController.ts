@@ -11,6 +11,7 @@ import {
   Query,
   createSuccessResponse,
   createErrorResponse,
+  ValidationError,
 } from '@oriana/shared';
 
 import { TYPES } from '../types/types';
@@ -73,7 +74,9 @@ export class ClientController implements IClientController {
   @Get('/{id}')
   async getById(@Param('id') id: string) {
     try {
-      const client = await this.clientService.getClientById(id);
+      const clientId = parseInt(id, 10);
+      if (isNaN(clientId)) throw new ValidationError('Invalid client ID');
+      const client = await this.clientService.getClientById(clientId);
       return createSuccessResponse(client);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
@@ -83,7 +86,9 @@ export class ClientController implements IClientController {
   @Put('/{id}')
   async update(@Param('id') id: string, @Body() data: UpdateClientRequest) {
     try {
-      const updated = await this.clientService.updateClient(id, data);
+      const clientId = parseInt(id, 10);
+      if (isNaN(clientId)) throw new ValidationError('Invalid client ID');
+      const updated = await this.clientService.updateClient(clientId, data);
       return createSuccessResponse(updated);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
@@ -93,7 +98,9 @@ export class ClientController implements IClientController {
   @Delete('/{id}')
   async delete(@Param('id') id: string) {
     try {
-      await this.clientService.deleteClient(id);
+      const clientId = parseInt(id, 10);
+      if (isNaN(clientId)) throw new ValidationError('Invalid client ID');
+      await this.clientService.deleteClient(clientId);
       return createSuccessResponse({ deleted: true });
     } catch (err: unknown) {
       return createErrorResponse(err as Error);

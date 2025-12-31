@@ -16,9 +16,9 @@ const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'username';
 
 export interface IUserRepository {
   findAll(params?: ListUserRequest): Promise<{ rows: User[]; count: number }>;
-  findById(id: string): Promise<User | null>;
-  update(id: string, data: UpdateUserRequest): Promise<User>;
-  delete(id: string): Promise<void>;
+  findById(id: number): Promise<User | null>;
+  update(id: number, data: UpdateUserRequest): Promise<User>;
+  delete(id: number): Promise<void>;
   create(data: CreateUserRequest): Promise<User>;
 }
 
@@ -128,7 +128,7 @@ export class UserRepository implements IUserRepository {
     return { rows, count };
   }
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: number): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: {
         userId: id,
@@ -140,7 +140,7 @@ export class UserRepository implements IUserRepository {
     return user;
   }
 
-  async update(id: string, data: UpdateUserRequest): Promise<User> {
+  async update(id: number, data: UpdateUserRequest): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: {
         userId: id,
@@ -194,7 +194,7 @@ export class UserRepository implements IUserRepository {
     }) as Promise<User>;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.prisma.user.delete({
       where: { userId: id },
     });

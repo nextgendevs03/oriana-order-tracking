@@ -13,9 +13,9 @@ import bcrypt from 'bcryptjs';
 export interface IUserService {
   getAllUsers(params?: ListUserRequest): Promise<UserListResponse>;
   createUser(data: CreateUserRequest): Promise<UserResponse>;
-  getUserById(id: string): Promise<UserResponse | null>;
-  updateUser(id: string, data: UpdateUserRequest): Promise<UserResponse>;
-  deleteUser(id: string): Promise<{ id: string; deleted: boolean }>;
+  getUserById(id: number): Promise<UserResponse | null>;
+  updateUser(id: number, data: UpdateUserRequest): Promise<UserResponse>;
+  deleteUser(id: number): Promise<{ id: number; deleted: boolean }>;
 }
 
 @injectable()
@@ -63,7 +63,7 @@ export class UserService implements IUserService {
     };
   }
 
-  async getUserById(id: string): Promise<UserResponse | null> {
+  async getUserById(id: number): Promise<UserResponse | null> {
     const user: User | null = await this.userRepository.findById(id);
 
     if (!user) return null;
@@ -119,7 +119,7 @@ export class UserService implements IUserService {
     };
   }
 
-  async updateUser(id: string, data: UpdateUserRequest): Promise<UserResponse> {
+  async updateUser(id: number, data: UpdateUserRequest): Promise<UserResponse> {
     // If password is provided, encrypt ONLY the password
     if (data.password) {
       data.password = await this.hashPassword(data.password); //  ONLY password encrypted
@@ -143,7 +143,7 @@ export class UserService implements IUserService {
     };
   }
 
-  async deleteUser(id: string): Promise<{ id: string; deleted: boolean }> {
+  async deleteUser(id: number): Promise<{ id: number; deleted: boolean }> {
     await this.userRepository.delete(id);
     return {
       id,

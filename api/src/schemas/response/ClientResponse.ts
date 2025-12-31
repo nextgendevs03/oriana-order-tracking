@@ -1,5 +1,5 @@
 export interface ClientResponse {
-  clientId: string;
+  clientId: number;
   clientName: string;
   clientAddress?: string | null;
   clientContact?: string | null;

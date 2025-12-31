@@ -11,6 +11,7 @@ import {
   Query,
   createSuccessResponse,
   createErrorResponse,
+  ValidationError,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IProductService } from '../services/ProductService';
@@ -64,8 +65,12 @@ export class ProductController implements IProductController {
         sortBy: sortBy || 'createdAt',
         sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
         isActive: isActive ? isActive === 'true' : undefined,
-        categoryId: categoryId || undefined,
-        oemId: oemId || undefined,
+        categoryId: categoryId
+          ? typeof categoryId === 'string'
+            ? parseInt(categoryId, 10)
+            : categoryId
+          : undefined,
+        oemId: oemId ? (typeof oemId === 'string' ? parseInt(oemId, 10) : oemId) : undefined,
         searchKey: searchKey || undefined,
         searchTerm: searchTerm || undefined,
       });
@@ -81,7 +86,9 @@ export class ProductController implements IProductController {
   @Get('/{id}')
   async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     try {
-      const product = await this.productService.getProductById(id);
+      const productId = parseInt(id, 10);
+      if (isNaN(productId)) throw new ValidationError('Invalid product ID');
+      const product = await this.productService.getProductById(productId);
       return createSuccessResponse(product);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error fetching product');
@@ -96,7 +103,9 @@ export class ProductController implements IProductController {
     @Body() data: UpdateProductRequest
   ): Promise<APIGatewayProxyResult> {
     try {
-      const product = await this.productService.updateProduct(id, data);
+      const productId = parseInt(id, 10);
+      if (isNaN(productId)) throw new ValidationError('Invalid product ID');
+      const product = await this.productService.updateProduct(productId, data);
       return createSuccessResponse(product);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error updating product');
@@ -108,7 +117,9 @@ export class ProductController implements IProductController {
   @Delete('/{id}')
   async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
     try {
-      await this.productService.deleteProduct(id);
+      const productId = parseInt(id, 10);
+      if (isNaN(productId)) throw new ValidationError('Invalid product ID');
+      await this.productService.deleteProduct(productId);
       return createSuccessResponse({ deleted: true });
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error deleting product');

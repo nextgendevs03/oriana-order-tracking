@@ -94,14 +94,18 @@ export class PORepository implements IPORepository {
       data: {
         poId,
         poReceivedDate: new Date(data.poReceivedDate),
-        clientId: data.clientId,
+        clientId: typeof data.clientId === 'string' ? parseInt(data.clientId, 10) : data.clientId,
         osgPiNo: data.osgPiNo,
         osgPiDate: new Date(data.osgPiDate),
         clientPoNo: data.clientPoNo,
         clientPoDate: new Date(data.clientPoDate),
         poStatus: data.poStatus,
         noOfDispatch: data.noOfDispatch,
-        assignDispatchTo: data.assignDispatchTo || null,
+        assignDispatchTo: data.assignDispatchTo
+          ? typeof data.assignDispatchTo === 'string'
+            ? parseInt(data.assignDispatchTo, 10)
+            : data.assignDispatchTo
+          : null,
         clientAddress: data.clientAddress,
         clientContact: data.clientContact,
         dispatchPlanDate: new Date(data.dispatchPlanDate),
@@ -113,9 +117,13 @@ export class PORepository implements IPORepository {
         poItems: {
           create:
             data.poItems?.map((item: POItemRequest) => ({
-              categoryId: item.categoryId,
-              oemId: item.oemId,
-              productId: item.productId,
+              categoryId:
+                typeof item.categoryId === 'string'
+                  ? parseInt(item.categoryId, 10)
+                  : item.categoryId,
+              oemId: typeof item.oemId === 'string' ? parseInt(item.oemId, 10) : item.oemId,
+              productId:
+                typeof item.productId === 'string' ? parseInt(item.productId, 10) : item.productId,
               quantity: item.quantity,
               spareQuantity: item.spareQuantity,
               totalQuantity: item.totalQuantity,
@@ -217,7 +225,11 @@ export class PORepository implements IPORepository {
     const updateData: Prisma.PurchaseOrderUpdateInput = {};
     if (data.poReceivedDate !== undefined)
       updateData.poReceivedDate = new Date(data.poReceivedDate);
-    if (data.clientId !== undefined) updateData.client = { connect: { clientId: data.clientId } };
+    if (data.clientId !== undefined) {
+      const clientId =
+        typeof data.clientId === 'string' ? parseInt(data.clientId, 10) : data.clientId;
+      updateData.client = { connect: { clientId } };
+    }
     if (data.osgPiNo !== undefined) updateData.osgPiNo = data.osgPiNo;
     if (data.osgPiDate !== undefined) updateData.osgPiDate = new Date(data.osgPiDate);
     if (data.clientPoNo !== undefined) updateData.clientPoNo = data.clientPoNo;
@@ -226,7 +238,11 @@ export class PORepository implements IPORepository {
     if (data.noOfDispatch !== undefined) updateData.noOfDispatch = data.noOfDispatch;
     if (data.assignDispatchTo !== undefined) {
       if (data.assignDispatchTo) {
-        updateData.assignedUser = { connect: { userId: data.assignDispatchTo } };
+        const userId =
+          typeof data.assignDispatchTo === 'string'
+            ? parseInt(data.assignDispatchTo, 10)
+            : data.assignDispatchTo;
+        updateData.assignedUser = { connect: { userId } };
       } else {
         updateData.assignedUser = { disconnect: true };
       }
@@ -252,9 +268,15 @@ export class PORepository implements IPORepository {
             ...updateData,
             poItems: {
               create: data.poItems.map((item: POItemRequest) => ({
-                categoryId: item.categoryId,
-                oemId: item.oemId,
-                productId: item.productId,
+                categoryId:
+                  typeof item.categoryId === 'string'
+                    ? parseInt(item.categoryId, 10)
+                    : item.categoryId,
+                oemId: typeof item.oemId === 'string' ? parseInt(item.oemId, 10) : item.oemId,
+                productId:
+                  typeof item.productId === 'string'
+                    ? parseInt(item.productId, 10)
+                    : item.productId,
                 quantity: item.quantity,
                 spareQuantity: item.spareQuantity,
                 totalQuantity: item.totalQuantity,

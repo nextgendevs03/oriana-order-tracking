@@ -17,10 +17,10 @@ const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'productName';
 
 export interface IProductRepository {
   findAll(params?: ListProductRequest): Promise<{ rows: ProductResponse[]; count: number }>;
-  findById(id: string): Promise<ProductResponse | null>;
+  findById(id: number): Promise<ProductResponse | null>;
   create(data: CreateProductRequest): Promise<ProductResponse | null>;
-  update(id: string, data: UpdateProductRequest): Promise<Product>;
-  delete(id: string): Promise<void>;
+  update(id: number, data: UpdateProductRequest): Promise<Product>;
+  delete(id: number): Promise<void>;
 }
 
 @injectable()
@@ -55,11 +55,11 @@ export class ProductRepository implements IProductRepository {
     }
 
     if (categoryId) {
-      where.categoryId = categoryId;
+      where.categoryId = typeof categoryId === 'string' ? parseInt(categoryId, 10) : categoryId;
     }
 
     if (oemId) {
-      where.oemId = oemId;
+      where.oemId = typeof oemId === 'string' ? parseInt(oemId, 10) : oemId;
     }
 
     // Dynamic search implementation with default field
@@ -128,7 +128,7 @@ export class ProductRepository implements IProductRepository {
     };
   }
 
-  async findById(id: string): Promise<ProductResponse | null> {
+  async findById(id: number): Promise<ProductResponse | null> {
     const product = await this.prisma.product.findUnique({
       where: { productId: id },
       include: {
@@ -157,11 +157,15 @@ export class ProductRepository implements IProductRepository {
   }
 
   async create(data: CreateProductRequest): Promise<ProductResponse | null> {
+    const categoryId =
+      typeof data.categoryId === 'string' ? parseInt(data.categoryId, 10) : data.categoryId;
+    const oemId = typeof data.oemId === 'string' ? parseInt(data.oemId, 10) : data.oemId;
+
     const product = await this.prisma.product.create({
       data: {
         productName: data.productName,
-        category: { connect: { categoryId: data.categoryId } },
-        oem: { connect: { oemId: data.oemId } },
+        category: { connect: { categoryId } },
+        oem: { connect: { oemId } },
         isActive: data.isActive,
         createdBy: data.createdBy ?? '',
         updatedBy: data.createdBy ?? '',
@@ -171,13 +175,17 @@ export class ProductRepository implements IProductRepository {
     return await this.findById(product.productId);
   }
 
-  async update(id: string, data: UpdateProductRequest): Promise<Product> {
+  async update(id: number, data: UpdateProductRequest): Promise<Product> {
+    const categoryId =
+      typeof data.categoryId === 'string' ? parseInt(data.categoryId, 10) : data.categoryId;
+    const oemId = typeof data.oemId === 'string' ? parseInt(data.oemId, 10) : data.oemId;
+
     const product = await this.prisma.product.update({
       where: { productId: id },
       data: {
         productName: data.productName,
-        category: { connect: { categoryId: data.categoryId } },
-        oem: { connect: { oemId: data.oemId } },
+        category: { connect: { categoryId } },
+        oem: { connect: { oemId } },
         isActive: data.isActive ?? true,
         updatedBy: data.updatedBy ?? '',
       },
@@ -185,7 +193,7 @@ export class ProductRepository implements IProductRepository {
     return product;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.prisma.product.delete({ where: { productId: id } });
   }
 }

@@ -1,5 +1,5 @@
 export interface OEMResponse {
-  oemId: string;
+  oemId: number;
   name: string;
   isActive: boolean;
   createdBy?: string | null;

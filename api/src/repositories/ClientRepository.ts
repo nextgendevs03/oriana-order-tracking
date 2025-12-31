@@ -17,10 +17,10 @@ const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'clientName';
 
 export interface IClientRepository {
   findAll(params?: ListClientRequest): Promise<{ rows: ClientResponse[]; count: number }>;
-  findById(id: string): Promise<ClientResponse | null>;
+  findById(id: number): Promise<ClientResponse | null>;
   create(data: CreateClientRequest): Promise<ClientResponse>;
-  update(id: string, data: UpdateClientRequest): Promise<ClientResponse>;
-  delete(id: string): Promise<void>;
+  update(id: number, data: UpdateClientRequest): Promise<ClientResponse>;
+  delete(id: number): Promise<void>;
 }
 
 @injectable()
@@ -105,7 +105,7 @@ export class ClientRepository implements IClientRepository {
     };
   }
 
-  async findById(id: string): Promise<ClientResponse | null> {
+  async findById(id: number): Promise<ClientResponse | null> {
     const client = await this.prisma.client.findUnique({ where: { clientId: id } });
     if (!client) return null;
     return {
@@ -144,7 +144,7 @@ export class ClientRepository implements IClientRepository {
     };
   }
 
-  async update(id: string, data: UpdateClientRequest): Promise<ClientResponse> {
+  async update(id: number, data: UpdateClientRequest): Promise<ClientResponse> {
     const client = await this.prisma.client.update({
       where: { clientId: id },
       data: {
@@ -168,7 +168,7 @@ export class ClientRepository implements IClientRepository {
     };
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.prisma.client.delete({ where: { clientId: id } });
   }
 }

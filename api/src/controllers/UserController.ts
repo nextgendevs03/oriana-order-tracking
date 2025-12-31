@@ -10,6 +10,7 @@ import {
   Body,
   Query,
   createSuccessResponse,
+  ValidationError,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IUserService } from '../services/UserService';
@@ -63,7 +64,9 @@ export class UserController implements IUserController {
 
   @Get('/{id}')
   async getById(@Param('id') id: string): Promise<APIGatewayProxyResult> {
-    const user = await this.userService.getUserById(id);
+    const userId = parseInt(id, 10);
+    if (isNaN(userId)) throw new ValidationError('Invalid user ID');
+    const user = await this.userService.getUserById(userId);
     return createSuccessResponse(user);
   }
 
@@ -72,13 +75,17 @@ export class UserController implements IUserController {
     @Param('id') id: string,
     @Body() data: UpdateUserRequest
   ): Promise<APIGatewayProxyResult> {
-    const user = await this.userService.updateUser(id, data);
+    const userId = parseInt(id, 10);
+    if (isNaN(userId)) throw new ValidationError('Invalid user ID');
+    const user = await this.userService.updateUser(userId, data);
     return createSuccessResponse(user);
   }
 
   @Delete('/{id}')
   async delete(@Param('id') id: string): Promise<APIGatewayProxyResult> {
-    const user = await this.userService.deleteUser(id);
+    const userId = parseInt(id, 10);
+    if (isNaN(userId)) throw new ValidationError('Invalid user ID');
+    const user = await this.userService.deleteUser(userId);
     return createSuccessResponse(user);
   }
 }

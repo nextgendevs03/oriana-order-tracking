@@ -13,10 +13,10 @@ const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'oemName';
 
 export interface IOEMRepository {
   findAll(params?: ListOEMRequest): Promise<{ rows: OEMResponse[]; count: number }>;
-  findById(id: string): Promise<OEMResponse | null>;
+  findById(id: number): Promise<OEMResponse | null>;
   create(data: CreateOEMRequest): Promise<OEMResponse>;
-  update(id: string, data: UpdateOEMRequest): Promise<OEMResponse>;
-  delete(id: string): Promise<void>;
+  update(id: number, data: UpdateOEMRequest): Promise<OEMResponse>;
+  delete(id: number): Promise<void>;
 }
 
 @injectable()
@@ -100,7 +100,7 @@ export class OEMRepository implements IOEMRepository {
     };
   }
 
-  async findById(id: string): Promise<OEMResponse | null> {
+  async findById(id: number): Promise<OEMResponse | null> {
     const oem = await this.prisma.oEM.findUnique({ where: { oemId: id } });
     if (!oem) return null;
     return {
@@ -134,7 +134,7 @@ export class OEMRepository implements IOEMRepository {
     };
   }
 
-  async update(id: string, data: UpdateOEMRequest): Promise<OEMResponse> {
+  async update(id: number, data: UpdateOEMRequest): Promise<OEMResponse> {
     const updateData: Prisma.OEMUpdateInput = {};
 
     if (data.name !== undefined) {
@@ -164,7 +164,7 @@ export class OEMRepository implements IOEMRepository {
     };
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.prisma.oEM.delete({ where: { oemId: id } });
   }
 }

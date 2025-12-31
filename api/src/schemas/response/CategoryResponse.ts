@@ -1,5 +1,5 @@
 export interface CategoryResponse {
-  categoryId: string;
+  categoryId: number;
   categoryName: string;
   isActive: boolean;
   createdBy: string;

@@ -7,9 +7,9 @@ import { OEMResponse, OEMListResponse } from '../schemas/response/OEMResponse';
 export interface IOEMService {
   createOEM(data: CreateOEMRequest): Promise<OEMResponse>;
   getAllOEMs(params?: ListOEMRequest): Promise<OEMListResponse>;
-  getOEMById(id: string): Promise<OEMResponse | null>;
-  updateOEM(id: string, data: UpdateOEMRequest): Promise<OEMResponse>;
-  deleteOEM(id: string): Promise<void>;
+  getOEMById(id: number): Promise<OEMResponse | null>;
+  updateOEM(id: number, data: UpdateOEMRequest): Promise<OEMResponse>;
+  deleteOEM(id: number): Promise<void>;
 }
 
 @injectable()
@@ -36,17 +36,17 @@ export class OEMService implements IOEMService {
     };
   }
 
-  async getOEMById(id: string): Promise<OEMResponse | null> {
+  async getOEMById(id: number): Promise<OEMResponse | null> {
     const o = await this.repo.findById(id);
     return o;
   }
 
-  async updateOEM(id: string, data: UpdateOEMRequest): Promise<OEMResponse> {
+  async updateOEM(id: number, data: UpdateOEMRequest): Promise<OEMResponse> {
     const updated = await this.repo.update(id, data);
     return updated;
   }
 
-  async deleteOEM(id: string): Promise<void> {
+  async deleteOEM(id: number): Promise<void> {
     await this.repo.delete(id);
   }
 }

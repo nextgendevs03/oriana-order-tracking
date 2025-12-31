@@ -17,10 +17,10 @@ const DEFAULT_SEARCH_FIELD: AllowedSearchField = 'categoryName';
 
 export interface ICategoryRepository {
   findAll(params?: ListCategoryRequest): Promise<{ rows: CategoryResponse[]; count: number }>;
-  findById(id: string): Promise<Category | null>;
+  findById(id: number): Promise<Category | null>;
   create(data: CreateCategoryRequest): Promise<Category>;
-  update(id: string, data: UpdateCategoryRequest): Promise<Category>;
-  delete(id: string): Promise<void>;
+  update(id: number, data: UpdateCategoryRequest): Promise<Category>;
+  delete(id: number): Promise<void>;
 }
 
 @injectable()
@@ -104,7 +104,7 @@ export class CategoryRepository implements ICategoryRepository {
     };
   }
 
-  async findById(id: string): Promise<Category | null> {
+  async findById(id: number): Promise<Category | null> {
     return this.prisma.category.findUnique({ where: { categoryId: id } });
   }
 
@@ -119,7 +119,7 @@ export class CategoryRepository implements ICategoryRepository {
     });
   }
 
-  async update(id: string, data: UpdateCategoryRequest): Promise<Category> {
+  async update(id: number, data: UpdateCategoryRequest): Promise<Category> {
     return this.prisma.category.update({
       where: { categoryId: id },
       data: {
@@ -130,7 +130,7 @@ export class CategoryRepository implements ICategoryRepository {
     });
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: number): Promise<void> {
     await this.prisma.category.delete({ where: { categoryId: id } });
   }
 }

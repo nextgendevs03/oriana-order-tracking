@@ -1,7 +1,7 @@
 export interface POItemRequest {
-  categoryId: string;
-  oemId: string;
-  productId: string;
+  categoryId: number;
+  oemId: number;
+  productId: number;
   quantity: number;
   spareQuantity: number;
   totalQuantity: number;
@@ -14,14 +14,14 @@ export interface POItemRequest {
 
 export interface CreatePORequest {
   poReceivedDate: string;
-  clientId: string;
+  clientId: number;
   osgPiNo: string; // Alphanumeric
   osgPiDate: string;
   clientPoNo: string; // Alphanumeric
   clientPoDate: string;
   poStatus: string;
   noOfDispatch: string;
-  assignDispatchTo?: string; // Optional - userId from users table
+  assignDispatchTo?: number; // Optional - userId from users table
   clientAddress: string;
   clientContact: string;
   poItems: POItemRequest[];
@@ -48,6 +48,6 @@ export interface DeletePORequest {
 import { BaseListRequest } from './BaseListRequest';
 
 export interface ListPORequest extends BaseListRequest {
-  clientId?: string;
+  clientId?: number | string;
   poStatus?: string;
 }
