@@ -150,8 +150,9 @@ export class LambdaConstruct extends Construct {
         ? lambda.Tracing.ACTIVE
         : lambda.Tracing.DISABLED,
       logRetention,
-      reservedConcurrentExecutions:
-        config.environment === "prod" ? 100 : undefined,
+      // Note: Reserved concurrency is not set to allow Lambda to scale automatically.
+      // If you need to limit concurrency or guarantee capacity, set reservedConcurrentExecutions
+      // but ensure total across all functions doesn't exceed (account limit - 10).
     });
 
     // Grant Secrets Manager access for DB and JWT secrets
