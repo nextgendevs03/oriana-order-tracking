@@ -29,8 +29,7 @@ import {
 
 export interface IFileService {
   generatePresignedUploadUrls(
-    request: GeneratePresignedUrlsRequest,
-    uploadedBy: number
+    request: GeneratePresignedUrlsRequest
   ): Promise<GeneratePresignedUrlsResponse>;
   confirmFiles(request: ConfirmFilesRequest): Promise<ConfirmFilesResponse>;
   getDownloadUrl(fileId: number): Promise<PresignedDownloadUrlResponse>;
@@ -52,10 +51,6 @@ export class FileService implements IFileService {
    * Map FileUpload entity to response DTO
    */
   private mapToResponse(file: FileUpload): FileUploadResponse {
-    const fileWithUploader = file as FileUpload & {
-      uploader?: { userId: number; username: string };
-    };
-
     return {
       fileId: file.fileId,
       originalFileName: file.originalFileName,
@@ -67,8 +62,6 @@ export class FileService implements IFileService {
       entityType: file.entityType || undefined,
       entityId: file.entityId || undefined,
       poId: file.poId || undefined,
-      uploadedBy: file.uploadedBy,
-      uploaderName: fileWithUploader.uploader?.username,
       confirmedAt: file.confirmedAt?.toISOString(),
       createdAt: file.createdAt.toISOString(),
       updatedAt: file.updatedAt.toISOString(),
@@ -80,8 +73,7 @@ export class FileService implements IFileService {
    * Creates pending file records in database
    */
   async generatePresignedUploadUrls(
-    request: GeneratePresignedUrlsRequest,
-    uploadedBy: number
+    request: GeneratePresignedUrlsRequest
   ): Promise<GeneratePresignedUrlsResponse> {
     const { files, poId, entityType, entityId } = request;
     const s3Config = getS3Config();
@@ -126,7 +118,6 @@ export class FileService implements IFileService {
           entityType,
           entityId,
           poId,
-          uploadedBy,
         });
 
         return {

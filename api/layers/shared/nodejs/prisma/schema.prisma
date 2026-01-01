@@ -13,28 +13,32 @@ datasource db {
 }
 
 model PurchaseOrder {
-  poId                  String   @id @map("po_id") @db.VarChar(20) // Format: OSG-00000001 (auto-generated)
-  poReceivedDate        DateTime @map("po_received_date") @db.Date
-  clientId              Int      @map("client_id")
-  client                Client   @relation(fields: [clientId], references: [clientId], onDelete: Restrict)
-  osgPiNo               String   @map("osg_pi_no") @db.VarChar(50) // Alphanumeric
-  osgPiDate             DateTime @map("osg_pi_date") @db.Date
-  clientPoNo            String   @map("client_po_no") @db.VarChar(50) // Alphanumeric
-  clientPoDate          DateTime @map("client_po_date") @db.Date
-  poStatus              String   @map("po_status") @db.VarChar(50)
-  noOfDispatch          String   @map("no_of_dispatch") @db.VarChar(20)
-  assignDispatchTo      Int?     @map("assign_dispatch_to") // FK to users table (nullable)
-  assignedUser          User?    @relation(fields: [assignDispatchTo], references: [userId], onDelete: SetNull)
-  clientAddress         String   @map("client_address")
-  clientContact         String   @map("client_contact") @db.VarChar(100)
-  dispatchPlanDate      DateTime @map("dispatch_plan_date") @db.Date
-  siteLocation          String   @map("site_location") @db.VarChar(255)
-  oscSupport            String   @map("osc_support") @db.VarChar(20)
-  confirmDateOfDispatch DateTime @map("confirm_date_of_dispatch") @db.Date
-  paymentStatus         String   @map("payment_status") @db.VarChar(50)
+  poId                  String       @id @map("po_id") @db.VarChar(20) // Format: OSG-00000001 (auto-generated)
+  poReceivedDate        DateTime     @map("po_received_date") @db.Date
+  clientId              Int          @map("client_id")
+  client                Client       @relation(fields: [clientId], references: [clientId], onDelete: Restrict)
+  osgPiNo               String       @map("osg_pi_no") @db.VarChar(50) // Alphanumeric
+  osgPiDate             DateTime     @map("osg_pi_date") @db.Date
+  clientPoNo            String       @map("client_po_no") @db.VarChar(50) // Alphanumeric
+  clientPoDate          DateTime     @map("client_po_date") @db.Date
+  poStatus              String       @map("po_status") @db.VarChar(50)
+  noOfDispatch          String       @map("no_of_dispatch") @db.VarChar(20)
+  assignDispatchTo      Int?         @map("assign_dispatch_to") // FK to users table (nullable)
+  assignedUser          User?        @relation("AssignedUser", fields: [assignDispatchTo], references: [userId], onDelete: SetNull)
+  clientAddress         String       @map("client_address")
+  clientContact         String       @map("client_contact") @db.VarChar(100)
+  dispatchPlanDate      DateTime     @map("dispatch_plan_date") @db.Date
+  siteLocation          String       @map("site_location") @db.VarChar(255)
+  oscSupport            String       @map("osc_support") @db.VarChar(20)
+  confirmDateOfDispatch DateTime     @map("confirm_date_of_dispatch") @db.Date
+  paymentStatus         String       @map("payment_status") @db.VarChar(50)
   remarks               String?
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  createdById           Int?         @map("created_by")
+  createdBy             User?        @relation("PurchaseOrderCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById           Int?         @map("updated_by")
+  updatedBy             User?        @relation("PurchaseOrderUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
   poItems               POItem[]
   fileUploads           FileUpload[] // Files uploaded for this PO
 
@@ -63,6 +67,10 @@ model POItem {
   gstPercent    Decimal       @map("gst_percent") @db.Decimal(5, 2)
   finalPrice    Decimal       @map("final_price") @db.Decimal(14, 2)
   warranty      String        @db.VarChar(100)
+  createdById   Int?          @map("created_by")
+  createdBy     User?         @relation("POItemCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById   Int?          @map("updated_by")
+  updatedBy     User?         @relation("POItemUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
@@ -74,19 +82,43 @@ model POItem {
 }
 
 model User {
-  userId      Int             @id @default(autoincrement()) @map("user_id")
-  username    String          @unique @db.VarChar(100)
-  email       String          @unique @db.VarChar(255)
-  password    String          @db.VarChar(255)
-  roleId      Int?            @map("role_id") // Foreign key to roles table (1-to-1 relationship)
-  role        Role?           @relation(fields: [roleId], references: [roleId], onDelete: SetNull)
-  isActive    Boolean         @default(true) @map("is_active")
-  createdBy   String          @map("created_by") @db.VarChar(100)
-  updatedBy   String          @map("updated_by") @db.VarChar(100)
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-  assignedPOs PurchaseOrder[] // POs assigned to this user for dispatch
-  fileUploads FileUpload[]    // Files uploaded by this user
+  userId                 Int              @id @default(autoincrement()) @map("user_id")
+  username               String           @unique @db.VarChar(100)
+  email                  String           @unique @db.VarChar(255)
+  password               String           @db.VarChar(255)
+  roleId                 Int?             @map("role_id") // Foreign key to roles table (1-to-1 relationship)
+  role                   Role?            @relation(fields: [roleId], references: [roleId], onDelete: SetNull)
+  isActive               Boolean          @default(true) @map("is_active")
+  createdById            Int?             @map("created_by")
+  createdBy              User?            @relation("UserCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById            Int?             @map("updated_by")
+  updatedBy              User?            @relation("UserUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt              DateTime         @default(now()) @map("created_at")
+  updatedAt              DateTime         @updatedAt @map("updated_at")
+  assignedPOs            PurchaseOrder[]  @relation("AssignedUser") // POs assigned to this user for dispatch
+  // Reverse relations for audit fields
+  purchaseOrdersCreated  PurchaseOrder[]  @relation("PurchaseOrderCreatedBy")
+  purchaseOrdersUpdated  PurchaseOrder[]  @relation("PurchaseOrderUpdatedBy")
+  poItemsCreated         POItem[]         @relation("POItemCreatedBy")
+  poItemsUpdated         POItem[]         @relation("POItemUpdatedBy")
+  usersCreated           User[]           @relation("UserCreatedBy")
+  usersUpdated           User[]           @relation("UserUpdatedBy")
+  rolesCreated           Role[]           @relation("RoleCreatedBy")
+  rolesUpdated           Role[]           @relation("RoleUpdatedBy")
+  permissionsCreated     Permission[]     @relation("PermissionCreatedBy")
+  permissionsUpdated     Permission[]     @relation("PermissionUpdatedBy")
+  rolePermissionsCreated RolePermission[] @relation("RolePermissionCreatedBy")
+  rolePermissionsUpdated RolePermission[] @relation("RolePermissionUpdatedBy")
+  categoriesCreated      Category[]       @relation("CategoryCreatedBy")
+  categoriesUpdated      Category[]       @relation("CategoryUpdatedBy")
+  oemsCreated            OEM[]            @relation("OEMCreatedBy")
+  oemsUpdated            OEM[]            @relation("OEMUpdatedBy")
+  productsCreated        Product[]        @relation("ProductCreatedBy")
+  productsUpdated        Product[]        @relation("ProductUpdatedBy")
+  clientsCreated         Client[]         @relation("ClientCreatedBy")
+  clientsUpdated         Client[]         @relation("ClientUpdatedBy")
+  fileUploadsCreated     FileUpload[]     @relation("FileUploadCreatedBy")
+  fileUploadsUpdated     FileUpload[]     @relation("FileUploadUpdatedBy")
 
   @@index([email])
   @@index([username])
@@ -95,15 +127,17 @@ model User {
 }
 
 model Role {
-  roleId      Int             @id @default(autoincrement()) @map("role_id")
-  roleName    String          @map("role_name") @db.VarChar(100)
-  description String          @map("description") @db.VarChar(255)
-  createdBy   String          @map("created_by") @db.VarChar(100)
-  updatedBy   String          @map("updated_by") @db.VarChar(100)
-  isActive    Boolean         @default(true) @map("is_active")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-  users       User[]          // Users with this role as primary role (1-to-1)
+  roleId          Int              @id @default(autoincrement()) @map("role_id")
+  roleName        String           @map("role_name") @db.VarChar(100)
+  description     String           @map("description") @db.VarChar(255)
+  createdById     Int?             @map("created_by")
+  createdBy       User?            @relation("RoleCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById     Int?             @map("updated_by")
+  updatedBy       User?            @relation("RoleUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  users           User[] // Users with this role as primary role (1-to-1)
   rolePermissions RolePermission[] // A role can have multiple permissions (one-to-many)
 
   @@index([roleName])
@@ -112,15 +146,17 @@ model Role {
 }
 
 model Permission {
-  permissionId   Int      @id @default(autoincrement()) @map("permission_id")
-  permissionCode String   @unique @map("permission_code") @db.VarChar(100)
-  permissionName String   @map("permission_name") @db.VarChar(100)
-  description    String   @map("description") @db.VarChar(255)
-  createdBy      String   @map("created_by") @db.VarChar(100)
-  updatedBy      String   @map("updated_by") @db.VarChar(100)
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  permissionId    Int              @id @default(autoincrement()) @map("permission_id")
+  permissionCode  String           @unique @map("permission_code") @db.VarChar(100)
+  permissionName  String           @map("permission_name") @db.VarChar(100)
+  description     String           @map("description") @db.VarChar(255)
+  createdById     Int?             @map("created_by")
+  createdBy       User?            @relation("PermissionCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById     Int?             @map("updated_by")
+  updatedBy       User?            @relation("PermissionUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
   rolePermissions RolePermission[] // A permission can belong to multiple roles (many-to-many)
 
   @@index([permissionName])
@@ -135,11 +171,13 @@ model RolePermission {
   permissionId     Int        @map("permission_id")
   role             Role       @relation(fields: [roleId], references: [roleId], onDelete: Cascade)
   permission       Permission @relation(fields: [permissionId], references: [permissionId], onDelete: Cascade)
-  createdBy        String    @map("created_by") @db.VarChar(100)
-  updatedBy        String    @map("updated_by") @db.VarChar(100)
-  isActive         Boolean   @default(true) @map("is_active")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  createdById      Int?       @map("created_by")
+  createdBy        User?      @relation("RolePermissionCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById      Int?       @map("updated_by")
+  updatedBy        User?      @relation("RolePermissionUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  isActive         Boolean    @default(true) @map("is_active")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -152,8 +190,10 @@ model Category {
   categoryId   Int       @id @default(autoincrement()) @map("category_id")
   categoryName String    @map("category_name") @db.VarChar(100)
   isActive     Boolean   @default(true) @map("is_active")
-  createdBy    String    @map("created_by") @db.VarChar(100)
-  updatedBy    String    @map("updated_by") @db.VarChar(100)
+  createdById  Int?      @map("created_by")
+  createdBy    User?     @relation("CategoryCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById  Int?      @map("updated_by")
+  updatedBy    User?     @relation("CategoryUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   products     Product[]
@@ -165,15 +205,17 @@ model Category {
 }
 
 model OEM {
-  oemId     Int       @id @default(autoincrement()) @map("oem_id")
-  oemName   String    @map("oem_name") @db.VarChar(100)
-  isActive  Boolean   @default(true) @map("is_active")
-  createdBy String    @map("created_by") @db.VarChar(100)
-  updatedBy String    @map("updated_by") @db.VarChar(100)
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  products  Product[]
-  poItems   POItem[] // PO items using this OEM
+  oemId       Int       @id @default(autoincrement()) @map("oem_id")
+  oemName     String    @map("oem_name") @db.VarChar(100)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdById Int?      @map("created_by")
+  createdBy   User?     @relation("OEMCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById Int?      @map("updated_by")
+  updatedBy   User?     @relation("OEMUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  products    Product[]
+  poItems     POItem[] // PO items using this OEM
 
   @@index([oemName])
   @@index([isActive])
@@ -188,8 +230,10 @@ model Product {
   category    Category @relation(fields: [categoryId], references: [categoryId])
   oemId       Int      @map("oem_id")
   oem         OEM      @relation(fields: [oemId], references: [oemId])
-  createdBy   String   @map("created_by") @db.VarChar(100)
-  updatedBy   String   @map("updated_by") @db.VarChar(100)
+  createdById Int?     @map("created_by")
+  createdBy   User?    @relation("ProductCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById Int?     @map("updated_by")
+  updatedBy   User?    @relation("ProductUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   poItems     POItem[] // PO items using this product
@@ -208,8 +252,10 @@ model Client {
   clientContact  String?         @map("client_contact") @db.VarChar(100)
   clientGST      String?         @map("client_gst") @db.VarChar(50)
   isActive       Boolean         @default(true) @map("is_active")
-  createdBy      String          @map("created_by") @db.VarChar(100)
-  updatedBy      String          @map("updated_by") @db.VarChar(100)
+  createdById    Int?            @map("created_by")
+  createdBy      User?           @relation("ClientCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById    Int?            @map("updated_by")
+  updatedBy      User?           @relation("ClientUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
   purchaseOrders PurchaseOrder[] // POs for this client
@@ -234,17 +280,17 @@ model FileUpload {
   entityId         String?        @map("entity_id") @db.VarChar(50)
   poId             String?        @map("po_id") @db.VarChar(20)
   purchaseOrder    PurchaseOrder? @relation(fields: [poId], references: [poId], onDelete: SetNull)
-  uploadedBy       Int            @map("uploaded_by")
-  uploader         User           @relation(fields: [uploadedBy], references: [userId], onDelete: Restrict)
+  createdById      Int?           @map("created_by")
+  createdBy        User?          @relation("FileUploadCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById      Int?           @map("updated_by")
+  updatedBy        User?          @relation("FileUploadUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
   confirmedAt      DateTime?      @map("confirmed_at")
-  deletedAt        DateTime?      @map("deleted_at")
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at") // Auto-updated on every modification
 
   @@index([status])
   @@index([entityType, entityId])
   @@index([poId])
-  @@index([uploadedBy])
   @@index([createdAt])
   @@map("file_uploads")
 }

@@ -12,8 +12,6 @@ export interface FileUploadResponse {
   entityType?: string;
   entityId?: string;
   poId?: string;
-  uploadedBy: number;
-  uploaderName?: string;
   confirmedAt?: string;
   createdAt: string;
   updatedAt: string;

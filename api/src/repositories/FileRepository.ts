@@ -21,7 +21,6 @@ export interface CreateFileUploadData {
   entityType?: string;
   entityId?: string;
   poId?: string;
-  uploadedBy: number;
 }
 
 /**
@@ -33,7 +32,6 @@ export interface UpdateFileUploadData {
   entityId?: string;
   poId?: string;
   confirmedAt?: Date;
-  deletedAt?: Date;
 }
 
 /**
@@ -48,7 +46,6 @@ export interface ListFilesParams {
   entityType?: string;
   entityId?: string;
   poId?: string;
-  uploadedBy?: number;
 }
 
 export interface IFileRepository {
@@ -87,15 +84,6 @@ export class FileRepository implements IFileRepository {
         entityType: data.entityType,
         entityId: data.entityId,
         poId: data.poId,
-        uploadedBy: data.uploadedBy,
-      },
-      include: {
-        uploader: {
-          select: {
-            userId: true,
-            username: true,
-          },
-        },
       },
     });
   }
@@ -118,15 +106,6 @@ export class FileRepository implements IFileRepository {
             entityType: file.entityType,
             entityId: file.entityId,
             poId: file.poId,
-            uploadedBy: file.uploadedBy,
-          },
-          include: {
-            uploader: {
-              select: {
-                userId: true,
-                username: true,
-              },
-            },
           },
         })
       )
@@ -141,12 +120,6 @@ export class FileRepository implements IFileRepository {
     return this.prisma.fileUpload.findUnique({
       where: { fileId },
       include: {
-        uploader: {
-          select: {
-            userId: true,
-            username: true,
-          },
-        },
         purchaseOrder: {
           select: {
             poId: true,
@@ -163,14 +136,6 @@ export class FileRepository implements IFileRepository {
     return this.prisma.fileUpload.findMany({
       where: {
         fileId: { in: fileIds },
-      },
-      include: {
-        uploader: {
-          select: {
-            userId: true,
-            username: true,
-          },
-        },
       },
     });
   }
@@ -197,14 +162,6 @@ export class FileRepository implements IFileRepository {
 
     return this.prisma.fileUpload.findMany({
       where,
-      include: {
-        uploader: {
-          select: {
-            userId: true,
-            username: true,
-          },
-        },
-      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -264,7 +221,6 @@ export class FileRepository implements IFileRepository {
       entityType,
       entityId,
       poId,
-      uploadedBy,
     } = params || {};
     const skip = (page - 1) * limit;
 
@@ -286,24 +242,12 @@ export class FileRepository implements IFileRepository {
       where.poId = poId;
     }
 
-    if (uploadedBy) {
-      where.uploadedBy = uploadedBy;
-    }
-
     const [rows, count] = await this.prisma.$transaction([
       this.prisma.fileUpload.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: sortOrder === 'ASC' ? 'asc' : 'desc' },
-        include: {
-          uploader: {
-            select: {
-              userId: true,
-              username: true,
-            },
-          },
-        },
       }),
       this.prisma.fileUpload.count({ where }),
     ]);
@@ -333,14 +277,6 @@ export class FileRepository implements IFileRepository {
     return this.prisma.fileUpload.update({
       where: { fileId },
       data,
-      include: {
-        uploader: {
-          select: {
-            userId: true,
-            username: true,
-          },
-        },
-      },
     });
   }
 
@@ -363,7 +299,6 @@ export class FileRepository implements IFileRepository {
       where: { fileId },
       data: {
         status: 'deleted',
-        deletedAt: new Date(),
       },
     });
   }

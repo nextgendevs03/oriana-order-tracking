@@ -50,8 +50,7 @@ export class FileController implements IFileController {
    */
   @Post('/presigned-urls')
   async generatePresignedUrls(
-    @Body() data: GeneratePresignedUrlsRequest,
-    event: AuthenticatedEvent
+    @Body() data: GeneratePresignedUrlsRequest
   ): Promise<APIGatewayProxyResult> {
     // Validate request
     if (!data.files || data.files.length === 0) {
@@ -71,13 +70,7 @@ export class FileController implements IFileController {
       }
     }
 
-    // Get user ID from authenticated event
-    const userId = event.user?.userId;
-    if (!userId) {
-      throw new ValidationError('User ID is required');
-    }
-
-    const result = await this.fileService.generatePresignedUploadUrls(data, userId);
+    const result = await this.fileService.generatePresignedUploadUrls(data);
     return createSuccessResponse(result, 201);
   }
 
