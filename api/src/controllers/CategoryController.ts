@@ -9,9 +9,11 @@ import {
   Param,
   Body,
   Query,
+  CurrentUser,
   createSuccessResponse,
   createErrorResponse,
   ValidationError,
+  JWTPayload,
 } from '@oriana/shared';
 
 import { TYPES } from '../types/types';
@@ -19,11 +21,15 @@ import { ICategoryService } from '../services/CategoryService';
 import { CreateCategoryRequest, UpdateCategoryRequest } from '../schemas/request/CategoryRequest';
 
 export interface ICategoryController {
-  create(data: CreateCategoryRequest): Promise<APIGatewayProxyResult>;
+  create(data: CreateCategoryRequest, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
   getAll(isActive?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
-  update(id: string, data: UpdateCategoryRequest): Promise<APIGatewayProxyResult>;
-  delete(id: string, data: { updatedBy: string }): Promise<APIGatewayProxyResult>;
+  update(
+    id: string,
+    data: UpdateCategoryRequest,
+    currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult>;
+  delete(id: string): Promise<APIGatewayProxyResult>;
 }
 @Controller({ path: '/api/category', lambdaName: 'productManagement' })
 @injectable()
@@ -34,9 +40,14 @@ export class CategoryController implements ICategoryController {
   ) {}
 
   @Post('/')
-  async create(@Body() data: CreateCategoryRequest) {
+  async create(@Body() data: CreateCategoryRequest, @CurrentUser() currentUser: JWTPayload) {
     try {
-      const category = await this.categoryService.createCategory(data);
+      const enrichedData = {
+        ...data,
+        createdById: currentUser.userId,
+        updatedById: currentUser.userId,
+      };
+      const category = await this.categoryService.createCategory(enrichedData);
       return createSuccessResponse(category, 201);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
@@ -83,11 +94,19 @@ export class CategoryController implements ICategoryController {
   }
 
   @Put('/{id}')
-  async update(@Param('id') id: string, @Body() data: UpdateCategoryRequest) {
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateCategoryRequest,
+    @CurrentUser() currentUser: JWTPayload
+  ) {
     try {
       const categoryId = parseInt(id, 10);
       if (isNaN(categoryId)) throw new ValidationError('Invalid category ID');
-      const updated = await this.categoryService.updateCategory(categoryId, data);
+      const enrichedData = {
+        ...data,
+        updatedById: currentUser.userId,
+      };
+      const updated = await this.categoryService.updateCategory(categoryId, enrichedData);
       return createSuccessResponse(updated);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);

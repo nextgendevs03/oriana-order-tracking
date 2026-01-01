@@ -70,8 +70,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             clientName: values.clientName.trim(),
             clientAddress: values.clientAddress?.trim() || undefined,
             clientContact: values.clientContact?.trim() || undefined,
-            clientGST: values.clientGST?.trim() || undefined,
-            updatedBy: "admin", // TODO: Get from auth context
+            clientGST: values.clientGST?.trim() || undefined
           },
         }).unwrap();
         toast.success("Client updated successfully");
@@ -82,8 +81,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
           clientAddress: values.clientAddress?.trim() || undefined,
           clientContact: values.clientContact?.trim() || undefined,
           clientGST: values.clientGST?.trim() || undefined,
-          isActive: true,
-          createdBy: "admin", // TODO: Get from auth context
+          isActive: true
         }).unwrap();
         toast.success("Client created successfully");
       }

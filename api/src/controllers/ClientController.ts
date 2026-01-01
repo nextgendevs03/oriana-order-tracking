@@ -9,9 +9,11 @@ import {
   Param,
   Body,
   Query,
+  CurrentUser,
   createSuccessResponse,
   createErrorResponse,
   ValidationError,
+  JWTPayload,
 } from '@oriana/shared';
 
 import { TYPES } from '../types/types';
@@ -19,10 +21,14 @@ import { IClientService } from '../services/ClientService';
 import { CreateClientRequest, UpdateClientRequest } from '../schemas/request/ClientRequest';
 
 export interface IClientController {
-  create(data: CreateClientRequest): Promise<APIGatewayProxyResult>;
+  create(data: CreateClientRequest, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
   getAll(isActive?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
-  update(id: string, data: UpdateClientRequest): Promise<APIGatewayProxyResult>;
+  update(
+    id: string,
+    data: UpdateClientRequest,
+    currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
 }
 
@@ -35,9 +41,14 @@ export class ClientController implements IClientController {
   ) {}
 
   @Post('/')
-  async create(@Body() data: CreateClientRequest) {
+  async create(@Body() data: CreateClientRequest, @CurrentUser() currentUser: JWTPayload) {
     try {
-      const client = await this.clientService.createClient(data);
+      const enrichedData = {
+        ...data,
+        createdById: currentUser.userId,
+        updatedById: currentUser.userId,
+      };
+      const client = await this.clientService.createClient(enrichedData);
       return createSuccessResponse(client, 201);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);
@@ -84,11 +95,19 @@ export class ClientController implements IClientController {
   }
 
   @Put('/{id}')
-  async update(@Param('id') id: string, @Body() data: UpdateClientRequest) {
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateClientRequest,
+    @CurrentUser() currentUser: JWTPayload
+  ) {
     try {
       const clientId = parseInt(id, 10);
       if (isNaN(clientId)) throw new ValidationError('Invalid client ID');
-      const updated = await this.clientService.updateClient(clientId, data);
+      const enrichedData = {
+        ...data,
+        updatedById: currentUser.userId,
+      };
+      const updated = await this.clientService.updateClient(clientId, enrichedData);
       return createSuccessResponse(updated);
     } catch (err: unknown) {
       return createErrorResponse(err as Error);

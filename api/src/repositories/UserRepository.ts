@@ -151,11 +151,12 @@ export class UserRepository implements IUserRepository {
     }
 
     const { roleId, ...updateFields } = data;
-    const userUpdateData: Record<string, any> = {};
+    const userUpdateData: Record<string, unknown> = {};
     if (updateFields.email !== undefined) userUpdateData.email = updateFields.email;
     if (updateFields.password !== undefined) userUpdateData.password = updateFields.password;
     if (updateFields.isActive !== undefined) userUpdateData.isActive = updateFields.isActive;
-    if (updateFields.updatedBy !== undefined) userUpdateData.updatedBy = updateFields.updatedBy;
+    if (updateFields.updatedById !== undefined)
+      userUpdateData.updatedById = updateFields.updatedById;
 
     // Always use roleId for updates (ignore role name for updates)
     // Update roleId if provided (1-to-1 relationship)

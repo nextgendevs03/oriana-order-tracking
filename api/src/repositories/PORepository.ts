@@ -114,6 +114,8 @@ export class PORepository implements IPORepository {
         confirmDateOfDispatch: new Date(data.confirmDateOfDispatch),
         paymentStatus: data.paymentStatus,
         remarks: data.remarks,
+        createdById: data.createdById,
+        updatedById: data.createdById,
         poItems: {
           create:
             data.poItems?.map((item: POItemRequest) => ({
@@ -223,6 +225,7 @@ export class PORepository implements IPORepository {
 
     // Build update data
     const updateData: Prisma.PurchaseOrderUpdateInput = {};
+    if (data.updatedById !== undefined) updateData.updatedById = data.updatedById;
     if (data.poReceivedDate !== undefined)
       updateData.poReceivedDate = new Date(data.poReceivedDate);
     if (data.clientId !== undefined) {

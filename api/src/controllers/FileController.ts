@@ -8,9 +8,10 @@ import {
   Param,
   Body,
   Query,
+  CurrentUser,
   createSuccessResponse,
   ValidationError,
-  AuthenticatedEvent,
+  JWTPayload,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IFileService } from '../services/FileService';
@@ -23,9 +24,9 @@ import {
 export interface IFileController {
   generatePresignedUrls(
     data: GeneratePresignedUrlsRequest,
-    event: AuthenticatedEvent
+    currentUser: JWTPayload
   ): Promise<APIGatewayProxyResult>;
-  confirmFiles(data: ConfirmFilesRequest): Promise<APIGatewayProxyResult>;
+  confirmFiles(data: ConfirmFilesRequest, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
   getDownloadUrl(fileId: string): Promise<APIGatewayProxyResult>;
   getEntityFiles(
     entityType: string,
@@ -34,7 +35,7 @@ export interface IFileController {
     limit?: string
   ): Promise<APIGatewayProxyResult>;
   getPOFiles(poId: string, page?: string, limit?: string): Promise<APIGatewayProxyResult>;
-  deleteFile(fileId: string): Promise<APIGatewayProxyResult>;
+  deleteFile(fileId: string, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
   cleanupOrphanedFiles(data: CleanupOrphanedFilesRequest): Promise<APIGatewayProxyResult>;
   getFileById(fileId: string): Promise<APIGatewayProxyResult>;
 }
@@ -50,7 +51,8 @@ export class FileController implements IFileController {
    */
   @Post('/presigned-urls')
   async generatePresignedUrls(
-    @Body() data: GeneratePresignedUrlsRequest
+    @Body() data: GeneratePresignedUrlsRequest,
+    @CurrentUser() currentUser: JWTPayload
   ): Promise<APIGatewayProxyResult> {
     // Validate request
     if (!data.files || data.files.length === 0) {
@@ -70,7 +72,12 @@ export class FileController implements IFileController {
       }
     }
 
-    const result = await this.fileService.generatePresignedUploadUrls(data);
+    const enrichedData = {
+      ...data,
+      createdById: currentUser.userId,
+      updatedById: currentUser.userId,
+    };
+    const result = await this.fileService.generatePresignedUploadUrls(enrichedData);
     return createSuccessResponse(result, 201);
   }
 
@@ -79,7 +86,10 @@ export class FileController implements IFileController {
    * POST /api/files/confirm
    */
   @Post('/confirm')
-  async confirmFiles(@Body() data: ConfirmFilesRequest): Promise<APIGatewayProxyResult> {
+  async confirmFiles(
+    @Body() data: ConfirmFilesRequest,
+    @CurrentUser() currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult> {
     // Validate request
     if (!data.fileIds || data.fileIds.length === 0) {
       throw new ValidationError('At least one fileId is required');
@@ -91,7 +101,11 @@ export class FileController implements IFileController {
       throw new ValidationError('entityId is required');
     }
 
-    const result = await this.fileService.confirmFiles(data);
+    const enrichedData = {
+      ...data,
+      updatedById: currentUser.userId,
+    };
+    const result = await this.fileService.confirmFiles(enrichedData);
     return createSuccessResponse(result);
   }
 
@@ -185,13 +199,16 @@ export class FileController implements IFileController {
    * DELETE /api/files/:fileId
    */
   @Delete('/{fileId}')
-  async deleteFile(@Param('fileId') fileId: string): Promise<APIGatewayProxyResult> {
+  async deleteFile(
+    @Param('fileId') fileId: string,
+    @CurrentUser() currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult> {
     const id = parseInt(fileId, 10);
     if (isNaN(id)) {
       throw new ValidationError('Invalid file ID');
     }
 
-    const result = await this.fileService.deleteFile(id);
+    const result = await this.fileService.deleteFile(id, currentUser.userId);
     return createSuccessResponse(result);
   }
 

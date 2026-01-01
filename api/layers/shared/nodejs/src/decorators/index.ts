@@ -11,4 +11,4 @@ export { Controller, ControllerOptions } from './controller.decorator';
 export { Get, Post, Put, Delete, Patch, Options } from './http.decorator';
 
 // Parameter decorators
-export { Param, Query, Body, Event, Context, Headers } from './param.decorator';
+export { Param, Query, Body, Event, Context, Headers, CurrentUser } from './param.decorator';

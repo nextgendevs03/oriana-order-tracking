@@ -89,7 +89,6 @@ const OEMManagement: React.FC = () => {
                 id: record.oemId,
                 data: {
                   isActive: checked,
-                  updatedBy: "admin", // TODO: Get from auth context
                 },
               }).unwrap();
               toast.success(

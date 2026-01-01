@@ -98,8 +98,8 @@ export class ClientRepository implements IClientRepository {
         clientContact: client.clientContact ?? null,
         clientGST: client.clientGST ?? null,
         isActive: client.isActive,
-        createdBy: client.createdBy,
-        updatedBy: client.updatedBy,
+        createdById: client.createdById,
+        updatedById: client.updatedById,
       })),
       count,
     };
@@ -115,8 +115,8 @@ export class ClientRepository implements IClientRepository {
       clientContact: client.clientContact ?? null,
       clientGST: client.clientGST ?? null,
       isActive: client.isActive,
-      createdBy: client.createdBy,
-      updatedBy: client.updatedBy,
+      createdById: client.createdById,
+      updatedById: client.updatedById,
     };
   }
 
@@ -128,8 +128,8 @@ export class ClientRepository implements IClientRepository {
         clientContact: data.clientContact ?? null,
         clientGST: data.clientGST ?? null,
         isActive: data.isActive ?? true,
-        createdBy: data.createdBy ?? '',
-        updatedBy: data.createdBy ?? '',
+        createdById: data.createdById,
+        updatedById: data.updatedById,
       },
     });
     return {
@@ -139,8 +139,8 @@ export class ClientRepository implements IClientRepository {
       clientContact: client.clientContact ?? null,
       clientGST: client.clientGST ?? null,
       isActive: client.isActive,
-      createdBy: client.createdBy,
-      updatedBy: client.updatedBy,
+      createdById: client.createdById,
+      updatedById: client.updatedById,
     };
   }
 
@@ -153,7 +153,7 @@ export class ClientRepository implements IClientRepository {
         clientContact: data.clientContact !== undefined ? data.clientContact : undefined,
         clientGST: data.clientGST !== undefined ? data.clientGST : undefined,
         isActive: data.isActive ?? undefined,
-        updatedBy: data.updatedBy ?? undefined,
+        updatedById: data.updatedById,
       },
     });
     return {
@@ -163,8 +163,8 @@ export class ClientRepository implements IClientRepository {
       clientContact: client.clientContact ?? null,
       clientGST: client.clientGST ?? null,
       isActive: client.isActive,
-      createdBy: client.createdBy,
-      updatedBy: client.updatedBy,
+      createdById: client.createdById,
+      updatedById: client.updatedById,
     };
   }
 

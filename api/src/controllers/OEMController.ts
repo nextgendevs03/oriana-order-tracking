@@ -9,19 +9,25 @@ import {
   Param,
   Body,
   Query,
+  CurrentUser,
   createSuccessResponse,
   createErrorResponse,
   ValidationError,
+  JWTPayload,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IOEMService } from '../services/OEMService';
 import { CreateOEMRequest, UpdateOEMRequest } from '../schemas/request/OEMRequest';
 
 export interface IOEMController {
-  create(data: CreateOEMRequest): Promise<APIGatewayProxyResult>;
+  create(data: CreateOEMRequest, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
   getAll(isActive?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
-  update(id: string, data: UpdateOEMRequest): Promise<APIGatewayProxyResult>;
+  update(
+    id: string,
+    data: UpdateOEMRequest,
+    currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
 }
 
@@ -31,9 +37,17 @@ export class OEMController implements IOEMController {
   constructor(@inject(TYPES.OEMService) private oemService: IOEMService) {}
 
   @Post('/')
-  async create(@Body() data: CreateOEMRequest): Promise<APIGatewayProxyResult> {
+  async create(
+    @Body() data: CreateOEMRequest,
+    @CurrentUser() currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult> {
     try {
-      const oem = await this.oemService.createOEM(data);
+      const enrichedData = {
+        ...data,
+        createdById: currentUser.userId,
+        updatedById: currentUser.userId,
+      };
+      const oem = await this.oemService.createOEM(enrichedData);
       return createSuccessResponse(oem, 201);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error creating OEM');
@@ -85,12 +99,17 @@ export class OEMController implements IOEMController {
   @Put('/{id}')
   async update(
     @Param('id') id: string,
-    @Body() data: UpdateOEMRequest
+    @Body() data: UpdateOEMRequest,
+    @CurrentUser() currentUser: JWTPayload
   ): Promise<APIGatewayProxyResult> {
     try {
       const oemId = parseInt(id, 10);
       if (isNaN(oemId)) throw new ValidationError('Invalid OEM ID');
-      const oem = await this.oemService.updateOEM(oemId, data);
+      const enrichedData = {
+        ...data,
+        updatedById: currentUser.userId,
+      };
+      const oem = await this.oemService.updateOEM(oemId, enrichedData);
       return createSuccessResponse(oem);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error updating OEM');

@@ -91,3 +91,15 @@ export function Context(): ParameterDecorator {
 export function Headers(name?: string): ParameterDecorator {
   return createParamDecorator(ParamType.HEADERS, name);
 }
+
+/**
+ * Current user decorator - injects the authenticated user from JWT token
+ * @example
+ * @Post('/')
+ * async create(@Body() data: CreateRequest, @CurrentUser() user: JWTPayload) {
+ *   const enrichedData = { ...data, createdById: user.userId };
+ * }
+ */
+export function CurrentUser(): ParameterDecorator {
+  return createParamDecorator(ParamType.USER);
+}

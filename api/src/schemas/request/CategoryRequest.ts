@@ -1,13 +1,14 @@
 export interface CreateCategoryRequest {
   categoryName: string;
-  isActive: boolean;
-  createdBy: string;
+  isActive?: boolean;
+  createdById?: number;
+  updatedById?: number;
 }
 
 export interface UpdateCategoryRequest {
   categoryName?: string;
   isActive?: boolean;
-  updatedBy: string;
+  updatedById?: number;
 }
 
 import { BaseListRequest } from './BaseListRequest';

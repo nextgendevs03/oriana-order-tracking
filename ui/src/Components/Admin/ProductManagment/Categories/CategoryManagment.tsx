@@ -92,7 +92,6 @@ const CategoryManagement: React.FC = () => {
                 id: record.categoryId,
                 data: {
                   isActive: checked,
-                  updatedBy: "admin", // TODO: Get from auth context
                 },
               }).unwrap();
               toast.success(

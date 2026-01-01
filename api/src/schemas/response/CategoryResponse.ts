@@ -2,8 +2,8 @@ export interface CategoryResponse {
   categoryId: number;
   categoryName: string;
   isActive: boolean;
-  createdBy: string;
-  updatedBy: string;
+  createdById?: number | null;
+  updatedById?: number | null;
 }
 
 export interface CategoryListResponse {

@@ -55,6 +55,7 @@ export class AuthService implements IAuthService {
 
     // Generate JWT tokens after successful password validation
     const tokenPayload: JWTPayload = {
+      userId: user.userId,
       username: user.username,
       email: user.email,
       role: role?.roleName,
@@ -77,6 +78,7 @@ export class AuthService implements IAuthService {
       expiresIn: tokens.expiresIn,
       refreshExpiresIn: tokens.refreshExpiresIn,
       user: {
+        userId: user.userId,
         username: user.username,
         email: user.email,
         roleName: role?.roleName || null,

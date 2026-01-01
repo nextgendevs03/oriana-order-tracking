@@ -55,14 +55,12 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
           id: initialValues.categoryId,
           data: {
             ...dataToSend,
-            updatedBy: "admin",
           },
         }).unwrap();
         toast.success("Category updated successfully");
       } else {
         await createCategory({
           ...dataToSend,
-          createdBy: "admin",
         }).unwrap();
         toast.success("Category created successfully");
       }

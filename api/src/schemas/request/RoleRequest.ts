@@ -3,6 +3,8 @@ export interface CreateRoleRequest {
   description?: string;
   isActive?: boolean;
   permissionIds?: number[]; // Array of permission IDs to assign to this role
+  createdById?: number;
+  updatedById?: number;
 }
 
 export interface UpdateRoleRequest {
@@ -10,6 +12,7 @@ export interface UpdateRoleRequest {
   description?: string;
   isActive?: boolean;
   permissionIds?: number[]; // Array of permission IDs to sync with this role
+  updatedById?: number;
 }
 
 import { BaseListRequest } from './BaseListRequest';

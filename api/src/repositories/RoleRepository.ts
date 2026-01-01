@@ -16,9 +16,9 @@ export interface IRoleRepository {
   findAll(params: ListRoleRequest): Promise<{ rows: Role[]; count: number }>;
   update(id: number, data: UpdateRoleRequest): Promise<Role | null>;
   delete(id: number): Promise<boolean>;
-  assignPermissions(roleId: number, permissionIds: number[], createdBy: string): Promise<void>;
-  removePermissions(roleId: number, permissionIds: number[]): Promise<void>;
-  syncPermissions(roleId: number, permissionIds: number[], updatedBy: string): Promise<void>;
+  assignPermissions(roleId: number, permissionIds: number[], createdById?: number): Promise<void>;
+  removePermissions(roleId: number, permissionIds: number[], updatedById?: number): Promise<void>;
+  syncPermissions(roleId: number, permissionIds: number[], updatedById?: number): Promise<void>;
 }
 
 @injectable()
@@ -37,15 +37,15 @@ export class RoleRepository implements IRoleRepository {
       data: {
         roleName: data.roleName,
         description: data.description || '',
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdById: data.createdById,
+        updatedById: data.updatedById,
         isActive: data.isActive ?? true,
       },
     });
 
     // If permissions are provided, assign them
     if (data.permissionIds && data.permissionIds.length > 0) {
-      await this.assignPermissions(role.roleId, data.permissionIds, 'system');
+      await this.assignPermissions(role.roleId, data.permissionIds, data.createdById);
     }
 
     // Fetch role with permissions
@@ -143,13 +143,13 @@ export class RoleRepository implements IRoleRepository {
         ...(data.roleName && { roleName: data.roleName }),
         ...(data.description && { description: data.description }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
-        updatedBy: 'system',
+        updatedById: data.updatedById,
       },
     });
 
     // If permissions are provided, sync them
     if (data.permissionIds !== undefined) {
-      await this.syncPermissions(id, data.permissionIds, 'system');
+      await this.syncPermissions(id, data.permissionIds, data.updatedById);
     }
 
     // Fetch role with permissions
@@ -159,22 +159,26 @@ export class RoleRepository implements IRoleRepository {
   async assignPermissions(
     roleId: number,
     permissionIds: number[],
-    createdBy: string
+    createdById?: number
   ): Promise<void> {
     // Create role-permission relationships
     await this.prisma.rolePermission.createMany({
       data: permissionIds.map((permissionId) => ({
         roleId,
         permissionId,
-        createdBy,
-        updatedBy: createdBy,
+        createdById,
+        updatedById: createdById,
         isActive: true,
       })),
       skipDuplicates: true,
     });
   }
 
-  async removePermissions(roleId: number, permissionIds: number[]): Promise<void> {
+  async removePermissions(
+    roleId: number,
+    permissionIds: number[],
+    updatedById?: number
+  ): Promise<void> {
     // Soft delete by setting isActive to false
     await this.prisma.rolePermission.updateMany({
       where: {
@@ -183,12 +187,16 @@ export class RoleRepository implements IRoleRepository {
       },
       data: {
         isActive: false,
-        updatedBy: 'system',
+        updatedById,
       },
     });
   }
 
-  async syncPermissions(roleId: number, permissionIds: number[], updatedBy: string): Promise<void> {
+  async syncPermissions(
+    roleId: number,
+    permissionIds: number[],
+    updatedById?: number
+  ): Promise<void> {
     // Get current active permissions
     const currentPermissions = await this.prisma.rolePermission.findMany({
       where: {
@@ -204,12 +212,12 @@ export class RoleRepository implements IRoleRepository {
 
     // Add new permissions
     if (permissionsToAdd.length > 0) {
-      await this.assignPermissions(roleId, permissionsToAdd, updatedBy);
+      await this.assignPermissions(roleId, permissionsToAdd, updatedById);
     }
 
     // Remove permissions that are no longer in the list
     if (permissionsToRemove.length > 0) {
-      await this.removePermissions(roleId, permissionsToRemove);
+      await this.removePermissions(roleId, permissionsToRemove, updatedById);
     }
   }
 

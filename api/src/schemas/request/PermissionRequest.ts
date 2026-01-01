@@ -2,16 +2,17 @@ export interface CreatePermissionRequest {
   permissionCode: string;
   permissionName: string;
   description?: string;
-  createdBy: string;
   isActive?: boolean;
+  createdById?: number;
+  updatedById?: number;
 }
 
 export interface UpdatePermissionRequest {
   permissionCode?: string;
   permissionName?: string;
   description?: string;
-  updatedBy: string;
   isActive?: boolean;
+  updatedById?: number;
 }
 
 import { BaseListRequest } from './BaseListRequest';

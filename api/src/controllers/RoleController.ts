@@ -9,9 +9,11 @@ import {
   Param,
   Body,
   Query,
+  CurrentUser,
   createSuccessResponse,
   ValidationError,
   NotFoundError,
+  JWTPayload,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IRoleService } from '../services/RoleService';
@@ -23,9 +25,14 @@ export class RoleController {
   constructor(@inject(TYPES.RoleService) private service: IRoleService) {}
 
   @Post('/')
-  async create(@Body() data: CreateRoleRequest) {
+  async create(@Body() data: CreateRoleRequest, @CurrentUser() currentUser: JWTPayload) {
     if (!data.roleName) throw new ValidationError('roleName is required');
-    const result = await this.service.createRole(data);
+    const enrichedData = {
+      ...data,
+      createdById: currentUser.userId,
+      updatedById: currentUser.userId,
+    };
+    const result = await this.service.createRole(enrichedData);
     return createSuccessResponse(result, 201);
   }
 
@@ -62,10 +69,18 @@ export class RoleController {
   }
 
   @Put('/{id}')
-  async update(@Param('id') id: string, @Body() data: UpdateRoleRequest) {
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateRoleRequest,
+    @CurrentUser() currentUser: JWTPayload
+  ) {
     const roleId = parseInt(id, 10);
     if (isNaN(roleId)) throw new ValidationError('Invalid role ID');
-    const role = await this.service.updateRole(roleId, data);
+    const enrichedData = {
+      ...data,
+      updatedById: currentUser.userId,
+    };
+    const role = await this.service.updateRole(roleId, enrichedData);
     if (!role) throw new NotFoundError(`Role ${id} not found`);
     return createSuccessResponse(role);
   }

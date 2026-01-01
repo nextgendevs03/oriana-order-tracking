@@ -2,10 +2,11 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import { getJwtSecrets, initializeJwtSecrets as initSecrets } from './jwt-secrets';
 
 export interface JWTPayload {
+  userId: number;
   username: string;
   email?: string;
   role?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TokenResult {

@@ -9,19 +9,25 @@ import {
   Param,
   Body,
   Query,
+  CurrentUser,
   createSuccessResponse,
   createErrorResponse,
   ValidationError,
+  JWTPayload,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IProductService } from '../services/ProductService';
 import { CreateProductRequest, UpdateProductRequest } from '../schemas/request/ProductRequest';
 
 export interface IProductController {
-  create(data: CreateProductRequest): Promise<APIGatewayProxyResult>;
+  create(data: CreateProductRequest, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
   getAll(isActive?: string, categoryId?: string, oemId?: string): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
-  update(id: string, data: UpdateProductRequest): Promise<APIGatewayProxyResult>;
+  update(
+    id: string,
+    data: UpdateProductRequest,
+    currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
 }
 
@@ -35,9 +41,17 @@ export class ProductController implements IProductController {
 
   // CREATE
   @Post('/')
-  async create(@Body() data: CreateProductRequest): Promise<APIGatewayProxyResult> {
+  async create(
+    @Body() data: CreateProductRequest,
+    @CurrentUser() currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult> {
     try {
-      const product = await this.productService.createProduct(data);
+      const enrichedData = {
+        ...data,
+        createdById: currentUser.userId,
+        updatedById: currentUser.userId,
+      };
+      const product = await this.productService.createProduct(enrichedData);
       return createSuccessResponse(product, 201);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error creating product');
@@ -100,12 +114,17 @@ export class ProductController implements IProductController {
   @Put('/{id}')
   async update(
     @Param('id') id: string,
-    @Body() data: UpdateProductRequest
+    @Body() data: UpdateProductRequest,
+    @CurrentUser() currentUser: JWTPayload
   ): Promise<APIGatewayProxyResult> {
     try {
       const productId = parseInt(id, 10);
       if (isNaN(productId)) throw new ValidationError('Invalid product ID');
-      const product = await this.productService.updateProduct(productId, data);
+      const enrichedData = {
+        ...data,
+        updatedById: currentUser.userId,
+      };
+      const product = await this.productService.updateProduct(productId, enrichedData);
       return createSuccessResponse(product);
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('Error updating product');

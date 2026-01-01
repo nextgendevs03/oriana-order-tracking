@@ -39,8 +39,8 @@ export class PermissionRepository implements IPermissionRepository {
         permissionCode: data.permissionCode,
         permissionName: data.permissionName,
         description: data.description ?? '',
-        createdBy: data.createdBy,
-        updatedBy: data.createdBy,
+        createdById: data.createdById,
+        updatedById: data.updatedById,
         isActive: data.isActive ?? true,
       },
     });
@@ -91,7 +91,7 @@ export class PermissionRepository implements IPermissionRepository {
         ...(data.permissionCode && { permissionCode: data.permissionCode }),
         ...(data.permissionName && { permissionName: data.permissionName }),
         ...(data.description && { description: data.description }),
-        updatedBy: data.updatedBy,
+        updatedById: data.updatedById,
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });

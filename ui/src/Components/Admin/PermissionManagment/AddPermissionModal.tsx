@@ -52,7 +52,6 @@ const AddPermissionModal: React.FC<Props> = ({
         await updatePermissionApi({
           id: String(permissionToEdit.permissionId),
           ...values,
-          updatedBy: "admin", // TODO: Get from auth context
         }).unwrap();
 
         toast.success("Permission Updated Successfully!");
@@ -60,7 +59,6 @@ const AddPermissionModal: React.FC<Props> = ({
         // CREATE
         await createPermissionApi({
           ...values,
-          createdBy: "admin", // TODO: Get from auth context
         }).unwrap();
         toast.success("Permission Created Successfully!");
       }

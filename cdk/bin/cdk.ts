@@ -13,10 +13,30 @@ const env = {
     process.env.CDK_DEFAULT_REGION || process.env.AWS_REGION || "ap-south-1",
 };
 
-// Create stacks for each environment
-const environments: Environment[] = ["dev", "qa", "prod"];
+// Determine which environments to synthesize
+// If deploying a specific stack (e.g., ApiStack-prod), only synthesize that environment
+// to avoid noisy logs from other environments
+const allEnvironments: Environment[] = ["dev", "qa", "prod"];
 
-environments.forEach((environment) => {
+// Check if a specific stack is being targeted via command line
+// CDK sets this when running commands like: cdk deploy ApiStack-prod
+const targetStack = process.argv.find((arg) =>
+  allEnvironments.some((e) => arg.includes(`ApiStack-${e}`)),
+);
+
+// Extract environment from target stack name, or synthesize all
+let environmentsToSynthesize: Environment[];
+
+if (targetStack) {
+  const targetEnv = allEnvironments.find((e) => targetStack.includes(`-${e}`));
+  environmentsToSynthesize = targetEnv ? [targetEnv] : allEnvironments;
+} else {
+  // No specific target - synthesize all (useful for cdk synth, cdk list, etc.)
+  environmentsToSynthesize = allEnvironments;
+}
+
+// Create stacks for target environment(s)
+environmentsToSynthesize.forEach((environment) => {
   const config = getEnvironmentConfig(environment);
 
   new ApiStack(app, config.stackName, {
