@@ -136,8 +136,9 @@ const baseQueryWithErrorHandling: BaseQueryFn<
 
 // Base query with automatic retry on failure (exponential backoff)
 // Auth errors are handled in baseQueryWithErrorHandling and bail out of retries
+// Retries disabled - set maxRetries to 0 to prevent automatic retries
 const baseQueryWithRetry = retry(baseQueryWithErrorHandling, {
-  maxRetries: 2,
+  maxRetries: 0,
 });
 
 export const baseApi = createApi({

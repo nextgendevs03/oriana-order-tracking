@@ -12,6 +12,7 @@ import SummaryDashboard from "./pages/SummaryDashboard";
 import Settings from "./pages/Settings";
 import CreatePO from "./pages/CreatePO";
 import PODetails from "./pages/PODetails";
+import Profile from "./pages/Profile";
 
 // Admin Components
 import UserManagement from "./Components/Admin/UserManagment/UserManagment";
@@ -114,6 +115,17 @@ export const AppRouter = () => {
         }
       >
         <Route index element={<Settings />} />
+      </Route>
+
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <LayoutPage />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<Profile />} />
       </Route>
 
       <Route
