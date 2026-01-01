@@ -117,7 +117,7 @@ export class RDSConstruct extends Construct implements IPermissionProvider {
     this.instance = new rds.DatabaseInstance(this, "Database", {
       instanceIdentifier: `oriana-db-${config.environment}`,
       engine: rds.DatabaseInstanceEngine.postgres({
-        version: rds.PostgresEngineVersion.VER_16_4,
+        version: rds.PostgresEngineVersion.VER_18_1,
       }),
       instanceType: ec2.InstanceType.of(
         rdsConfig.instanceClass,
