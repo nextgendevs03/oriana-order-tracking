@@ -126,8 +126,10 @@ export interface POData {
   poStatus: string;
   noOfDispatch: string;
   assignDispatchTo: number;
+  assignedUserName?: string | null;
   clientAddress: string;
   clientContact: string;
+  clientGST?: string | null;
   poItems: POItem[];
   dispatchPlanDate: string;
   siteLocation: string;
