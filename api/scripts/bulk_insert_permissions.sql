@@ -13,35 +13,35 @@ INSERT INTO permissions (
   updated_at
 ) VALUES
   -- Product Management Permissions
-  ('product_create', 'Product Management Create', 'Permission to create products, OEM, Category, Client', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('product_read', 'Product Management Read', 'Permission to Read products, OEM, Category, Client', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('product_update', 'Product Management Update', 'Permission to Update products, OEM, Category, Client', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('product_delete', 'Product Management Delete', 'Permission to Delete products, OEM, Category, Client', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('product_create', 'Product Management Create', 'Permission to create products, OEM, Category, Client', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('product_read', 'Product Management Read', 'Permission to Read products, OEM, Category, Client', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('product_update', 'Product Management Update', 'Permission to Update products, OEM, Category, Client', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('product_delete', 'Product Management Delete', 'Permission to Delete products, OEM, Category, Client', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   
   -- Users Management Permissions
-  ('users_create', 'Users management Create', 'Permission to Create users, roles and permissions', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('users_read', 'Users management Read', 'Permission to Read users, roles and permissions', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('users_update', 'Users management Update', 'Permission to Update users, roles and permissions', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('users_delete', 'Users management Delete', 'Permission to Delete users, roles and permissions', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('users_view', 'Users management View', 'Permission to View users, roles and permissions', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('users_create', 'Users management Create', 'Permission to Create users, roles and permissions', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('users_read', 'Users management Read', 'Permission to Read users, roles and permissions', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('users_update', 'Users management Update', 'Permission to Update users, roles and permissions', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('users_delete', 'Users management Delete', 'Permission to Delete users, roles and permissions', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('users_view', 'Users management View', 'Permission to View users, roles and permissions', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   
   -- PO Management Permissions
-  ('po_create', 'PO management Create', 'Permission to Create POs', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('po_read', 'PO management Read', 'Permission to Read POs', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('po_update', 'PO management Update', 'Permission to Update POs', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('po_delete', 'PO management Delete', 'Permission to Delete POs', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('po_create', 'PO management Create', 'Permission to Create POs', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('po_read', 'PO management Read', 'Permission to Read POs', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('po_update', 'PO management Update', 'Permission to Update POs', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('po_delete', 'PO management Delete', 'Permission to Delete POs', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   
   -- Dispatch Management Permissions
-  ('dispatch_create', 'Dispatch management Create', 'Permission to Create Dispatches, Delivery and documents', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('dispatch_read', 'Dispatch management Read', 'Permission to Read Dispatches, Delivery and documents', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('dispatch_update', 'Dispatch management Update', 'Permission to Update Dispatches, Delivery and documents', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('dispatch_delete', 'Dispatch management Delete', 'Permission to Delete Dispatches, Delivery and documents', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('dispatch_create', 'Dispatch management Create', 'Permission to Create Dispatches, Delivery and documents', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('dispatch_read', 'Dispatch management Read', 'Permission to Read Dispatches, Delivery and documents', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('dispatch_update', 'Dispatch management Update', 'Permission to Update Dispatches, Delivery and documents', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('dispatch_delete', 'Dispatch management Delete', 'Permission to Delete Dispatches, Delivery and documents', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   
   -- Commissioning Management Permissions
-  ('commissioning_create', 'Commissioning management Create', 'Permission to Create Pre-Commissioning, Commissioning, and Warranty', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('commissioning_read', 'Commissioning management Read', 'Permission to Read Pre-Commissioning, Commissioning, and Warranty', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('commissioning_update', 'Commissioning management Update', 'Permission to Update Pre-Commissioning, Commissioning, and Warranty', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('commissioning_delete', 'Commissioning management Delete', 'Permission to Delete Pre-Commissioning, Commissioning, and Warranty', 'system', 'system', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  ('commissioning_create', 'Commissioning management Create', 'Permission to Create Pre-Commissioning, Commissioning, and Warranty', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('commissioning_read', 'Commissioning management Read', 'Permission to Read Pre-Commissioning, Commissioning, and Warranty', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('commissioning_update', 'Commissioning management Update', 'Permission to Update Pre-Commissioning, Commissioning, and Warranty', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('commissioning_delete', 'Commissioning management Delete', 'Permission to Delete Pre-Commissioning, Commissioning, and Warranty', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (permission_code) DO UPDATE SET
   permission_name = EXCLUDED.permission_name,
   description = EXCLUDED.description,
