@@ -113,7 +113,7 @@ export const rdsConfig: Record<Environment, RDSEnvironmentConfig> = {
     maxAllocatedStorage: 100, // Auto-scale up to 100 GB
     multiAz: false, // Single-AZ saves ~50% cost (disable for budget, enable for HA)
     deletionProtection: true, // CRITICAL: Prevent accidental deletion!
-    backupRetentionDays: 7, // 7 days of backups (saves storage cost)
+    backupRetentionDays: 1, // 1 day (free tier limit - upgrade account for more)
     publiclyAccessible: true, // Allow Lambda access without NAT Gateway (saves ~$32/month)
   },
 };
