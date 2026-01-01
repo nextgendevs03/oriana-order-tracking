@@ -121,7 +121,6 @@ const ClientManagement: React.FC = () => {
                 id: record.clientId,
                 data: {
                   isActive: checked,
-                  updatedBy: "admin", // TODO: Get from auth context
                 },
               }).unwrap();
               toast.success(

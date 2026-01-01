@@ -10,9 +10,11 @@ import {
   Param,
   Query,
   Body,
+  CurrentUser,
   createSuccessResponse,
   NotFoundError,
   ValidationError,
+  JWTPayload,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IPermissionService } from '../services/PermissionService';
@@ -24,10 +26,15 @@ export class PermissionController {
   constructor(@inject(TYPES.PermissionService) private permissionService: IPermissionService) {}
 
   @Post('/')
-  async create(@Body() data: CreatePermissionRequest) {
+  async create(@Body() data: CreatePermissionRequest, @CurrentUser() currentUser: JWTPayload) {
     if (!data.permissionCode || !data.permissionName)
-      throw new ValidationError('permissionCode, permissionName and createdBy are required');
-    const permission = await this.permissionService.createPermission(data);
+      throw new ValidationError('permissionCode, permissionName are required');
+    const enrichedData = {
+      ...data,
+      createdById: currentUser.userId,
+      updatedById: currentUser.userId,
+    };
+    const permission = await this.permissionService.createPermission(enrichedData);
     return createSuccessResponse(permission, 201);
   }
 
@@ -60,10 +67,18 @@ export class PermissionController {
   }
 
   @Put('/{id}')
-  async update(@Param('id') id: string, @Body() data: UpdatePermissionRequest) {
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdatePermissionRequest,
+    @CurrentUser() currentUser: JWTPayload
+  ) {
     const permissionId = parseInt(id, 10);
     if (isNaN(permissionId)) throw new ValidationError('Invalid permission ID');
-    const permission = await this.permissionService.updatePermission(permissionId, data);
+    const enrichedData = {
+      ...data,
+      updatedById: currentUser.userId,
+    };
+    const permission = await this.permissionService.updatePermission(permissionId, enrichedData);
     if (!permission) throw new NotFoundError(`Permission with ID ${id} not found`);
     return createSuccessResponse(permission);
   }

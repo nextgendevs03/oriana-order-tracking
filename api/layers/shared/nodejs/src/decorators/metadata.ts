@@ -28,6 +28,7 @@ export enum ParamType {
   EVENT = 'event', // Raw APIGatewayProxyEvent
   CONTEXT = 'context', // Lambda Context
   HEADERS = 'headers', // Request headers
+  USER = 'user', // Authenticated user from JWT
 }
 
 // Parameter metadata structure

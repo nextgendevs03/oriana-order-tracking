@@ -118,8 +118,8 @@ export class ProductRepository implements IProductRepository {
             oemName: product.oem.oemName,
           },
           isActive: product.isActive ?? true,
-          createdBy: product.createdBy,
-          updatedBy: product.updatedBy,
+          createdById: product.createdById,
+          updatedById: product.updatedById,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt,
         })
@@ -149,8 +149,8 @@ export class ProductRepository implements IProductRepository {
         oemName: product.oem.oemName,
       },
       isActive: product.isActive ?? true,
-      createdBy: product.createdBy,
-      updatedBy: product.updatedBy,
+      createdById: product.createdById,
+      updatedById: product.updatedById,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
@@ -166,9 +166,9 @@ export class ProductRepository implements IProductRepository {
         productName: data.productName,
         category: { connect: { categoryId } },
         oem: { connect: { oemId } },
-        isActive: data.isActive,
-        createdBy: data.createdBy ?? '',
-        updatedBy: data.createdBy ?? '',
+        isActive: data.isActive ?? true,
+        createdById: data.createdById,
+        updatedById: data.updatedById,
       },
     });
 
@@ -180,15 +180,22 @@ export class ProductRepository implements IProductRepository {
       typeof data.categoryId === 'string' ? parseInt(data.categoryId, 10) : data.categoryId;
     const oemId = typeof data.oemId === 'string' ? parseInt(data.oemId, 10) : data.oemId;
 
+    const updateData: Prisma.ProductUpdateInput = {
+      productName: data.productName,
+      isActive: data.isActive,
+      updatedById: data.updatedById,
+    };
+
+    if (categoryId !== undefined) {
+      updateData.category = { connect: { categoryId } };
+    }
+    if (oemId !== undefined) {
+      updateData.oem = { connect: { oemId } };
+    }
+
     const product = await this.prisma.product.update({
       where: { productId: id },
-      data: {
-        productName: data.productName,
-        category: { connect: { categoryId } },
-        oem: { connect: { oemId } },
-        isActive: data.isActive ?? true,
-        updatedBy: data.updatedBy ?? '',
-      },
+      data: updateData,
     });
     return product;
   }

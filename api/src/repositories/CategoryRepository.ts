@@ -97,8 +97,8 @@ export class CategoryRepository implements ICategoryRepository {
         categoryId: category.categoryId,
         categoryName: category.categoryName,
         isActive: category.isActive,
-        createdBy: category.createdBy,
-        updatedBy: category.updatedBy,
+        createdById: category.createdById,
+        updatedById: category.updatedById,
       })),
       count,
     };
@@ -113,8 +113,8 @@ export class CategoryRepository implements ICategoryRepository {
       data: {
         categoryName: data.categoryName,
         isActive: data.isActive ?? true,
-        createdBy: data.createdBy ?? '',
-        updatedBy: data.createdBy ?? '',
+        createdById: data.createdById,
+        updatedById: data.updatedById,
       },
     });
   }
@@ -124,8 +124,8 @@ export class CategoryRepository implements ICategoryRepository {
       where: { categoryId: id },
       data: {
         categoryName: data.categoryName,
-        isActive: data.isActive ?? true,
-        updatedBy: data.updatedBy ?? undefined,
+        isActive: data.isActive,
+        updatedById: data.updatedById,
       },
     });
   }

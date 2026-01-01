@@ -93,8 +93,8 @@ export class OEMRepository implements IOEMRepository {
         isActive: oem.isActive,
         createdAt: oem.createdAt,
         updatedAt: oem.updatedAt,
-        createdBy: oem.createdBy,
-        updatedBy: oem.updatedBy,
+        createdById: oem.createdById,
+        updatedById: oem.updatedById,
       })),
       count,
     };
@@ -107,8 +107,8 @@ export class OEMRepository implements IOEMRepository {
       oemId: oem.oemId,
       name: oem.oemName,
       isActive: oem.isActive ?? true,
-      createdBy: oem.createdBy,
-      updatedBy: oem.updatedBy,
+      createdById: oem.createdById,
+      updatedById: oem.updatedById,
       createdAt: oem.createdAt,
       updatedAt: oem.updatedAt,
     };
@@ -119,16 +119,16 @@ export class OEMRepository implements IOEMRepository {
       data: {
         oemName: data.name,
         isActive: data.isActive ?? true,
-        createdBy: data.createdBy ?? '',
-        updatedBy: data.createdBy ?? '',
+        createdById: data.createdById,
+        updatedById: data.updatedById,
       },
     });
     return {
       oemId: oem.oemId,
       name: oem.oemName,
       isActive: oem.isActive ?? true,
-      createdBy: oem.createdBy,
-      updatedBy: oem.updatedBy,
+      createdById: oem.createdById,
+      updatedById: oem.updatedById,
       createdAt: oem.createdAt,
       updatedAt: oem.updatedAt,
     };
@@ -145,8 +145,8 @@ export class OEMRepository implements IOEMRepository {
       updateData.isActive = data.isActive;
     }
 
-    if (data.updatedBy !== undefined) {
-      updateData.updatedBy = data.updatedBy;
+    if (data.updatedById !== undefined) {
+      updateData.updatedById = data.updatedById;
     }
 
     const oem = await this.prisma.oEM.update({
@@ -157,8 +157,8 @@ export class OEMRepository implements IOEMRepository {
       oemId: oem.oemId,
       name: oem.oemName,
       isActive: oem.isActive,
-      createdBy: oem.createdBy,
-      updatedBy: oem.updatedBy,
+      createdById: oem.createdById,
+      updatedById: oem.updatedById,
       createdAt: oem.createdAt,
       updatedAt: oem.updatedAt,
     };

@@ -10,16 +10,18 @@ import {
   Param,
   Query,
   Body,
+  CurrentUser,
   createSuccessResponse,
   NotFoundError,
   ValidationError,
+  JWTPayload,
 } from '@oriana/shared';
 import { TYPES } from '../types/types';
 import { IPOService } from '../services/POService';
 import { CreatePORequest, UpdatePORequest, ListPORequest } from '../schemas';
 
 export interface IPOController {
-  create(data: CreatePORequest): Promise<APIGatewayProxyResult>;
+  create(data: CreatePORequest, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
   getAll(
     page?: string,
     limit?: string,
@@ -29,7 +31,11 @@ export interface IPOController {
     poStatus?: string
   ): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
-  update(id: string, data: UpdatePORequest): Promise<APIGatewayProxyResult>;
+  update(
+    id: string,
+    data: UpdatePORequest,
+    currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
 }
 
@@ -39,9 +45,17 @@ export class POController implements IPOController {
   constructor(@inject(TYPES.POService) private poService: IPOService) {}
 
   @Post('/')
-  async create(@Body() data: CreatePORequest): Promise<APIGatewayProxyResult> {
+  async create(
+    @Body() data: CreatePORequest,
+    @CurrentUser() currentUser: JWTPayload
+  ): Promise<APIGatewayProxyResult> {
     this.validateCreateRequest(data);
-    const po = await this.poService.createPO(data);
+    const enrichedData = {
+      ...data,
+      createdById: currentUser.userId,
+      updatedById: currentUser.userId,
+    };
+    const po = await this.poService.createPO(enrichedData);
     return createSuccessResponse(po, 201);
   }
 
@@ -86,9 +100,14 @@ export class POController implements IPOController {
   @Put('/{id}')
   async update(
     @Param('id') id: string,
-    @Body() data: UpdatePORequest
+    @Body() data: UpdatePORequest,
+    @CurrentUser() currentUser: JWTPayload
   ): Promise<APIGatewayProxyResult> {
-    const updateData = { ...data, poId: id };
+    const updateData = {
+      ...data,
+      poId: id,
+      updatedById: currentUser.userId,
+    };
     const po = await this.poService.updatePO(id, updateData);
 
     if (!po) {

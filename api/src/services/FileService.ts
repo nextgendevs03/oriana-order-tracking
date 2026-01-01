@@ -35,7 +35,7 @@ export interface IFileService {
   getDownloadUrl(fileId: number): Promise<PresignedDownloadUrlResponse>;
   getEntityFiles(request: ListEntityFilesRequest): Promise<FileListResponse>;
   getPOFiles(poId: string, page?: number, limit?: number): Promise<FileListResponse>;
-  deleteFile(fileId: number): Promise<DeleteFileResponse>;
+  deleteFile(fileId: number, updatedById?: number): Promise<DeleteFileResponse>;
   cleanupOrphanedFiles(request: CleanupOrphanedFilesRequest): Promise<CleanupOrphanedFilesResponse>;
   getFileById(fileId: number): Promise<FileUploadResponse | null>;
 }
@@ -243,14 +243,14 @@ export class FileService implements IFileService {
   /**
    * Soft delete a file
    */
-  async deleteFile(fileId: number): Promise<DeleteFileResponse> {
+  async deleteFile(fileId: number, updatedById?: number): Promise<DeleteFileResponse> {
     const file = await this.fileRepository.findById(fileId);
 
     if (!file) {
       throw new Error(`File not found: ${fileId}`);
     }
 
-    await this.fileRepository.softDelete(fileId);
+    await this.fileRepository.softDelete(fileId, updatedById);
 
     // Note: We don't delete from S3 on soft delete
     // The cleanup job will handle S3 deletion for old deleted files

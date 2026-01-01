@@ -4,20 +4,19 @@ export interface CreateUserRequest {
   password: string;
   role?: string; // Role name (for backward compatibility)
   roleId?: number; // Role ID (foreign key)
-  isActive: boolean;
-  createdBy: string;
-  updatedBy: string;
+  isActive?: boolean;
+  createdById?: number;
+  updatedById?: number;
 }
 
-export interface UpdateUserRequest extends Partial<CreateUserRequest> {
+export interface UpdateUserRequest {
   username?: string;
   email?: string;
   password?: string;
   role?: string; // Role name (for backward compatibility)
   roleId?: number; // Role ID (foreign key)
   isActive?: boolean;
-  createdBy?: string;
-  updatedBy?: string;
+  updatedById?: number;
 }
 
 import { BaseListRequest } from './BaseListRequest';

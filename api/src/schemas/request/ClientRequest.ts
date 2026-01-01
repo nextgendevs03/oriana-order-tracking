@@ -3,8 +3,9 @@ export interface CreateClientRequest {
   clientAddress?: string;
   clientContact?: string;
   clientGST?: string;
-  isActive: boolean;
-  createdBy: string;
+  isActive?: boolean;
+  createdById?: number;
+  updatedById?: number;
 }
 
 export interface UpdateClientRequest {
@@ -13,7 +14,7 @@ export interface UpdateClientRequest {
   clientContact?: string;
   clientGST?: string;
   isActive?: boolean;
-  updatedBy: string;
+  updatedById?: number;
 }
 
 import { BaseListRequest } from './BaseListRequest';

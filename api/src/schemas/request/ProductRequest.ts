@@ -2,8 +2,9 @@ export interface CreateProductRequest {
   productName: string;
   categoryId: number;
   oemId: number;
-  isActive: boolean;
-  createdBy?: string;
+  isActive?: boolean;
+  createdById?: number;
+  updatedById?: number;
 }
 
 export interface UpdateProductRequest {
@@ -11,7 +12,7 @@ export interface UpdateProductRequest {
   categoryId?: number;
   oemId?: number;
   isActive?: boolean;
-  updatedBy?: string;
+  updatedById?: number;
 }
 
 import { BaseListRequest } from './BaseListRequest';

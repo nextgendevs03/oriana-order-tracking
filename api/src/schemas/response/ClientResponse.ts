@@ -5,8 +5,8 @@ export interface ClientResponse {
   clientContact?: string | null;
   clientGST?: string | null;
   isActive: boolean;
-  createdBy: string;
-  updatedBy: string;
+  createdById?: number | null;
+  updatedById?: number | null;
 }
 
 export interface ClientListResponse {

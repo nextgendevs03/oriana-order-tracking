@@ -73,7 +73,6 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           password: values.password || undefined,
           roleId: values.roleId,
           isActive: values.isActive ?? false,
-          updatedBy: userId,
         };
 
         await updateUser({
@@ -91,8 +90,6 @@ const UserManagementModal: React.FC<UserManagmentModalProps> = ({
           password: values.password,
           roleId: values.roleId,
           isActive: values.isActive ?? true,
-          createdBy: userId,
-          updatedBy: userId,
         };
 
         await createUser(userData).unwrap();

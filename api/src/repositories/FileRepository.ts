@@ -59,7 +59,7 @@ export interface IFileRepository {
   findOrphanedPendingFiles(olderThanHours: number): Promise<FileUpload[]>;
   update(fileId: number, data: UpdateFileUploadData): Promise<FileUpload>;
   updateMany(fileIds: number[], data: UpdateFileUploadData): Promise<number>;
-  softDelete(fileId: number): Promise<FileUpload>;
+  softDelete(fileId: number, updatedById?: number): Promise<FileUpload>;
   hardDelete(fileId: number): Promise<void>;
   hardDeleteMany(fileIds: number[]): Promise<number>;
 }
@@ -294,11 +294,12 @@ export class FileRepository implements IFileRepository {
   /**
    * Soft delete a file (mark as deleted)
    */
-  async softDelete(fileId: number): Promise<FileUpload> {
+  async softDelete(fileId: number, updatedById?: number): Promise<FileUpload> {
     return this.prisma.fileUpload.update({
       where: { fileId },
       data: {
         status: 'deleted',
+        updatedById,
       },
     });
   }

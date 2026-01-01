@@ -123,7 +123,6 @@ const UserManagement = () => {
                 userId: record.userId,
                 data: {
                   isActive: checked,
-                  updatedBy: "system",
                 },
               }).unwrap();
 

@@ -10,8 +10,8 @@ export interface ProductResponse {
     oemId: number;
   };
   isActive: boolean;
-  createdBy: string;
-  updatedBy: string;
+  createdById?: number | null;
+  updatedById?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

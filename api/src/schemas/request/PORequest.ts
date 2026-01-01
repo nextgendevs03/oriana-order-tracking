@@ -31,10 +31,13 @@ export interface CreatePORequest {
   confirmDateOfDispatch: string;
   paymentStatus: string;
   remarks?: string;
+  createdById?: number;
+  updatedById?: number;
 }
 
 export interface UpdatePORequest extends Partial<CreatePORequest> {
   poId: string;
+  updatedById?: number;
 }
 
 export interface GetPOByIdRequest {

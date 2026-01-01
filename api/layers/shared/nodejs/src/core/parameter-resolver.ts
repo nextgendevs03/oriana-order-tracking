@@ -65,6 +65,9 @@ export class ParameterResolver {
       case ParamType.HEADERS:
         return this.resolveHeaders(param.name, ctx);
 
+      case ParamType.USER:
+        return this.resolveUser(ctx);
+
       default:
         return undefined;
     }
@@ -128,6 +131,15 @@ export class ParameterResolver {
     }
 
     return headers;
+  }
+
+  /**
+   * Extract authenticated user from event (populated by authMiddleware)
+   */
+  private resolveUser(ctx: RequestContext): unknown {
+    // The event is cast to AuthenticatedEvent by the router after auth middleware
+    const authenticatedEvent = ctx.event as APIGatewayProxyEvent & { user?: unknown };
+    return authenticatedEvent.user;
   }
 }
 

@@ -143,7 +143,7 @@ export const environmentConfigs: Record<Environment, EnvironmentConfig> = {
       rds: false, // QA uses external DB (Neon/Supabase)
     },
     database: {
-      host: "ep-ancient-scene-a1soyqk2-pooler.ap-southeast-1.aws.neon.tech",
+      host: "ep-square-bread-a1axruqy-pooler.ap-southeast-1.aws.neon.tech",
       port: 5432,
       name: "neondb",
       ssl: true,

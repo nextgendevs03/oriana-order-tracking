@@ -17,12 +17,18 @@ import {
   retry,
   fetchBaseQuery,
   BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
 import { message } from "antd";
+import { logout } from "../authSlice";
 
 // API base URL - configure based on environment
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "http://localhost:4000/api";
+
+// Flag to prevent multiple logout redirects
+let isLoggingOut = false;
 
 // Base query function
 const baseQuery = fetchBaseQuery({
@@ -42,57 +48,96 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-// Custom base query with error handling for token expiry
-const baseQueryWithErrorHandling: BaseQueryFn = async (
-  args,
-  api,
-  extraOptions
+/**
+ * Check if the error is an authentication error (401 or token expired)
+ */
+const isAuthError = (error: FetchBaseQueryError): boolean => {
+  if (error.status === 401) return true;
+
+  const errorData = error.data as { message?: string; error?: { message?: string } } | undefined;
+  const errorMessage = errorData?.message?.toLowerCase() || "";
+  const nestedErrorMessage = errorData?.error?.message?.toLowerCase() || "";
+
+  return (
+    errorMessage.includes("access token has expired") ||
+    errorMessage.includes("unauthorized") ||
+    errorMessage.includes("token expired") ||
+    nestedErrorMessage.includes("access token has expired")
+  );
+};
+
+/**
+ * Handle logout: clear tokens, dispatch logout action, and redirect
+ */
+const handleLogout = (
+  api: { dispatch: (action: unknown) => void },
+  errorMessage?: string
 ) => {
+  // Prevent multiple logout attempts
+  if (isLoggingOut) return;
+  isLoggingOut = true;
+
+  // Clear the auth token from session storage
+  sessionStorage.removeItem("authToken");
+
+  // Dispatch logout action to clear Redux state (including persisted state)
+  api.dispatch(logout());
+
+  // Also reset the API cache
+  api.dispatch(baseApi.util.resetApiState());
+
+  // Show error message
+  message.error(
+    errorMessage || "Your session has expired. Please login again.",
+    3
+  );
+
+  // Redirect to login page after a short delay
+  setTimeout(() => {
+    isLoggingOut = false;
+    window.location.href = "/";
+  }, 500);
+};
+
+// Custom base query with error handling for token expiry
+const baseQueryWithErrorHandling: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  // If already logging out, don't make any more requests
+  if (isLoggingOut) {
+    return {
+      error: {
+        status: 401,
+        data: { message: "Session expired" },
+      } as FetchBaseQueryError,
+    };
+  }
+
   const result = await baseQuery(args, api, extraOptions);
 
-  // Check for 401 Unauthorized or token expiry errors
-  if (result.error) {
-    const errorStatus = result.error.status;
-    const errorData = result.error.data as any;
+  // Check for authentication errors
+  if (result.error && isAuthError(result.error)) {
+    const errorData = result.error.data as { message?: string; error?: { message?: string } } | undefined;
+    const errorMessage =
+      errorData?.message ||
+      errorData?.error?.message ||
+      "Your session has expired. Please login again.";
 
-    // Check if it's a 401 error or token expiry message
-    if (
-      errorStatus === 401 ||
-      errorData?.message?.toLowerCase().includes("access token has expired") ||
-      errorData?.message?.toLowerCase().includes("unauthorized") ||
-      errorData?.message?.toLowerCase().includes("token expired") ||
-      errorData?.error?.message
-        ?.toLowerCase()
-        .includes("access token has expired")
-    ) {
-      // Clear the auth token
-      sessionStorage.removeItem("authToken");
+    handleLogout(api, errorMessage);
 
-      // Show error message using static message API
-      // Note: Static methods work but may not have full ConfigProvider context
-      // This is acceptable for error handling in API middleware
-      message.error(
-        errorData?.message ||
-          errorData?.error?.message ||
-          "Your session has expired. Please login again.",
-        5 // 5 seconds duration
-      );
-
-      // Redirect to login page after a short delay
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1500);
-    }
+    // Bail out of retries for auth errors
+    retry.fail(result.error);
   }
 
   return result;
 };
 
-// Base query with automatic retry on failure (3 retries with exponential backoff)
-// Note: 401 errors are handled in baseQueryWithErrorHandling which redirects to login
-// We use a lower maxRetries to avoid excessive retries on auth errors
+// Base query with automatic retry on failure (exponential backoff)
+// Auth errors are handled in baseQueryWithErrorHandling and bail out of retries
 const baseQueryWithRetry = retry(baseQueryWithErrorHandling, {
-  maxRetries: 2, // Reduced from 3 to minimize retries on auth errors
+  maxRetries: 2,
 });
 
 export const baseApi = createApi({

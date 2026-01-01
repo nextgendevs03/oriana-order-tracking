@@ -123,7 +123,6 @@ const ProductManagementProducts: React.FC = () => {
                   oemId: record.oem?.oemId,
                   productName: record.productName,
                   isActive: checked,
-                  updatedBy: "admin", // TODO: Get from auth context
                 },
               }).unwrap();
               toast.success(

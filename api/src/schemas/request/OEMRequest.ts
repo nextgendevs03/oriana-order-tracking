@@ -1,13 +1,14 @@
 export interface CreateOEMRequest {
   name: string;
-  isActive: boolean;
-  createdBy?: string;
+  isActive?: boolean;
+  createdById?: number;
+  updatedById?: number;
 }
 
 export interface UpdateOEMRequest {
   name?: string;
   isActive?: boolean;
-  updatedBy?: string;
+  updatedById?: number;
 }
 
 import { BaseListRequest } from './BaseListRequest';
