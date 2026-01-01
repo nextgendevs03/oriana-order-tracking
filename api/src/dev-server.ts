@@ -219,7 +219,8 @@ async function startServer() {
     const context = createMockContext();
 
     // Find the right router for this path
-    for (const [lambdaName, router] of routers) {
+    // Check all registered lambdas, not just successfully initialized ones
+    for (const lambdaName of lambdaNames) {
       const controllerData = routeRegistry.getRoutesForLambda(lambdaName);
 
       for (const { routes, basePath } of controllerData) {
@@ -230,6 +231,23 @@ async function startServer() {
           const pathRegex = new RegExp('^' + fullPath.replace(/\{(\w+)\}/g, '([^/]+)') + '$');
 
           if (route.method === req.method && pathRegex.test(req.path)) {
+            // Get or create router for this lambda (may need to initialize)
+            let router = routers.get(lambdaName);
+            if (!router) {
+              try {
+                const container = await lambdaRegistry.getContainer(lambdaName);
+                router = createRouter(container, lambdaName);
+                routers.set(lambdaName, router);
+              } catch (error) {
+                console.error(`Failed to initialize router for ${lambdaName}:`, error);
+                res.status(500).json({
+                  error: 'Internal Server Error',
+                  message: `Failed to initialize service: ${(error as Error).message}`,
+                });
+                return;
+              }
+            }
+
             // Extract path parameters
             const match = req.path.match(pathRegex);
             if (match) {

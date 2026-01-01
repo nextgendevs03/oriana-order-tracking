@@ -41,6 +41,7 @@ const authSlice = createSlice({
         roleId: null,
         permissions: [],
       };
+      state.isLoggedIn = false;
     },
 
     setIsLoggedIn: (state, action: PayloadAction<boolean>) => {

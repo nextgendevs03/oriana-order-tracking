@@ -17,6 +17,9 @@ import type { MenuProps } from "antd";
 import { motion } from "framer-motion";
 import { usePermissionUtils } from "../hooks/usePermission";
 import { PERMISSIONS } from "../constants/permissions";
+import { useAppDispatch } from "../store/hooks";
+import { logout } from "../store/authSlice";
+import { useToast } from "../hooks/useToast";
 
 interface SidebarMenuProps {
   collapsed?: boolean;
@@ -25,12 +28,42 @@ interface SidebarMenuProps {
 const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
+  const toast = useToast();
   const { hasPermission } = usePermissionUtils();
 
   // Check permissions for Admin menu visibility
   const canViewUsers = hasPermission(PERMISSIONS.USERS_READ);
   const canViewProducts = hasPermission(PERMISSIONS.PRODUCT_READ);
   const showAdminMenu = canViewUsers || canViewProducts;
+
+  /**
+   * Handle logout action
+   * Clears all storage and Redux state, then redirects to login
+   */
+  const handleLogout = () => {
+    try {
+      // Clear sessionStorage
+      sessionStorage.clear();
+
+      // Clear localStorage
+      localStorage.clear();
+
+      // Clear Redux state (logout action also sets isLoggedIn to false)
+      dispatch(logout());
+
+      // Show success message
+      toast.success("Logged out successfully");
+
+      // Redirect to login page
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast.error("An error occurred during logout");
+      // Still redirect to login even if there's an error
+      navigate("/", { replace: true });
+    }
+  };
 
   // Determine selected key based on current path
   const getSelectedKey = () => {
@@ -73,7 +106,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ collapsed = false }) => {
         navigate("/profile");
         break;
       case "4":
-        navigate("/");
+        handleLogout();
         break;
       default:
         break;

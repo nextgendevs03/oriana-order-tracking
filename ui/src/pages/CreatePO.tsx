@@ -20,6 +20,7 @@ import AddClientModal from "../Components/Admin/ClientManagment/AddClientModal";
 import { useGetCategoriesQuery } from "../store/api/categoryApi";
 import { useGetOEMsQuery } from "../store/api/oemApi";
 import { useGetClientsQuery } from "../store/api/clientApi";
+import { useGetUsersQuery } from "../store/api/userApi";
 import { useCreatePOMutation } from "../store/api/poApi";
 import { CreatePORequest, POItemRequest } from "@OrianaTypes";
 import { useDebounce } from "../hooks";
@@ -27,7 +28,6 @@ import { useToast } from "../hooks/useToast";
 import {
   poStatusOptions,
   dispatchOptions,
-  assignDispatchToOptions,
   oscSupportOptions,
   paymentStatusOptions,
   warrantyOptions,
@@ -67,6 +67,7 @@ const CreatePO: FC = () => {
   const navigate = useNavigate();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
+  const [userSearchTerm, setUserSearchTerm] = useState<string>("");
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientOption | null>(
     null
@@ -77,6 +78,8 @@ const CreatePO: FC = () => {
 
   // Debounce client search term with 500ms delay
   const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 500);
+  // Debounce user search term with 500ms delay
+  const debouncedUserSearchTerm = useDebounce(userSearchTerm, 500);
 
   // Fetch categories and OEMs from API (with automatic retry on failure)
   const { data: categoriesResponse, isError: categoriesError } =
@@ -90,10 +93,21 @@ const CreatePO: FC = () => {
     { skip: !shouldFetchClients }
   );
 
+  // Fetch users (active users only, limit 10 initially, with search)
+  const { data: usersResponse, isError: usersError } = useGetUsersQuery({
+    page: 1,
+    limit: 10,
+    searchKey: debouncedUserSearchTerm ? "username" : undefined,
+    searchTerm: debouncedUserSearchTerm || undefined,
+    sortBy: "username",
+    sortOrder: "ASC",
+  });
+
   // Extract data arrays from responses
   const categoriesData = categoriesResponse?.data || [];
   const oemsData = oemsResponse?.data || [];
   const clientsData = clientsResponse?.data || [];
+  const usersData = usersResponse?.data || [];
 
   // Show error toast after all retries have failed (RTK Query retries 3 times automatically)
   useEffect(() => {
@@ -124,6 +138,15 @@ const CreatePO: FC = () => {
       });
     }
   }, [clientsError, toast]);
+
+  useEffect(() => {
+    if (usersError) {
+      toast.error("Failed to load Users", {
+        description: "Unable to search users. Please try again later.",
+        duration: 5000,
+      });
+    }
+  }, [usersError, toast]);
 
   // Transform API data to dropdown options format
   // Filter only Active items and map to { value, label } format
@@ -161,6 +184,17 @@ const CreatePO: FC = () => {
       clientContact: client.clientContact, // Store contact for auto-population
     }));
   }, [clientsData, clientsError, shouldFetchClients]);
+
+  // Transform users data to Select options (filter active users only)
+  const userOptions = useMemo(() => {
+    if (!usersData || usersError) return [];
+    return usersData
+      .filter((user) => user.isActive)
+      .map((user) => ({
+        value: user.userId,
+        label: user.username,
+      }));
+  }, [usersData, usersError]);
 
   // Handle client selection from autocomplete
   const handleClientSelect = (value: string, option: any) => {
@@ -235,9 +269,18 @@ const CreatePO: FC = () => {
     // Build PO items array with proper types
     const poItems: POItemRequest[] = (values.poItems as POItemFormValues[]).map(
       (item) => ({
-        categoryId: typeof item.categoryId === 'string' ? parseInt(item.categoryId, 10) : item.categoryId,
-        oemId: typeof item.oemId === 'string' ? parseInt(item.oemId, 10) : item.oemId,
-        productId: typeof item.productId === 'string' ? parseInt(item.productId, 10) : item.productId,
+        categoryId:
+          typeof item.categoryId === "string"
+            ? parseInt(item.categoryId, 10)
+            : item.categoryId,
+        oemId:
+          typeof item.oemId === "string"
+            ? parseInt(item.oemId, 10)
+            : item.oemId,
+        productId:
+          typeof item.productId === "string"
+            ? parseInt(item.productId, 10)
+            : item.productId,
         quantity: item.quantity,
         spareQuantity: item.spareQuantity || 0,
         totalQuantity: item.totalQuantity,
@@ -252,16 +295,24 @@ const CreatePO: FC = () => {
     // Build the API request payload
     const createPORequest: CreatePORequest = {
       poReceivedDate: formatDate(values.poReceivedDate as dayjs.Dayjs),
-      clientId: typeof values.clientId === 'string' ? parseInt(values.clientId, 10) : (values.clientId as number),
+      clientId:
+        typeof values.clientId === "string"
+          ? parseInt(values.clientId, 10)
+          : (values.clientId as number),
       osgPiNo: values.osgPiNo as string,
       osgPiDate: formatDate(values.osgPiDate as dayjs.Dayjs),
       clientPoNo: values.clientPoNo as string,
       clientPoDate: formatDate(values.clientPoDate as dayjs.Dayjs),
       poStatus: values.poStatus as string,
       noOfDispatch: values.noOfDispatch as string,
-      assignDispatchTo: values.assignDispatchTo && typeof values.assignDispatchTo !== 'object' 
-        ? (typeof values.assignDispatchTo === 'string' ? parseInt(values.assignDispatchTo, 10) : (typeof values.assignDispatchTo === 'number' ? values.assignDispatchTo : undefined))
-        : undefined,
+      assignDispatchTo:
+        values.assignDispatchTo && typeof values.assignDispatchTo !== "object"
+          ? typeof values.assignDispatchTo === "string"
+            ? parseInt(values.assignDispatchTo, 10)
+            : typeof values.assignDispatchTo === "number"
+              ? values.assignDispatchTo
+              : undefined
+          : undefined,
       clientAddress: values.clientAddress as string,
       clientContact: values.clientContact as string,
       poItems,
@@ -546,8 +597,12 @@ const CreatePO: FC = () => {
             <Form.Item name="assignDispatchTo" label="Assign Dispatch To">
               <Select
                 placeholder="Select person (optional)"
-                options={assignDispatchToOptions}
+                options={userOptions}
                 allowClear
+                showSearch
+                filterOption={false}
+                onSearch={(value) => setUserSearchTerm(value)}
+                style={{ width: "100%" }}
               />
             </Form.Item>
           </Col>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Button, Table, Tag, Popconfirm, Input, Select } from "antd";
+import { Button, Table, Popconfirm, Input, Select, Switch } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   useGetProductsQuery,
   useDeleteProductMutation,
+  useUpdateProductMutation,
 } from "../../../../store/api/productApi";
 import type { ProductResponse } from "@OrianaTypes";
 import AddProductModal from "./AddProductModal";
@@ -21,17 +22,13 @@ const ProductManagementProducts: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [searchKey, setSearchKey] = useState<string>("productName");
-  
+
   // Reset to first page when search term changes
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
-  
-  const {
-    data,
-    isLoading,
-    refetch,
-  } = useGetProductsQuery({
+
+  const { data, isLoading, refetch } = useGetProductsQuery({
     page: currentPage,
     limit: pageSize,
     sortBy: "createdAt",
@@ -41,6 +38,8 @@ const ProductManagementProducts: React.FC = () => {
   });
 
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+  const [updateProduct, { isLoading: isUpdatingStatus }] =
+    useUpdateProductMutation();
 
   interface EditingProduct {
     productId: number;
@@ -102,17 +101,44 @@ const ProductManagementProducts: React.FC = () => {
       title: "OEM",
       dataIndex: "oemName",
       key: "oemName",
-      render: (_: string, record: ProductResponse) => record.oem?.oemName || "-",
+      render: (_: string, record: ProductResponse) =>
+        record.oem?.oemName || "-",
     },
     {
       title: "Status",
       dataIndex: "isActive",
-      render: (_: unknown, record: ProductResponse) =>
-        record.isActive ? (
-          <Tag color="green">Active</Tag>
-        ) : (
-          <Tag color="red">Inactive</Tag>
-        ),
+      key: "isActive",
+      render: (_: unknown, record: ProductResponse) => (
+        <Switch
+          checkedChildren="Active"
+          unCheckedChildren="Inactive"
+          checked={record.isActive}
+          loading={isUpdatingStatus}
+          onChange={async (checked) => {
+            try {
+              await updateProduct({
+                id: record.productId,
+                data: {
+                  categoryId: record.category?.categoryId,
+                  oemId: record.oem?.oemId,
+                  productName: record.productName,
+                  isActive: checked,
+                  updatedBy: "admin", // TODO: Get from auth context
+                },
+              }).unwrap();
+              toast.success(
+                `Product status updated to ${checked ? "Active" : "Inactive"}`
+              );
+              refetch();
+            } catch (error: unknown) {
+              const errorMessage =
+                (error as { data?: { message?: string } })?.data?.message ||
+                "Failed to update product status";
+              toast.error(errorMessage);
+            }
+          }}
+        />
+      ),
     },
     {
       title: "Actions",
@@ -164,7 +190,8 @@ const ProductManagementProducts: React.FC = () => {
             width: 150,
             height: 150,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(168, 85, 247, 0.4), transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(168, 85, 247, 0.4), transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -176,11 +203,20 @@ const ProductManagementProducts: React.FC = () => {
             width: 80,
             height: 80,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(192, 132, 252, 0.3), transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(192, 132, 252, 0.3), transparent 70%)",
             pointerEvents: "none",
           }}
         />
-        <div style={{ display: "flex", alignItems: "center", gap: 16, position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           <div
             style={{
               width: 52,
@@ -197,10 +233,23 @@ const ProductManagementProducts: React.FC = () => {
             <span style={{ fontSize: 26 }}>📦</span>
           </div>
           <div>
-            <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.4rem", color: "#fff" }}>
+            <h2
+              style={{
+                margin: 0,
+                fontWeight: 700,
+                fontSize: "1.4rem",
+                color: "#fff",
+              }}
+            >
               Products Catalog
             </h2>
-            <p style={{ margin: "0.2rem 0 0 0", fontSize: "0.85rem", color: "rgba(255, 255, 255, 0.7)" }}>
+            <p
+              style={{
+                margin: "0.2rem 0 0 0",
+                fontSize: "0.85rem",
+                color: "rgba(255, 255, 255, 0.7)",
+              }}
+            >
               Manage your complete product inventory
             </p>
           </div>
