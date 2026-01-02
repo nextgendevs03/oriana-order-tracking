@@ -147,11 +147,43 @@ jobs:
         if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
         working-directory: ui
         run: |
-          echo "🔨 Building UI with API URL: ${{ steps.get_api_url.outputs.api_url }}"
+          echo "🔨 Building UI with API URL: $REACT_APP_API_URL"
+          echo "Verifying env var is set..."
+          if [ -z "$REACT_APP_API_URL" ]; then
+            echo "❌ ERROR: REACT_APP_API_URL is not set!"
+            exit 1
+          fi
+          # Export explicitly to ensure it's available to npm subprocess
+          export REACT_APP_API_URL="$REACT_APP_API_URL"
           npm run build
         env:
-          CI: false  # Ignore warnings as errors
+          CI: false
           REACT_APP_API_URL: ${{ steps.get_api_url.outputs.api_url }}
+
+      - name: ✅ Verify Build Contains Correct API URL
+        if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
+        working-directory: ui
+        run: |
+          echo "🔍 Verifying build contains correct API URL..."
+          JS_FILE=$(find build/static/js -name 'main.*.js' | head -1)
+          if [ -z "$JS_FILE" ]; then
+            echo "❌ ERROR: Could not find main JS file"
+            exit 1
+          fi
+          echo "Checking file: $JS_FILE"
+          
+          if grep -q "localhost:4000" "$JS_FILE"; then
+            echo "❌ ERROR: Build still contains localhost:4000!"
+            echo "The REACT_APP_API_URL was not embedded correctly."
+            exit 1
+          fi
+          
+          if grep -q "${{ steps.get_api_url.outputs.api_url }}" "$JS_FILE"; then
+            echo "✅ Build contains correct API URL!"
+          else
+            echo "⚠️ Warning: Could not find exact API URL in bundle, but localhost not found."
+            echo "Expected: ${{ steps.get_api_url.outputs.api_url }}"
+          fi
 
       # ============================================
       # PHASE 3: Upload UI to S3 & Invalidate Cache
