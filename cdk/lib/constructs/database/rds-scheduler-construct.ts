@@ -1,5 +1,6 @@
 import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
@@ -68,10 +69,10 @@ export interface RDSSchedulerConstructProps {
  *   rdsInstance: rds.instance,
  *   scheduleConfig: {
  *     enabled: true,
- *     // Start at 6 AM IST (00:30 UTC) on weekdays
- *     startSchedule: 'cron(30 0 ? * MON-FRI *)',
- *     // Stop at 9 PM IST (15:30 UTC) on weekdays
- *     stopSchedule: 'cron(30 15 ? * MON-FRI *)',
+ *     // Start at 7 AM IST (01:30 UTC) on weekdays
+ *     startSchedule: 'cron(30 1 ? * MON-SAT *)',
+ *     // Stop at 10 PM IST (16:30 UTC) on weekdays
+ *     stopSchedule: 'cron(30 16 ? * MON-SAT *)',
  *   },
  * });
  * ```
@@ -107,31 +108,28 @@ export class RDSSchedulerConstruct extends Construct {
 
     console.log(`   ⏰ Setting up RDS scheduling for ${config.environment}...`);
 
-    // Create the scheduler Lambda function
-    this.schedulerFunction = new lambda.Function(this, "SchedulerFunction", {
+    // Create the scheduler Lambda function using NodejsFunction for proper bundling
+    // Lambda code is in api/src/lambdas/rdsScheduler.lambda.ts for consistency
+    this.schedulerFunction = new NodejsFunction(this, "SchedulerFunction", {
       functionName: `oriana-rds-scheduler-${config.environment}`,
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "rds-scheduler-handler.handler",
-      code: lambda.Code.fromAsset(path.join(__dirname), {
-        bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
-          command: [
-            "bash",
-            "-c",
-            [
-              "npm init -y",
-              "npm install @aws-sdk/client-rds esbuild",
-              "npx esbuild rds-scheduler-handler.ts --bundle --platform=node --target=node20 --outfile=/asset-output/rds-scheduler-handler.js",
-            ].join(" && "),
-          ],
-        },
-      }),
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: "handler",
+      entry: path.join(
+        __dirname,
+        "../../../../api/src/lambdas/rdsScheduler.lambda.ts",
+      ),
       environment: {
         DB_INSTANCE_IDENTIFIER: rdsInstance.instanceIdentifier,
       },
       timeout: Duration.seconds(30),
       memorySize: 128,
       description: `Start/Stop RDS instance for Oriana - ${config.environment}`,
+      bundling: {
+        // Bundle the AWS SDK since we need @aws-sdk/client-rds
+        externalModules: [],
+        minify: true,
+        sourceMap: false,
+      },
     });
 
     // Grant permissions to start/stop RDS
