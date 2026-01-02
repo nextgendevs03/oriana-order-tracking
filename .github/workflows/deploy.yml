@@ -196,16 +196,18 @@ jobs:
           STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
           
           # Get from CDK outputs file (CDK prefixes with construct ID)
+          # IMPORTANT: Use WebsiteBucketName (for UI) not just BucketName (which is for file uploads)
           if [ -f cdk-outputs.json ]; then
-            BUCKET_NAME=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"BucketName\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
+            BUCKET_NAME=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"WebsiteBucketName\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
             DISTRIBUTION_ID=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"DistributionId\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
             WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"WebsiteURL\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
           fi
           
           # Fallback to CloudFormation
+          # IMPORTANT: Use WebsiteBucketName specifically to get the UI hosting bucket
           if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" == "null" ]; then
             BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
-              --query "Stacks[0].Outputs[?contains(OutputKey, 'BucketName')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
+              --query "Stacks[0].Outputs[?contains(OutputKey, 'WebsiteBucketName')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
           fi
           if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" == "null" ]; then
             DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
@@ -220,9 +222,14 @@ jobs:
           echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
           echo "website_url=$WEBSITE_URL" >> $GITHUB_OUTPUT
           
-          echo "📦 S3 Bucket: $BUCKET_NAME"
+          echo "📦 S3 Bucket (UI): $BUCKET_NAME"
           echo "🌐 CloudFront Distribution: $DISTRIBUTION_ID"
           echo "🔗 Website URL: $WEBSITE_URL"
+          
+          # Verify we got the correct bucket
+          if [[ "$BUCKET_NAME" != *"ui"* ]]; then
+            echo "⚠️ WARNING: Bucket name '$BUCKET_NAME' doesn't contain 'ui' - might be wrong bucket!"
+          fi
 
       - name: 📤 Phase 3 - Upload UI to S3
         if: github.event.inputs.deploy_type == 'full' && github.event.inputs.skip_ui_build == 'false'
