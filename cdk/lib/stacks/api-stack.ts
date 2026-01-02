@@ -12,6 +12,8 @@ import {
 import { S3Construct } from "../constructs/storage/s3-construct";
 import { StaticSiteConstruct } from "../constructs/hosting/static-site-construct";
 import { RDSConstruct } from "../constructs/database/rds-construct";
+import { RDSSchedulerConstruct } from "../constructs/database/rds-scheduler-construct";
+import { getRDSConfig } from "../../config/rds.config";
 import { JwtSecretsConstruct } from "../constructs/security/jwt-secrets-construct";
 import {
   LambdaPermissions,
@@ -58,6 +60,17 @@ export class ApiStack extends Stack {
         config,
       });
       permissionProviders.push(rdsConstruct);
+
+      // Setup RDS scheduler for cost savings (if configured)
+      const rdsConfig = getRDSConfig(config.environment);
+      if (rdsConfig.schedule?.enabled) {
+        console.log("\n⏰ Setting up RDS auto-start/stop scheduler...");
+        new RDSSchedulerConstruct(this, "RDSSchedulerConstruct", {
+          config,
+          rdsInstance: rdsConstruct.instance,
+          scheduleConfig: rdsConfig.schedule,
+        });
+      }
     }
 
     // Determine database host (from RDS if enabled, otherwise from config)

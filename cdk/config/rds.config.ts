@@ -27,6 +27,31 @@ import { Environment } from "../lib/config/environment";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 
 /**
+ * Schedule configuration for RDS instance (for cost savings)
+ */
+export interface RDSScheduleConfig {
+  /** Enable scheduling (default: false) */
+  enabled: boolean;
+  /**
+   * Cron expression to START the RDS instance (UTC timezone)
+   * Format: cron(minutes hours day-of-month month day-of-week year)
+   * Example: "cron(0 6 ? * MON-FRI *)" = 6:00 AM UTC, Monday-Friday
+   */
+  startSchedule?: string;
+  /**
+   * Cron expression to STOP the RDS instance (UTC timezone)
+   * Format: cron(minutes hours day-of-month month day-of-week year)
+   * Example: "cron(0 18 ? * MON-FRI *)" = 6:00 PM UTC, Monday-Friday
+   */
+  stopSchedule?: string;
+  /**
+   * Timezone reference (for documentation only - cron runs in UTC)
+   * @default "UTC"
+   */
+  timezone?: string;
+}
+
+/**
  * Configuration for RDS instance
  */
 export interface RDSEnvironmentConfig {
@@ -52,6 +77,11 @@ export interface RDSEnvironmentConfig {
   backupRetentionDays: number;
   /** Make the database publicly accessible (use with caution!) */
   publiclyAccessible: boolean;
+  /**
+   * Schedule configuration to auto-start/stop RDS for cost savings
+   * COST SAVINGS: Running 12h/day instead of 24h = 50% savings!
+   */
+  schedule?: RDSScheduleConfig;
 }
 
 /**
@@ -115,6 +145,17 @@ export const rdsConfig: Record<Environment, RDSEnvironmentConfig> = {
     deletionProtection: true, // CRITICAL: Prevent accidental deletion!
     backupRetentionDays: 1, // 1 day (free tier limit - upgrade account for more)
     publiclyAccessible: true, // Allow Lambda access without NAT Gateway (saves ~$32/month)
+    // COST SAVINGS: Auto stop/start RDS during off-hours
+    // Running 15h/day (Mon-Sat) instead of 24/7 = significant savings!
+    // Sunday: RDS stays stopped all day
+    schedule: {
+      enabled: true,
+      // Start at 1:30 AM UTC = 7:00 AM IST (Mon-Sat)
+      startSchedule: "cron(30 1 ? * MON-SAT *)",
+      // Stop at 4:30 PM UTC = 10:00 PM IST (Mon-Sat)
+      stopSchedule: "cron(30 16 ? * MON-SAT *)",
+      timezone: "Asia/Kolkata", // IST - for documentation reference
+    },
   },
 };
 
