@@ -186,19 +186,38 @@ async function seedDatabase() {
 
     // Step 3: Create admin role (with admin user as creator)
     console.log("👤 Step 3: Creating admin role...");
-    const roleResult = await client.query(
-      `INSERT INTO roles (role_name, description, is_active, created_by, updated_by, created_at, updated_at)
-       VALUES ('admin', 'Admin user will have all access to platform', true, $1, $1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-       ON CONFLICT (role_name) DO UPDATE SET
-         description = EXCLUDED.description,
-         is_active = true,
-         updated_by = $1,
-         updated_at = CURRENT_TIMESTAMP
-       RETURNING role_id`,
-      [adminUserId]
+    
+    // Check if admin role already exists
+    const existingRole = await client.query(
+      "SELECT role_id FROM roles WHERE role_name = $1",
+      ["admin"]
     );
-    const adminRoleId = roleResult.rows[0].role_id;
-    console.log(`   ✅ Admin role created/updated with ID: ${adminRoleId}\n`);
+    
+    let adminRoleId;
+    if (existingRole.rows.length > 0) {
+      adminRoleId = existingRole.rows[0].role_id;
+      console.log(`   ⚠️  Admin role already exists with ID: ${adminRoleId}`);
+      // Update it
+      await client.query(
+        `UPDATE roles SET
+           description = 'Admin user will have all access to platform',
+           is_active = true,
+           updated_by = $1,
+           updated_at = CURRENT_TIMESTAMP
+         WHERE role_id = $2`,
+        [adminUserId, adminRoleId]
+      );
+    } else {
+      const roleResult = await client.query(
+        `INSERT INTO roles (role_name, description, is_active, created_by, updated_by, created_at, updated_at)
+         VALUES ('admin', 'Admin user will have all access to platform', true, $1, $1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         RETURNING role_id`,
+        [adminUserId]
+      );
+      adminRoleId = roleResult.rows[0].role_id;
+      console.log(`   ✅ Admin role created with ID: ${adminRoleId}`);
+    }
+    console.log("");
 
     // Step 4: Assign all permissions to admin role
     console.log("🔗 Step 4: Assigning permissions to admin role...");
