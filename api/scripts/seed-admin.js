@@ -61,7 +61,12 @@ async function getDbConnection() {
   // Check if DATABASE_URL is provided directly
   if (process.env.DATABASE_URL) {
     console.log("   Using DATABASE_URL from environment");
-    return process.env.DATABASE_URL;
+    return { 
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL.includes('localhost') ? false : {
+        rejectUnauthorized: false,
+      },
+    };
   }
 
   // Otherwise, fetch from AWS Secrets Manager (for production)
@@ -91,23 +96,35 @@ async function getDbConnection() {
   const credentials = JSON.parse(secret.SecretString);
   const { username, password } = credentials;
 
-  const DATABASE_URL = `postgresql://${username}:${encodeURIComponent(password)}@${dbHost}:${dbPort}/${dbName}?sslmode=require`;
-  console.log(`   Connected to: ${dbHost}:${dbPort}/${dbName}`);
+  console.log(`   Connecting to: ${dbHost}:${dbPort}/${dbName}`);
 
-  return DATABASE_URL;
+  // Return connection config object for pg library
+  // AWS RDS requires SSL, so we configure it properly
+  return {
+    host: dbHost,
+    port: parseInt(dbPort),
+    database: dbName,
+    user: username,
+    password: password,
+    ssl: {
+      rejectUnauthorized: false, // Required for RDS since it uses self-signed certs
+    },
+    connectionTimeoutMillis: 30000, // 30 second timeout
+  };
 }
 
 async function seedDatabase() {
   console.log("\n🌱 Starting admin seed...\n");
 
-  // Get database connection
-  const databaseUrl = await getDbConnection();
+  // Get database connection config
+  const dbConfig = await getDbConnection();
 
   // Dynamic import for pg (ESM compatible)
   const { Client } = require("pg");
-  const client = new Client({ connectionString: databaseUrl });
+  const client = new Client(dbConfig);
 
   try {
+    console.log("   Attempting database connection...");
     await client.connect();
     console.log("   ✅ Connected to database\n");
 
@@ -224,11 +241,36 @@ async function seedDatabase() {
     console.log("\n⚠️  IMPORTANT: Change this password after first login!\n");
 
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      // Ignore rollback error if connection already closed
+    }
     console.error("\n❌ Seed failed:", error.message);
+    
+    // Provide helpful error messages
+    if (error.message.includes("Connection terminated")) {
+      console.error("\n💡 Hint: Connection terminated. This could mean:");
+      console.error("   - RDS Security Group doesn't allow your IP");
+      console.error("   - SSL configuration issue");
+      console.error("   - Network connectivity problem");
+      console.error("   - RDS instance is not running (check if it's stopped by scheduler)");
+    } else if (error.message.includes("timeout")) {
+      console.error("\n💡 Hint: Connection timeout. Check:");
+      console.error("   - RDS Security Group allows inbound traffic on port 5432");
+      console.error("   - RDS instance is publicly accessible");
+    } else if (error.message.includes("password")) {
+      console.error("\n💡 Hint: Authentication failed. Check:");
+      console.error("   - Secrets Manager secret has correct username/password");
+    }
+    
     throw error;
   } finally {
-    await client.end();
+    try {
+      await client.end();
+    } catch (endError) {
+      // Ignore if already closed
+    }
   }
 }
 
