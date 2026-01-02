@@ -4,7 +4,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as rds from "aws-cdk-lib/aws-rds";
-import { Duration, CfnOutput } from "aws-cdk-lib";
+import { Duration, CfnOutput, Stack } from "aws-cdk-lib";
 import * as path from "path";
 import { EnvironmentConfig } from "../../config/environment";
 
@@ -144,7 +144,7 @@ export class RDSSchedulerConstruct extends Construct {
           "rds:DescribeDBInstances",
         ],
         resources: [
-          `arn:aws:rds:${config.region}:*:db:${rdsInstance.instanceIdentifier}`,
+          `arn:aws:rds:${Stack.of(this).region}:*:db:${rdsInstance.instanceIdentifier}`,
         ],
       }),
     );
