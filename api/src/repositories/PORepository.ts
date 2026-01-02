@@ -129,10 +129,10 @@ export class PORepository implements IPORepository {
               quantity: item.quantity,
               spareQuantity: item.spareQuantity,
               totalQuantity: item.totalQuantity,
-              pricePerUnit: new Prisma.Decimal(item.pricePerUnit),
-              totalPrice: new Prisma.Decimal(item.totalPrice),
-              gstPercent: new Prisma.Decimal(item.gstPercent),
-              finalPrice: new Prisma.Decimal(item.finalPrice),
+              pricePerUnit: item.pricePerUnit,
+              totalPrice: item.totalPrice,
+              gstPercent: item.gstPercent,
+              finalPrice: item.finalPrice,
               warranty: item.warranty,
             })) || [],
         },
@@ -223,15 +223,15 @@ export class PORepository implements IPORepository {
       return null;
     }
 
-    // Build update data
-    const updateData: Prisma.PurchaseOrderUpdateInput = {};
+    // Build update data using UncheckedUpdateInput to allow direct foreign key assignments
+    const updateData: Prisma.PurchaseOrderUncheckedUpdateInput = {};
     if (data.updatedById !== undefined) updateData.updatedById = data.updatedById;
     if (data.poReceivedDate !== undefined)
       updateData.poReceivedDate = new Date(data.poReceivedDate);
     if (data.clientId !== undefined) {
       const clientId =
         typeof data.clientId === 'string' ? parseInt(data.clientId, 10) : data.clientId;
-      updateData.client = { connect: { clientId } };
+      updateData.clientId = clientId;
     }
     if (data.osgPiNo !== undefined) updateData.osgPiNo = data.osgPiNo;
     if (data.osgPiDate !== undefined) updateData.osgPiDate = new Date(data.osgPiDate);
@@ -240,15 +240,11 @@ export class PORepository implements IPORepository {
     if (data.poStatus !== undefined) updateData.poStatus = data.poStatus;
     if (data.noOfDispatch !== undefined) updateData.noOfDispatch = data.noOfDispatch;
     if (data.assignDispatchTo !== undefined) {
-      if (data.assignDispatchTo) {
-        const userId =
-          typeof data.assignDispatchTo === 'string'
-            ? parseInt(data.assignDispatchTo, 10)
-            : data.assignDispatchTo;
-        updateData.assignedUser = { connect: { userId } };
-      } else {
-        updateData.assignedUser = { disconnect: true };
-      }
+      const userId =
+        typeof data.assignDispatchTo === 'string'
+          ? parseInt(data.assignDispatchTo, 10)
+          : data.assignDispatchTo;
+      updateData.assignDispatchTo = userId || null;
     }
     if (data.clientAddress !== undefined) updateData.clientAddress = data.clientAddress;
     if (data.clientContact !== undefined) updateData.clientContact = data.clientContact;
@@ -283,10 +279,10 @@ export class PORepository implements IPORepository {
                 quantity: item.quantity,
                 spareQuantity: item.spareQuantity,
                 totalQuantity: item.totalQuantity,
-                pricePerUnit: new Prisma.Decimal(item.pricePerUnit),
-                totalPrice: new Prisma.Decimal(item.totalPrice),
-                gstPercent: new Prisma.Decimal(item.gstPercent),
-                finalPrice: new Prisma.Decimal(item.finalPrice),
+                pricePerUnit: item.pricePerUnit,
+                totalPrice: item.totalPrice,
+                gstPercent: item.gstPercent,
+                finalPrice: item.finalPrice,
                 warranty: item.warranty,
               })),
             },

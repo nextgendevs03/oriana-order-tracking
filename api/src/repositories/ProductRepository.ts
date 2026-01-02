@@ -161,15 +161,16 @@ export class ProductRepository implements IProductRepository {
       typeof data.categoryId === 'string' ? parseInt(data.categoryId, 10) : data.categoryId;
     const oemId = typeof data.oemId === 'string' ? parseInt(data.oemId, 10) : data.oemId;
 
+    // Use UncheckedCreateInput to allow setting foreign keys directly
     const product = await this.prisma.product.create({
       data: {
         productName: data.productName,
-        category: { connect: { categoryId } },
-        oem: { connect: { oemId } },
+        categoryId: categoryId,
+        oemId: oemId,
         isActive: data.isActive ?? true,
-        createdById: data.createdById,
-        updatedById: data.updatedById,
-      },
+        createdById: data.createdById ?? null,
+        updatedById: data.updatedById ?? null,
+      } as Prisma.ProductUncheckedCreateInput,
     });
 
     return await this.findById(product.productId);
@@ -183,7 +184,7 @@ export class ProductRepository implements IProductRepository {
     const updateData: Prisma.ProductUpdateInput = {
       productName: data.productName,
       isActive: data.isActive,
-      updatedById: data.updatedById,
+      updatedBy: { connect: { userId: data.updatedById } },
     };
 
     if (categoryId !== undefined) {

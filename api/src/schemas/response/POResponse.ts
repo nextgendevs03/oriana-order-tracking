@@ -1,10 +1,10 @@
 export interface POItemResponse {
-  id: string;
-  categoryId: string;
+  id: number;
+  categoryId: number;
   categoryName?: string; // Resolved from relation
-  oemId: string;
+  oemId: number;
   oemName?: string; // Resolved from relation
-  productId: string;
+  productId: number;
   productName?: string; // Resolved from relation
   quantity: number;
   spareQuantity: number;
@@ -21,7 +21,7 @@ export interface POItemResponse {
 export interface POResponse {
   poId: string;
   poReceivedDate: string;
-  clientId: string;
+  clientId: number;
   clientName?: string; // Resolved from relation
   osgPiNo: string; // Alphanumeric
   osgPiDate: string;
@@ -29,10 +29,11 @@ export interface POResponse {
   clientPoDate: string;
   poStatus: string;
   noOfDispatch: string;
-  assignDispatchTo: string | null;
+  assignDispatchTo: number | null;
   assignedUserName?: string | null; // Resolved from relation
   clientAddress: string;
   clientContact: string;
+  clientGST?: string | null; // Client GST number
   poItems: POItemResponse[];
   dispatchPlanDate: string;
   siteLocation: string;

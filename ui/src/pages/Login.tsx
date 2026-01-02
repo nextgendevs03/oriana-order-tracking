@@ -39,6 +39,7 @@ const Login: React.FC = () => {
       // Store user info in Redux state
       dispatch(
         addAuth({
+          userId: response.user.userId || null,
           username: response.user.username,
           email: response.user.email,
           roleName: response.user.roleName || null,

@@ -55,6 +55,7 @@ import DispatchDetailsModal, {
 import ServiceDetailsModal, {
   ServiceDetailsTab,
 } from "../Components/POManagement/ServiceDetailsModal";
+import UpdateAssignDispatchToModal from "../Components/POManagement/UpdateAssignDispatchToModal";
 import {
   selectDispatchDetails,
   selectPreCommissioningDetails,
@@ -83,12 +84,22 @@ const PODetails: React.FC = () => {
   const canCreateDispatch = usePermission(PERMISSIONS.DISPATCH_CREATE);
   const canUpdateDispatch = usePermission(PERMISSIONS.DISPATCH_UPDATE);
   const canDeleteDispatch = usePermission(PERMISSIONS.DISPATCH_DELETE);
-  const canCreateCommissioning = usePermission(PERMISSIONS.COMMISSIONING_CREATE);
-  const canUpdateCommissioning = usePermission(PERMISSIONS.COMMISSIONING_UPDATE);
-  const canDeleteCommissioning = usePermission(PERMISSIONS.COMMISSIONING_DELETE);
+  const canCreateCommissioning = usePermission(
+    PERMISSIONS.COMMISSIONING_CREATE
+  );
+  const canUpdateCommissioning = usePermission(
+    PERMISSIONS.COMMISSIONING_UPDATE
+  );
+  const canDeleteCommissioning = usePermission(
+    PERMISSIONS.COMMISSIONING_DELETE
+  );
   const canViewPricingOwn = usePermission(PERMISSIONS.PO_PRICING_VIEW_OWN);
   const canViewPricingAll = usePermission(PERMISSIONS.PO_PRICING_VIEW_ALL);
-  const canViewPricing = useAnyPermission([PERMISSIONS.PO_PRICING_VIEW_OWN, PERMISSIONS.PO_PRICING_VIEW_ALL]);
+  const canViewPricing = useAnyPermission([
+    PERMISSIONS.PO_PRICING_VIEW_OWN,
+    PERMISSIONS.PO_PRICING_VIEW_ALL,
+  ]);
+  const canUpdatePO = usePermission(PERMISSIONS.PRODUCT_UPDATE);
 
   const [isDispatchModalVisible, setIsDispatchModalVisible] = useState(false);
   const [editingDispatch, setEditingDispatch] = useState<DispatchDetail | null>(
@@ -127,6 +138,11 @@ const PODetails: React.FC = () => {
     useState<PreCommissioning | null>(null);
   const [serviceDetailsTab, setServiceDetailsTab] =
     useState<ServiceDetailsTab>("precommissioning");
+  // Update Assign Dispatch To Modal
+  const [
+    isUpdateAssignDispatchToModalVisible,
+    setIsUpdateAssignDispatchToModalVisible,
+  ] = useState(false);
 
   // Fetch PO from API using poId from route params
   const {
@@ -157,8 +173,10 @@ const PODetails: React.FC = () => {
       poStatus: poResponse.poStatus,
       noOfDispatch: poResponse.noOfDispatch,
       assignDispatchTo: 0, // Not used in this component anymore
+      assignedUserName: poResponse.assignedUserName,
       clientAddress: poResponse.clientAddress,
       clientContact: poResponse.clientContact,
+      clientGST: poResponse.clientGST,
       poItems: poResponse.poItems.map(
         (item): POItem => ({
           category: item.categoryName || "",
@@ -607,7 +625,8 @@ const PODetails: React.FC = () => {
             : "Edit";
         // Disable delete if dispatch status is "done" OR delivery status exists OR no permission
         const hasDeliveryStatus = !!record.deliveryStatus;
-        const isDeleteDisabled = isDispatchDone || hasDeliveryStatus || !canDeleteDispatch;
+        const isDeleteDisabled =
+          isDispatchDone || hasDeliveryStatus || !canDeleteDispatch;
         const deleteDisabledReason = !canDeleteDispatch
           ? "You don't have permission to delete dispatches"
           : hasDeliveryStatus
@@ -894,7 +913,9 @@ const PODetails: React.FC = () => {
           />
           <Tooltip
             title={
-              canUpdateDispatch ? "Edit" : "You don't have permission to edit delivery"
+              canUpdateDispatch
+                ? "Edit"
+                : "You don't have permission to edit delivery"
             }
           >
             <Button
@@ -1508,6 +1529,37 @@ const PODetails: React.FC = () => {
             <Descriptions.Item label="Client Contact">
               {selectedPO.clientContact}
             </Descriptions.Item>
+            <Descriptions.Item label="Client GST No.">
+              {selectedPO.clientGST || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Assign Dispatch To">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span>{selectedPO.assignedUserName || "Not Assigned"}</span>
+                {canUpdatePO ? (
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() =>
+                      setIsUpdateAssignDispatchToModalVisible(true)
+                    }
+                    style={{ padding: 0, height: "auto" }}
+                  >
+                    Update
+                  </Button>
+                ) : (
+                  <Tooltip title="You don't have permission to update PO">
+                    <Button
+                      type="link"
+                      size="small"
+                      disabled
+                      style={{ padding: 0, height: "auto" }}
+                    >
+                      Update
+                    </Button>
+                  </Tooltip>
+                )}
+              </div>
+            </Descriptions.Item>
             <Descriptions.Item label="Site Location">
               {selectedPO.siteLocation}
             </Descriptions.Item>
@@ -2056,6 +2108,15 @@ const PODetails: React.FC = () => {
         onClose={handleCloseServiceDetailsModal}
         preCommissioning={viewingServiceDetails}
         initialTab={serviceDetailsTab}
+      />
+
+      {/* Update Assign Dispatch To Modal */}
+      <UpdateAssignDispatchToModal
+        visible={isUpdateAssignDispatchToModalVisible}
+        onClose={() => setIsUpdateAssignDispatchToModalVisible(false)}
+        poId={selectedPO.id}
+        currentAssignDispatchTo={poResponse?.assignDispatchTo}
+        currentAssignedUserName={poResponse?.assignedUserName}
       />
     </div>
   );

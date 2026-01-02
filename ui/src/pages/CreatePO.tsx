@@ -59,6 +59,7 @@ interface ClientOption {
   clientName: string;
   clientAddress?: string | null;
   clientContact?: string | null;
+  clientGST?: string | null;
 }
 
 const CreatePO: FC = () => {
@@ -182,6 +183,7 @@ const CreatePO: FC = () => {
       clientId: client.clientId, // Store clientId for form submission
       clientAddress: client.clientAddress, // Store address for auto-population
       clientContact: client.clientContact, // Store contact for auto-population
+      clientGST: client.clientGST, // Store GST for auto-population
     }));
   }, [clientsData, clientsError, shouldFetchClients]);
 
@@ -204,16 +206,20 @@ const CreatePO: FC = () => {
       clientName: value,
       clientAddress: option.clientAddress,
       clientContact: option.clientContact,
+      clientGST: option.clientGST,
     });
     // Set the hidden clientId field
     form.setFieldValue("clientId", option.clientId);
 
-    // Auto-populate client address and contact if available
+    // Auto-populate client address, contact, and GST if available
     if (option.clientAddress) {
       form.setFieldValue("clientAddress", option.clientAddress);
     }
     if (option.clientContact) {
       form.setFieldValue("clientContact", option.clientContact);
+    }
+    if (option.clientGST) {
+      form.setFieldValue("clientGST", option.clientGST);
     }
   };
 
@@ -626,6 +632,15 @@ const CreatePO: FC = () => {
               rules={textFieldRulesWithMinLength}
             >
               <Input placeholder="Enter client contact" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Row 6.5: Client GST */}
+        <Row gutter={24}>
+          <Col span={12}>
+            <Form.Item name="clientGST" label="Client GST No.">
+              <Input placeholder="Client GST number" disabled />
             </Form.Item>
           </Col>
         </Row>

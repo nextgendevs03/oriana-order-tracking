@@ -28,12 +28,12 @@ export class POService implements IPOService {
 
   private mapItemToResponse(item: POItemWithRelations): POItemResponse {
     return {
-      id: String(item.id),
-      categoryId: String(item.categoryId),
+      id: item.id,
+      categoryId: item.categoryId,
       categoryName: item.category?.categoryName,
-      oemId: String(item.oemId),
+      oemId: item.oemId,
       oemName: item.oem?.oemName,
-      productId: String(item.productId),
+      productId: item.productId,
       productName: item.product?.productName,
       quantity: item.quantity,
       spareQuantity: item.spareQuantity,
@@ -61,7 +61,7 @@ export class POService implements IPOService {
     return {
       poId: po.poId,
       poReceivedDate: formatDate(po.poReceivedDate),
-      clientId: String(po.clientId),
+      clientId: po.clientId,
       clientName: po.client?.clientName,
       osgPiNo: po.osgPiNo,
       osgPiDate: formatDate(po.osgPiDate),
@@ -69,10 +69,11 @@ export class POService implements IPOService {
       clientPoDate: formatDate(po.clientPoDate),
       poStatus: po.poStatus,
       noOfDispatch: po.noOfDispatch,
-      assignDispatchTo: po.assignDispatchTo ? String(po.assignDispatchTo) : null,
+      assignDispatchTo: po.assignDispatchTo,
       assignedUserName: po.assignedUser?.username || null,
       clientAddress: po.clientAddress,
       clientContact: po.clientContact,
+      clientGST: po.client?.clientGST || null,
       poItems,
       dispatchPlanDate: formatDate(po.dispatchPlanDate),
       siteLocation: po.siteLocation,

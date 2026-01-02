@@ -23,13 +23,13 @@ import {
 } from '../schemas/request/UserRequest';
 
 export interface IUserController {
-  create(data: CreateUserRequest, currentUser: JWTPayload): Promise<APIGatewayProxyResult>;
+  create(data: CreateUserRequest, currentUser?: JWTPayload): Promise<APIGatewayProxyResult>;
   getAll(): Promise<APIGatewayProxyResult>;
   getById(id: string): Promise<APIGatewayProxyResult>;
   update(
     id: string,
     data: UpdateUserRequest,
-    currentUser: JWTPayload
+    currentUser?: JWTPayload
   ): Promise<APIGatewayProxyResult>;
   delete(id: string): Promise<APIGatewayProxyResult>;
 }
@@ -42,12 +42,12 @@ export class UserController implements IUserController {
   @Post('/')
   async create(
     @Body() data: CreateUserRequest,
-    @CurrentUser() currentUser: JWTPayload
+    @CurrentUser() currentUser?: JWTPayload
   ): Promise<APIGatewayProxyResult> {
     const enrichedData = {
       ...data,
-      createdById: currentUser.userId,
-      updatedById: currentUser.userId,
+      createdById: currentUser?.userId,
+      updatedById: currentUser?.userId,
     };
     const user = await this.userService.createUser(enrichedData);
     return createSuccessResponse(user, 201);
@@ -88,13 +88,13 @@ export class UserController implements IUserController {
   async update(
     @Param('id') id: string,
     @Body() data: UpdateUserRequest,
-    @CurrentUser() currentUser: JWTPayload
+    @CurrentUser() currentUser?: JWTPayload
   ): Promise<APIGatewayProxyResult> {
     const userId = parseInt(id, 10);
     if (isNaN(userId)) throw new ValidationError('Invalid user ID');
     const enrichedData = {
       ...data,
-      updatedById: currentUser.userId,
+      updatedById: currentUser?.userId,
     };
     const user = await this.userService.updateUser(userId, enrichedData);
     return createSuccessResponse(user);
