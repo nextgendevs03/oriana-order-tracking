@@ -23,7 +23,7 @@ This document outlines the complete implementation plan for the Dispatch API bac
 
 ### Tables Required
 
-We need **2 new tables** (FileUpload already exists):
+We need **2 new tables**:
 
 1. **`dispatches`** - Main dispatch table
 2. **`dispatched_items`** - Items dispatched in each dispatch (many-to-many relationship)
@@ -82,8 +82,6 @@ model Dispatch {
   dispatchedItems         DispatchedItem[]
   preCommissionings       PreCommissioning[]
 
-  // Note: FileUploads are linked via entityType/entityId, not foreign keys
-
   @@index([poId])
   @@index([dispatchStatus])
   @@index([deliveryStatus])
@@ -134,17 +132,6 @@ model Product {
   // ... rest of fields ...
 }
 ```
-
-#### Note on `FileUpload` model:
-
-The existing `FileUpload` model uses `entityType` and `entityId` (string fields) to link files to entities, not foreign key relations.
-
-For dispatch documents:
-
-- Set `entityType = 'dispatch'` and `entityId = dispatchId.toString()`
-- Set `entityType = 'delivery'` and `entityId = dispatchId.toString()` for delivery documents
-
-No schema changes needed for FileUpload model - it already supports this pattern.
 
 #### Update `User` model:
 
@@ -312,7 +299,6 @@ export interface UpdateDispatchDocumentsRequest {
   dispatchStatus?: string;
   dispatchLrNo?: string;
   dispatchRemarks?: string;
-  documentFileIds?: number[]; // File IDs from FileUpload table
   updatedById?: number;
 }
 
@@ -323,7 +309,6 @@ export interface UpdateDeliveryConfirmationRequest {
   dateOfDelivery?: string; // YYYY-MM-DD format
   deliveryStatus?: string;
   proofOfDelivery?: string;
-  deliveryFileIds?: number[]; // File IDs from FileUpload table
   updatedById?: number;
 }
 
@@ -351,21 +336,6 @@ export interface DispatchedItemResponse {
   productName?: string; // Resolved from relation
   quantity: number;
   serialNumbers?: string;
-}
-
-/**
- * Dispatch Document Response (from FileUpload)
- */
-export interface DispatchDocumentResponse {
-  fileId: number;
-  originalFileName: string;
-  storedFileName: string;
-  mimeType: string;
-  fileSize: number;
-  s3Key: string;
-  s3Bucket: string;
-  url?: string; // Generated URL for access
-  uploadedAt: string;
 }
 
 /**
@@ -400,14 +370,12 @@ export interface DispatchResponse {
   dispatchStatus?: string;
   dispatchLrNo?: string;
   dispatchRemarks?: string;
-  dispatchDocuments?: DispatchDocumentResponse[];
   documentUpdatedAt?: string;
 
   // Delivery Confirmation Fields (Section 3)
   dateOfDelivery?: string;
   deliveryStatus?: string;
   proofOfDelivery?: string;
-  deliveryDocuments?: DispatchDocumentResponse[];
   deliveryUpdatedAt?: string;
 
   // Audit Fields
@@ -476,7 +444,6 @@ export interface DispatchWithRelations extends Dispatch {
       productName: string;
     };
   })[];
-  // Note: Files are loaded separately by querying FileUpload with entityType/entityId
   createdBy?: {
     userId: number;
     username: string;
@@ -594,7 +561,7 @@ export interface IDispatchController {
 
 1. Open `api/layers/shared/nodejs/prisma/schema.prisma`
 2. Add the `Dispatch` and `DispatchedItem` models as specified above
-3. Update `PurchaseOrder`, `Product`, `FileUpload`, and `User` models with new relations
+3. Update `PurchaseOrder`, `Product`, and `User` models with new relations
 4. Run migration:
    ```bash
    cd api/layers/shared/nodejs
@@ -628,9 +595,6 @@ export interface IDispatchController {
 2. Implement `IDispatchRepository` interface
 3. Use Prisma Client for all database operations
 4. Include proper relations in queries (dispatchedItems, etc.)
-5. Inject `FileRepository` to handle file operations (linking files via entityType/entityId)
-6. Use `FileRepository.findByEntity()` to fetch dispatch and delivery documents
-7. Use `FileRepository.updateMany()` to link files when updating documents
 
 ### Step 6: Create Service
 
@@ -690,28 +654,13 @@ export interface IDispatchController {
    - Get dispatches by PO ID
    - Get dispatch by ID
    - Delete dispatch
-3. Verify file uploads are correctly linked
-4. Verify relations are properly loaded
-5. Verify pagination works correctly
-6. Verify audit fields are set correctly
+3. Verify relations are properly loaded
+4. Verify pagination works correctly
+5. Verify audit fields are set correctly
 
 ---
 
 ## Implementation Notes
-
-### File Upload Handling
-
-- Files should be uploaded using the existing `FileController` endpoints first
-- The file IDs from the upload response should be passed in `documentFileIds` or `deliveryFileIds`
-- The repository should update the `FileUpload` records to link them to the dispatch:
-  - For dispatch documents: set `entityType = 'dispatch'` and `entityId = dispatchId.toString()`
-  - For delivery documents: set `entityType = 'delivery'` and `entityId = dispatchId.toString()`
-  - Optionally set `poId` to link files to the PO as well
-  - Use `FileRepository.updateMany()` to update multiple file records at once
-- When fetching dispatch data, use `FileRepository.findByEntity()` to get files:
-  - `fileRepository.findByEntity('dispatch', dispatchId.toString())` for dispatch documents
-  - `fileRepository.findByEntity('delivery', dispatchId.toString())` for delivery documents
-- Inject `FileRepository` into `DispatchRepository` or `DispatchService` to handle file operations
 
 ### Transactions
 
