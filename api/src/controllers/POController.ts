@@ -67,6 +67,7 @@ export class POController implements IPOController {
     @Query('sortOrder') sortOrder?: string,
     @Query('clientId') clientId?: string,
     @Query('poStatus') poStatus?: string,
+    @Query('assignedTo') assignedTo?: string,
     @Query('searchKey') searchKey?: string,
     @Query('searchTerm') searchTerm?: string
   ): Promise<APIGatewayProxyResult> {
@@ -77,6 +78,7 @@ export class POController implements IPOController {
       sortOrder: (sortOrder as 'ASC' | 'DESC') || 'DESC',
       clientId,
       poStatus,
+      assignedTo: assignedTo ? parseInt(assignedTo, 10) : undefined,
       searchKey: searchKey || undefined,
       searchTerm: searchTerm || undefined,
     };

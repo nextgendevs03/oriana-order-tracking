@@ -161,6 +161,7 @@ export class PORepository implements IPORepository {
       sortOrder = 'DESC',
       clientId,
       poStatus,
+      assignedTo,
       searchKey,
       searchTerm,
     } = params;
@@ -175,6 +176,10 @@ export class PORepository implements IPORepository {
     if (poStatus && !searchTerm) {
       // Only use poStatus filter if not using dynamic search
       where.poStatus = poStatus;
+    }
+    if (assignedTo) {
+      where.assignDispatchTo =
+        typeof assignedTo === 'string' ? parseInt(assignedTo, 10) : assignedTo;
     }
 
     // Dynamic search implementation with default field

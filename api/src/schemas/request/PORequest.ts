@@ -53,4 +53,5 @@ import { BaseListRequest } from './BaseListRequest';
 export interface ListPORequest extends BaseListRequest {
   clientId?: number | string;
   poStatus?: string;
+  assignedTo?: number | string;
 }

@@ -11,17 +11,20 @@ import {
   Col,
   Space,
   Tooltip,
+  Switch,
 } from "antd";
 import {
   PlusOutlined,
   EyeOutlined,
   FileTextOutlined,
   SearchOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { useGetPOsQuery } from "../store/api/poApi";
+import { selectAuth } from "../store/authSlice";
 import type { POResponse } from "../store/api/poApi";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -51,6 +54,7 @@ type SearchFieldType = "poId" | "osgPiNo" | "clientPoNo" | "poStatus" | "";
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const currentUser = useAppSelector(selectAuth);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchField, setSearchField] = useState<SearchFieldType>("");
@@ -58,6 +62,7 @@ const Dashboard: React.FC = () => {
   const [selectedPoStatus, setSelectedPoStatus] = useState<string | undefined>(
     undefined
   );
+  const [assignedToMe, setAssignedToMe] = useState<boolean>(false);
 
   // Permission checks
   const canCreatePO = usePermission(PERMISSIONS.PO_CREATE);
@@ -71,6 +76,11 @@ const Dashboard: React.FC = () => {
       page: currentPage,
       limit: pageSize,
     };
+
+    // If "Assigned to me" toggle is active, add assignedTo filter
+    if (assignedToMe && currentUser.userId) {
+      params.assignedTo = currentUser.userId;
+    }
 
     // If searchField is "poStatus" and selectedPoStatus is set, use searchKey/searchTerm
     if (searchField === "poStatus" && selectedPoStatus) {
@@ -94,6 +104,8 @@ const Dashboard: React.FC = () => {
     searchField,
     debouncedSearchTerm,
     selectedPoStatus,
+    assignedToMe,
+    currentUser.userId,
   ]);
 
   // Fetch POs from API with search/filter parameters
@@ -419,6 +431,20 @@ const Dashboard: React.FC = () => {
                   />
                 ) : null}
               </Space.Compact>
+            </Col>
+            <Col>
+              <Space>
+                <UserOutlined style={{ color: colors.gray600 }} />
+                <span style={{ color: colors.gray700, fontWeight: 500 }}>
+                  Assigned to me
+                </span>
+                <Switch
+                  checked={assignedToMe}
+                  onChange={setAssignedToMe}
+                  checkedChildren="ON"
+                  unCheckedChildren="OFF"
+                />
+              </Space>
             </Col>
           </Row>
         </Card>

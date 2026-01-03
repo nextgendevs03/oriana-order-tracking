@@ -29,6 +29,7 @@ import { usePermission, useAnyPermission } from "../hooks/usePermission";
 import { PERMISSIONS } from "../constants/permissions";
 import { colors, shadows } from "../styles/theme";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { selectAuth } from "../store/authSlice";
 import { useGetPOByIdQuery } from "../store/api/poApi";
 import {
   deleteDispatchDetail,
@@ -79,20 +80,42 @@ const { Panel } = Collapse;
 const PODetails: React.FC = () => {
   const { poId } = useParams<{ poId: string }>();
   const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectAuth);
 
-  // Permission checks
-  const canCreateDispatch = usePermission(PERMISSIONS.DISPATCH_CREATE);
-  const canUpdateDispatch = usePermission(PERMISSIONS.DISPATCH_UPDATE);
-  const canDeleteDispatch = usePermission(PERMISSIONS.DISPATCH_DELETE);
-  const canCreateCommissioning = usePermission(
-    PERMISSIONS.COMMISSIONING_CREATE
-  );
-  const canUpdateCommissioning = usePermission(
-    PERMISSIONS.COMMISSIONING_UPDATE
-  );
-  const canDeleteCommissioning = usePermission(
-    PERMISSIONS.COMMISSIONING_DELETE
-  );
+  // Fetch PO from API using poId from route params
+  const {
+    data: poResponse,
+    isLoading: isPOLoading,
+    isError: isPOError,
+    error: poError,
+  } = useGetPOByIdQuery(poId || "", {
+    skip: !poId, // Skip if poId is not available
+  });
+
+  // Check if current user is assigned to this PO
+  const isAssignedToCurrentUser = useMemo(() => {
+    return (
+      currentUser.userId !== null &&
+      currentUser.userId !== undefined &&
+      poResponse?.assignDispatchTo !== null &&
+      poResponse?.assignDispatchTo !== undefined &&
+      currentUser.userId === poResponse.assignDispatchTo
+    );
+  }, [currentUser.userId, poResponse?.assignDispatchTo]);
+
+  // Permission checks - only allowed if user has permission AND is assigned to this PO
+  const canCreateDispatch =
+    usePermission(PERMISSIONS.DISPATCH_CREATE) && isAssignedToCurrentUser;
+  const canUpdateDispatch =
+    usePermission(PERMISSIONS.DISPATCH_UPDATE) && isAssignedToCurrentUser;
+  const canDeleteDispatch =
+    usePermission(PERMISSIONS.DISPATCH_DELETE) && isAssignedToCurrentUser;
+  const canCreateCommissioning =
+    usePermission(PERMISSIONS.COMMISSIONING_CREATE) && isAssignedToCurrentUser;
+  const canUpdateCommissioning =
+    usePermission(PERMISSIONS.COMMISSIONING_UPDATE) && isAssignedToCurrentUser;
+  const canDeleteCommissioning =
+    usePermission(PERMISSIONS.COMMISSIONING_DELETE) && isAssignedToCurrentUser;
   const canViewPricingOwn = usePermission(PERMISSIONS.PO_PRICING_VIEW_OWN);
   const canViewPricingAll = usePermission(PERMISSIONS.PO_PRICING_VIEW_ALL);
   const canViewPricing = useAnyPermission([
@@ -143,16 +166,6 @@ const PODetails: React.FC = () => {
     isUpdateAssignDispatchToModalVisible,
     setIsUpdateAssignDispatchToModalVisible,
   ] = useState(false);
-
-  // Fetch PO from API using poId from route params
-  const {
-    data: poResponse,
-    isLoading: isPOLoading,
-    isError: isPOError,
-    error: poError,
-  } = useGetPOByIdQuery(poId || "", {
-    skip: !poId, // Skip if poId is not available
-  });
 
   const dispatchDetails = useAppSelector(selectDispatchDetails);
   const preCommissioningDetails = useAppSelector(selectPreCommissioningDetails);
