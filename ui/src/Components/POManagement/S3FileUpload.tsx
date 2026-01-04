@@ -75,9 +75,10 @@ export interface S3FileUploadProps {
 export interface S3FileUploadRef {
   /**
    * Upload all pending files to S3 and confirm them
+   * @param overrideParams - Optional parameters to override the component props (useful for CreatePO where poId is not known until after creation)
    * @returns Array of confirmed file IDs
    */
-  uploadAndConfirm: () => Promise<number[]>;
+  uploadAndConfirm: (overrideParams?: { poId?: string; entityType?: string; entityId?: string }) => Promise<number[]>;
   /**
    * Check if upload is in progress
    */
@@ -293,7 +294,7 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
     }, [uploadStates]);
 
     // Upload all pending files to S3 and confirm them
-    const uploadAndConfirm = useCallback(async (): Promise<number[]> => {
+    const uploadAndConfirm = useCallback(async (overrideParams?: { poId?: string; entityType?: string; entityId?: string }): Promise<number[]> => {
       // Filter files that have originFileObj (new files to upload)
       const filesToUpload = fileList.filter((f) => f.originFileObj);
 
@@ -301,6 +302,11 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
         // Return existing file IDs if any
         return getUploadedFileIds();
       }
+
+      // Use override params if provided, otherwise use component props
+      const effectivePoId = overrideParams?.poId ?? poId;
+      const effectiveEntityType = overrideParams?.entityType ?? entityType;
+      const effectiveEntityId = overrideParams?.entityId ?? entityId;
 
       setIsUploading(true);
 
@@ -315,9 +321,9 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
         // Generate presigned URLs
         const presignedResponse = await generatePresignedUrls({
           files: fileInfos,
-          poId,
-          entityType,
-          entityId,
+          poId: effectivePoId,
+          entityType: effectiveEntityType,
+          entityId: effectiveEntityId,
         }).unwrap();
 
         // Validate presigned response
@@ -408,12 +414,12 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
         const fileIds = await Promise.all(uploadPromises);
 
         // Confirm the files if entityType and entityId are provided
-        if (entityType && entityId && fileIds.length > 0) {
+        if (effectiveEntityType && effectiveEntityId && fileIds.length > 0) {
           await confirmFiles({
             fileIds,
-            entityType,
-            entityId,
-            poId,
+            entityType: effectiveEntityType,
+            entityId: effectiveEntityId,
+            poId: effectivePoId,
           }).unwrap();
 
           // Update states to confirmed

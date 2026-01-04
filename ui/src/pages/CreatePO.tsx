@@ -350,8 +350,12 @@ const CreatePO: FC = () => {
       // Upload files to S3 if any files are selected
       if (fileList.length > 0 && s3FileUploadRef.current) {
         try {
-          // Set the poId and entityId for file upload
-          await s3FileUploadRef.current.uploadAndConfirm();
+          // Pass the poId now that the PO has been created
+          await s3FileUploadRef.current.uploadAndConfirm({
+            poId: result.poId,
+            entityType: "po_document",
+            entityId: result.poId, // Use poId as entityId for PO documents
+          });
         } catch (uploadError) {
           console.warn("File upload failed, but PO was created:", uploadError);
           toast.warning("PO created but some files failed to upload. You can add them later.");
