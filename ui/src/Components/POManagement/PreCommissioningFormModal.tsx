@@ -4,11 +4,11 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
   addMultiplePreCommissioning,
   updatePreCommissioning,
-  DispatchDetail,
   PreCommissioning,
   DispatchDocument,
 } from "../../store/poSlice";
 import { selectPreCommissioningDetails } from "../../store/poSelectors";
+import type { DispatchResponse } from "@OrianaTypes";
 import type { UploadFile } from "antd/es/upload/interface";
 import FileUpload from "./FileUpload";
 import { formatLabel, textFieldRules, selectFieldRules } from "../../utils";
@@ -16,7 +16,7 @@ import { formatLabel, textFieldRules, selectFieldRules } from "../../utils";
 interface SerialOption {
   value: string;
   label: string;
-  dispatchId: string;
+  dispatchId: number;
   product: string;
 }
 
@@ -24,7 +24,7 @@ interface PreCommissioningFormModalProps {
   visible: boolean;
   onClose: () => void;
   poId: string;
-  dispatches: DispatchDetail[];
+  dispatches: DispatchResponse[];
   editData?: PreCommissioning | null;
 }
 
@@ -66,10 +66,10 @@ const PreCommissioningFormModal: React.FC<PreCommissioningFormModalProps> = ({
               const isAlreadyUsed = existingSerials.includes(serial);
               if (!isAlreadyUsed || serial === editData?.serialNumber) {
                 options.push({
-                  value: `${d.id}__${item.product}__${serial}`,
-                  label: `${serial} (${formatLabel(item.product)} - ${d.id})`,
-                  dispatchId: d.id,
-                  product: item.product,
+                  value: `${d.dispatchId}__${item.productName || ""}__${serial}`,
+                  label: `${serial} (${formatLabel(item.productName || "")} - #${d.dispatchId})`,
+                  dispatchId: d.dispatchId,
+                  product: item.productName || "",
                 });
               }
             });

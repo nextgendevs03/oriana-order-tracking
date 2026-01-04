@@ -36,3 +36,8 @@ export * from './response/CategoryResponse';
 export * from './request/FileRequest';
 // File Response schemas
 export * from './response/FileResponse';
+
+// Dispatch Request schemas
+export * from './request/DispatchRequest';
+// Dispatch Response schemas
+export * from './response/DispatchResponse';

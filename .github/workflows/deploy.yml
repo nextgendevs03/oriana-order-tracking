@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy'
+        description: "Environment to deploy"
         required: true
         type: choice
         options:
@@ -27,14 +27,14 @@ on:
           - qa
           - prod
       deploy_type:
-        description: 'What to deploy'
+        description: "What to deploy"
         required: true
         type: choice
         options:
-          - full        # API + UI (two-phase deployment)
-          - api-only    # API only (faster)
+          - full # API + UI (two-phase deployment)
+          - api-only # API only (faster)
       skip_ui_build:
-        description: 'Skip UI build (use existing)'
+        description: "Skip UI build (use existing)"
         required: false
         type: boolean
         default: false
@@ -45,7 +45,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '24'
+  NODE_VERSION: "24"
   AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: |
             api/package-lock.json
             cdk/package-lock.json
@@ -103,9 +103,9 @@ jobs:
         working-directory: cdk
         run: |
           STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
-          
+
           echo "📄 Looking for API URL in stack outputs..."
-          
+
           # Try to get from CDK outputs file first (CDK prefixes with construct ID)
           if [ -f cdk-outputs.json ]; then
             echo "Found cdk-outputs.json:"
@@ -114,7 +114,7 @@ jobs:
             # Look for any key containing "ApiUrl" (CDK adds construct prefix)
             API_URL=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"ApiUrl\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
           fi
-          
+
           # Fallback to CloudFormation if not found
           if [ -z "$API_URL" ]; then
             echo "Fetching from CloudFormation..."
@@ -122,7 +122,7 @@ jobs:
             API_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
               --query "Stacks[0].Outputs[?contains(OutputKey, 'ApiUrl')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
           fi
-          
+
           if [ -n "$API_URL" ] && [ "$API_URL" != "None" ] && [ "$API_URL" != "" ]; then
             # Remove trailing slash if present, then append /api for UI base URL
             API_URL="${API_URL%/}/api"
@@ -171,13 +171,13 @@ jobs:
             exit 1
           fi
           echo "Checking file: $JS_FILE"
-          
+
           if grep -q "localhost:4000" "$JS_FILE"; then
             echo "❌ ERROR: Build still contains localhost:4000!"
             echo "The REACT_APP_API_URL was not embedded correctly."
             exit 1
           fi
-          
+
           if grep -q "${{ steps.get_api_url.outputs.api_url }}" "$JS_FILE"; then
             echo "✅ Build contains correct API URL!"
           else
@@ -194,7 +194,7 @@ jobs:
         working-directory: cdk
         run: |
           STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
-          
+
           # Get from CDK outputs file (CDK prefixes with construct ID)
           # IMPORTANT: Use WebsiteBucketName (for UI) not just BucketName (which is for file uploads)
           if [ -f cdk-outputs.json ]; then
@@ -202,7 +202,7 @@ jobs:
             DISTRIBUTION_ID=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"DistributionId\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
             WEBSITE_URL=$(jq -r ".[\"$STACK_NAME\"] | to_entries[] | select(.key | contains(\"WebsiteURL\")) | .value" cdk-outputs.json 2>/dev/null | head -1)
           fi
-          
+
           # Fallback to CloudFormation
           # IMPORTANT: Use WebsiteBucketName specifically to get the UI hosting bucket
           if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" == "null" ]; then
@@ -217,15 +217,15 @@ jobs:
             WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name $STACK_NAME \
               --query "Stacks[0].Outputs[?contains(OutputKey, 'WebsiteURL')].OutputValue" --output text 2>/dev/null | head -1 || echo "")
           fi
-          
+
           echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
           echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
           echo "website_url=$WEBSITE_URL" >> $GITHUB_OUTPUT
-          
+
           echo "📦 S3 Bucket (UI): $BUCKET_NAME"
           echo "🌐 CloudFront Distribution: $DISTRIBUTION_ID"
           echo "🔗 Website URL: $WEBSITE_URL"
-          
+
           # Verify we got the correct bucket
           if [[ "$BUCKET_NAME" != *"ui"* ]]; then
             echo "⚠️ WARNING: Bucket name '$BUCKET_NAME' doesn't contain 'ui' - might be wrong bucket!"
@@ -240,11 +240,11 @@ jobs:
             --cache-control "public, max-age=31536000, immutable" \
             --exclude "index.html" \
             --exclude "*.json"
-          
+
           # Upload index.html and JSON files with no-cache
           aws s3 cp ui/build/index.html s3://${{ steps.get_ui_info.outputs.bucket_name }}/index.html \
             --cache-control "no-cache, no-store, must-revalidate"
-          
+
           # Upload other JSON files if they exist
           if ls ui/build/*.json 1> /dev/null 2>&1; then
             for file in ui/build/*.json; do
@@ -252,7 +252,7 @@ jobs:
                 --cache-control "no-cache, no-store, must-revalidate"
             done
           fi
-          
+
           echo "✅ UI uploaded successfully!"
 
       - name: 🔄 Invalidate CloudFront Cache
@@ -284,7 +284,7 @@ jobs:
         working-directory: cdk
         run: |
           STACK_NAME="ApiStack-${{ github.event.inputs.environment }}"
-          
+
           # Extract URLs from CDK outputs file (CDK prefixes with construct ID)
           if [ -f cdk-outputs.json ]; then
             echo "📄 CDK Outputs:"
@@ -324,26 +324,26 @@ jobs:
         run: |
           echo "## 🎉 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Deployment URLs section
           echo "### 🔗 Deployment URLs" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           API_URL="${{ steps.urls.outputs.api_url }}"
           WEBSITE_URL="${{ steps.urls.outputs.website_url }}"
-          
+
           if [ -n "$API_URL" ]; then
             echo "| 🚀 **API URL** | [$API_URL]($API_URL) |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ -n "$WEBSITE_URL" ]; then
             echo "| 🌐 **Website URL** | [$WEBSITE_URL]($WEBSITE_URL) |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ -z "$API_URL" ] && [ -z "$WEBSITE_URL" ]; then
             echo "> ⚠️ URLs not found in stack outputs. Check CloudFormation console." >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 Deployment Details" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -355,7 +355,7 @@ jobs:
           echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Triggered by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Region | \`${{ env.AWS_REGION }}\` |" >> $GITHUB_STEP_SUMMARY
-          
+
           # Add quick test commands
           if [ -n "$API_URL" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY

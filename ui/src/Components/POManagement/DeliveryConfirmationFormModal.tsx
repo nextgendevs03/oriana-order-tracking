@@ -1,14 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Form, Input, Select, DatePicker, Row, Col, Button } from "antd";
-import { useAppDispatch } from "../../store/hooks";
-import {
-  updateDispatchDetail,
-  DispatchDetail,
-  DispatchDocument,
-} from "../../store/poSlice";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { Modal, Form, Input, Select, DatePicker, Row, Col, Button, message } from "antd";
+import { useUpdateDeliveryConfirmationMutation } from "../../store/api/dispatchApi";
+import type { DispatchResponse } from "@OrianaTypes";
 import dayjs from "dayjs";
 import type { UploadFile } from "antd/es/upload/interface";
-import FileUpload from "./FileUpload";
+import S3FileUpload, { S3FileUploadRef } from "./S3FileUpload";
 import {
   deliveryStatusOptions,
   textFieldRules,
@@ -19,16 +15,21 @@ import {
 interface DeliveryConfirmationFormModalProps {
   visible: boolean;
   onClose: () => void;
-  dispatches: DispatchDetail[];
-  editData?: DispatchDetail | null;
+  dispatches: DispatchResponse[];
+  editData?: DispatchResponse | null;
+  poId?: string;
 }
 
 const DeliveryConfirmationFormModal: React.FC<
   DeliveryConfirmationFormModalProps
-> = ({ visible, onClose, dispatches, editData = null }) => {
+> = ({ visible, onClose, dispatches, editData = null, poId }) => {
   const [form] = Form.useForm();
-  const dispatch = useAppDispatch();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const fileUploadRef = useRef<S3FileUploadRef>(null);
+  const selectedDispatchId = Form.useWatch("dispatchId", form);
+
+  // API mutation
+  const [updateDeliveryConfirmation, { isLoading: isUpdating }] = useUpdateDeliveryConfirmationMutation();
 
   const isEditMode = !!editData;
 
@@ -38,34 +39,19 @@ const DeliveryConfirmationFormModal: React.FC<
     return dispatches
       .filter((d) => d.dispatchStatus === "done")
       .map((d) => ({
-        value: d.id,
-        label: d.id,
-        disabled: !!d.deliveryStatus && d.id !== editData?.id,
+        value: d.dispatchId,
+        label: `Dispatch #${d.dispatchId}`,
+        disabled: !!d.deliveryStatus && d.dispatchId !== editData?.dispatchId,
       }));
   }, [dispatches, editData]);
 
-  // Initialize form with edit data (flat properties)
+  // Initialize form with edit data
   useEffect(() => {
     if (visible && editData) {
-      // Initialize file list from existing documents
-      if (editData.deliveryDocuments && editData.deliveryDocuments.length > 0) {
-        const existingFiles: UploadFile[] = editData.deliveryDocuments.map(
-          (doc: DispatchDocument) => ({
-            uid: doc.uid,
-            name: doc.name,
-            status: "done",
-            url: doc.url,
-            type: doc.type,
-            size: doc.size,
-          })
-        );
-        setFileList(existingFiles);
-      } else {
-        setFileList([]);
-      }
+      setFileList([]);
 
       form.setFieldsValue({
-        dispatchId: editData.id,
+        dispatchId: editData.dispatchId,
         dateOfDelivery: editData.dateOfDelivery
           ? dayjs(editData.dateOfDelivery)
           : undefined,
@@ -82,44 +68,43 @@ const DeliveryConfirmationFormModal: React.FC<
     try {
       const values = await form.validateFields();
 
-      const targetDispatch = dispatches.find((d) => d.id === values.dispatchId);
+      const targetDispatch = dispatches.find((d) => d.dispatchId === values.dispatchId);
 
       if (!targetDispatch) {
-        console.error("Dispatch not found");
+        message.error("Dispatch not found");
         return;
       }
 
-      // Convert file list to dispatch documents
-      const deliveryDocuments: DispatchDocument[] = fileList.map((file) => ({
-        uid: file.uid,
-        name: file.name,
-        type: file.type || "",
-        size: file.size || 0,
-        url:
-          file.url ||
-          (file.originFileObj ? URL.createObjectURL(file.originFileObj) : ""),
-        uploadedAt: new Date().toISOString(),
-      }));
+      // Upload files to S3 if any new files
+      if (fileUploadRef.current && fileList.some(f => f.originFileObj)) {
+        try {
+          await fileUploadRef.current.uploadAndConfirm();
+        } catch (error) {
+          console.error("File upload failed:", error);
+          message.error("Failed to upload files. Please try again.");
+          return;
+        }
+      }
 
-      // Update the dispatch with flat delivery confirmation fields
-      const updatedDispatch: DispatchDetail = {
-        ...targetDispatch,
-        dateOfDelivery: values.dateOfDelivery
-          ? dayjs(values.dateOfDelivery).format("YYYY-MM-DD")
-          : "",
-        deliveryStatus: values.deliveryStatus,
-        proofOfDelivery: values.proofOfDelivery,
-        deliveryDocuments: deliveryDocuments,
-        deliveryUpdatedAt: new Date().toISOString(),
-      };
+      // Update delivery confirmation via API
+      await updateDeliveryConfirmation({
+        id: targetDispatch.dispatchId,
+        data: {
+          dateOfDelivery: values.dateOfDelivery
+            ? dayjs(values.dateOfDelivery).format("YYYY-MM-DD")
+            : undefined,
+          deliveryStatus: values.deliveryStatus,
+          proofOfDelivery: values.proofOfDelivery,
+        },
+      }).unwrap();
 
-      dispatch(updateDispatchDetail(updatedDispatch));
-
+      message.success("Delivery confirmation updated successfully");
       form.resetFields();
       setFileList([]);
       onClose();
     } catch (error) {
-      console.error("Validation failed:", error);
+      console.error("Submission failed:", error);
+      message.error("Failed to update delivery confirmation. Please try again.");
     }
   };
 
@@ -141,13 +126,14 @@ const DeliveryConfirmationFormModal: React.FC<
       width={700}
       destroyOnClose
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
+        <Button key="cancel" onClick={handleCancel} disabled={isUpdating}>
           Cancel
         </Button>,
         <Button
           key="submit"
           type="primary"
           onClick={handleSubmit}
+          loading={isUpdating}
           style={{
             backgroundColor: "#4b6cb7",
           }}
@@ -227,14 +213,18 @@ const DeliveryConfirmationFormModal: React.FC<
               label="Upload Document (Proof of delivery)"
               tooltip="Upload 1-5 documents. Supported formats: Images, PDF, Word, Excel"
             >
-              <FileUpload
+              <S3FileUpload
+                ref={fileUploadRef}
                 fileList={fileList}
                 onChange={setFileList}
-                minFiles={1}
+                minFiles={0}
                 maxFiles={5}
                 maxSizeMB={10}
                 buttonLabel="Click to Upload"
                 helperText="Supported: Images (JPG, PNG, GIF, SVG), PDF, Word, Excel."
+                poId={poId}
+                entityType="delivery_confirmation"
+                entityId={selectedDispatchId?.toString()}
               />
             </Form.Item>
           </Col>

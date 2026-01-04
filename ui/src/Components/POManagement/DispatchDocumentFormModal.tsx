@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Modal,
   Form,
@@ -10,17 +10,13 @@ import {
   Button,
   Card,
   Typography,
+  message,
 } from "antd";
-import { useAppDispatch } from "../../store/hooks";
-import {
-  updateDispatchDetail,
-  DispatchDetail,
-  DispatchedItem,
-  DispatchDocument,
-} from "../../store/poSlice";
+import { useUpdateDispatchDocumentsMutation } from "../../store/api/dispatchApi";
+import type { DispatchResponse, DispatchedItemResponse } from "@OrianaTypes";
 import dayjs from "dayjs";
 import type { UploadFile } from "antd/es/upload/interface";
-import FileUpload from "./FileUpload";
+import S3FileUpload, { S3FileUploadRef } from "./S3FileUpload";
 import {
   formatLabel,
   noDuesClearanceOptions,
@@ -35,8 +31,9 @@ const { Text } = Typography;
 interface DispatchDocumentFormModalProps {
   visible: boolean;
   onClose: () => void;
-  dispatches: DispatchDetail[];
-  editData?: DispatchDetail | null;
+  dispatches: DispatchResponse[];
+  editData?: DispatchResponse | null;
+  poId?: string;
 }
 
 const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
@@ -44,55 +41,44 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
   onClose,
   dispatches,
   editData = null,
+  poId,
 }) => {
   const [form] = Form.useForm();
-  const dispatch = useAppDispatch();
   const selectedDispatchId = Form.useWatch("dispatchId", form);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const fileUploadRef = useRef<S3FileUploadRef>(null);
+
+  // API mutation
+  const [updateDispatchDocuments, { isLoading: isUpdating }] = useUpdateDispatchDocumentsMutation();
 
   const isEditMode = !!editData;
 
   // Get dispatch options - disable if already has document (check dispatchStatus field)
   const dispatchOptions = useMemo(() => {
     return dispatches.map((d) => ({
-      value: d.id,
-      label: d.id,
-      disabled: !!d.dispatchStatus && d.id !== editData?.id,
+      value: d.dispatchId,
+      label: `Dispatch #${d.dispatchId}`,
+      disabled: !!d.dispatchStatus && d.dispatchId !== editData?.dispatchId,
     }));
   }, [dispatches, editData]);
 
   // Get selected dispatch's items for serial number fields
   const selectedDispatch = useMemo(() => {
-    return dispatches.find((d) => d.id === selectedDispatchId);
+    return dispatches.find((d) => d.dispatchId === selectedDispatchId);
   }, [dispatches, selectedDispatchId]);
 
-  // Initialize form with edit data (flat properties)
+  // Initialize form with edit data
   useEffect(() => {
     if (visible && editData) {
-      const serialNumbers: Record<string, string> = {};
+      const serialNumbers: Record<number, string> = {};
       editData.dispatchedItems?.forEach((item) => {
-        serialNumbers[item.product] = item.serialNumbers || "";
+        serialNumbers[item.productId] = item.serialNumbers || "";
       });
 
-      // Initialize file list from existing documents
-      if (editData.dispatchDocuments && editData.dispatchDocuments.length > 0) {
-        const existingFiles: UploadFile[] = editData.dispatchDocuments.map(
-          (doc: DispatchDocument) => ({
-            uid: doc.uid,
-            name: doc.name,
-            status: "done",
-            url: doc.url,
-            type: doc.type,
-            size: doc.size,
-          })
-        );
-        setFileList(existingFiles);
-      } else {
-        setFileList([]);
-      }
+      setFileList([]);
 
       form.setFieldsValue({
-        dispatchId: editData.id,
+        dispatchId: editData.dispatchId,
         noDuesClearance: editData.noDuesClearance,
         osgPiNo: editData.docOsgPiNo,
         osgPiDate: editData.docOsgPiDate
@@ -124,67 +110,64 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
     try {
       const values = await form.validateFields();
 
-      const targetDispatch = dispatches.find((d) => d.id === values.dispatchId);
+      const targetDispatch = dispatches.find((d) => d.dispatchId === values.dispatchId);
 
       if (!targetDispatch) {
-        console.error("Dispatch not found");
+        message.error("Dispatch not found");
         return;
       }
 
-      // Build updated dispatchedItems with serial numbers
-      const updatedDispatchedItems: DispatchedItem[] =
-        targetDispatch.dispatchedItems.map((item) => ({
-          ...item,
-          serialNumbers: values.serialNumbers?.[item.product] || "",
-        }));
+      // Build serial numbers map (productId -> serialNumbers)
+      const serialNumbers: Record<number, string> = {};
+      targetDispatch.dispatchedItems.forEach((item) => {
+        serialNumbers[item.productId] = values.serialNumbers?.[item.productId] || "";
+      });
 
-      // Convert file list to dispatch documents
-      const dispatchDocuments: DispatchDocument[] = fileList.map((file) => ({
-        uid: file.uid,
-        name: file.name,
-        type: file.type || "",
-        size: file.size || 0,
-        url:
-          file.url ||
-          (file.originFileObj ? URL.createObjectURL(file.originFileObj) : ""),
-        uploadedAt: new Date().toISOString(),
-      }));
+      // Upload files to S3 if any new files
+      if (fileUploadRef.current && fileList.some(f => f.originFileObj)) {
+        try {
+          await fileUploadRef.current.uploadAndConfirm();
+        } catch (error) {
+          console.error("File upload failed:", error);
+          message.error("Failed to upload files. Please try again.");
+          return;
+        }
+      }
 
-      // Update the dispatch with flat document fields
-      const updatedDispatch: DispatchDetail = {
-        ...targetDispatch,
-        dispatchedItems: updatedDispatchedItems,
-        // Document fields (flat)
-        noDuesClearance: values.noDuesClearance,
-        docOsgPiNo: values.osgPiNo,
-        docOsgPiDate: values.osgPiDate
-          ? dayjs(values.osgPiDate).format("YYYY-MM-DD")
-          : "",
-        taxInvoiceNumber: values.taxInvoiceNumber,
-        invoiceDate: values.invoiceDate
-          ? dayjs(values.invoiceDate).format("YYYY-MM-DD")
-          : "",
-        ewayBill: values.ewayBill,
-        deliveryChallan: values.deliveryChallan,
-        dispatchDate: values.dispatchDate
-          ? dayjs(values.dispatchDate).format("YYYY-MM-DD")
-          : "",
-        packagingList: values.packagingList || "",
-        dispatchFromLocation: values.dispatchFromLocation,
-        dispatchStatus: values.dispatchStatus,
-        dispatchLrNo: values.dispatchLrNo,
-        dispatchRemarks: values.dispatchRemarks || "",
-        dispatchDocuments: dispatchDocuments,
-        documentUpdatedAt: new Date().toISOString(),
-      };
+      // Update dispatch documents via API
+      await updateDispatchDocuments({
+        id: targetDispatch.dispatchId,
+        data: {
+          noDuesClearance: values.noDuesClearance,
+          docOsgPiNo: values.osgPiNo,
+          docOsgPiDate: values.osgPiDate
+            ? dayjs(values.osgPiDate).format("YYYY-MM-DD")
+            : undefined,
+          taxInvoiceNumber: values.taxInvoiceNumber,
+          invoiceDate: values.invoiceDate
+            ? dayjs(values.invoiceDate).format("YYYY-MM-DD")
+            : undefined,
+          ewayBill: values.ewayBill,
+          deliveryChallan: values.deliveryChallan,
+          dispatchDate: values.dispatchDate
+            ? dayjs(values.dispatchDate).format("YYYY-MM-DD")
+            : undefined,
+          packagingList: values.packagingList || undefined,
+          dispatchFromLocation: values.dispatchFromLocation,
+          dispatchStatus: values.dispatchStatus,
+          dispatchLrNo: values.dispatchLrNo,
+          dispatchRemarks: values.dispatchRemarks || undefined,
+          serialNumbers: serialNumbers,
+        },
+      }).unwrap();
 
-      dispatch(updateDispatchDetail(updatedDispatch));
-
+      message.success("Dispatch documents updated successfully");
       form.resetFields();
       setFileList([]);
       onClose();
     } catch (error) {
-      console.error("Validation failed:", error);
+      console.error("Submission failed:", error);
+      message.error("Failed to update dispatch documents. Please try again.");
     }
   };
 
@@ -201,16 +184,15 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
         return Promise.reject(new Error("Serial numbers are required"));
       }
 
-      // Split by comma and filter out empty values
-      const serialNumbers = value
+      const serialNumbersList = value
         .split(",")
         .map((s) => s.trim())
         .filter((s) => s !== "");
 
-      if (serialNumbers.length !== quantity) {
+      if (serialNumbersList.length !== quantity) {
         return Promise.reject(
           new Error(
-            `Please enter exactly ${quantity} serial number${quantity > 1 ? "s" : ""}. You entered ${serialNumbers.length}.`
+            `Please enter exactly ${quantity} serial number${quantity > 1 ? "s" : ""}. You entered ${serialNumbersList.length}.`
           )
         );
       }
@@ -227,13 +209,14 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
       width={1000}
       destroyOnClose
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
+        <Button key="cancel" onClick={handleCancel} disabled={isUpdating}>
           Cancel
         </Button>,
         <Button
           key="submit"
           type="primary"
           onClick={handleSubmit}
+          loading={isUpdating}
           style={{
             backgroundColor: "#4b6cb7",
           }}
@@ -390,8 +373,8 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
             style={{ marginBottom: "1rem" }}
           >
             <Row gutter={[16, 8]}>
-              {selectedDispatch.dispatchedItems.map((item: DispatchedItem) => (
-                <Col span={12} key={item.product}>
+              {selectedDispatch.dispatchedItems.map((item: DispatchedItemResponse) => (
+                <Col span={12} key={item.productId}>
                   <div
                     style={{
                       padding: "12px",
@@ -402,11 +385,11 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
                   >
                     <div style={{ marginBottom: "8px" }}>
                       <Text strong>
-                        {formatLabel(item.product)} (Qty: {item.quantity})
+                        {formatLabel(item.productName || "")} (Qty: {item.quantity})
                       </Text>
                     </div>
                     <Form.Item
-                      name={["serialNumbers", item.product]}
+                      name={["serialNumbers", item.productId]}
                       rules={[
                         { validator: getSerialNumberValidator(item.quantity) },
                       ]}
@@ -444,19 +427,24 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
             </Form.Item>
           </Col>
         </Row>
+
         {/* Upload Dispatch Documents */}
         <Form.Item
           label="Upload Dispatch Documents (OSG PI, Tax Invoice, E-way bill, Delivery Challan, LR Copy)"
           tooltip="Upload up to 5 documents. Supported formats: Images, PDF, Word, Excel"
         >
-          <FileUpload
+          <S3FileUpload
+            ref={fileUploadRef}
             fileList={fileList}
             onChange={setFileList}
-            minFiles={5}
+            minFiles={0}
             maxFiles={5}
             maxSizeMB={10}
             buttonLabel="Click to Upload Documents"
             helperText="Supported formats: Images (JPG, PNG, GIF, SVG), PDF, Excel, Word documents."
+            poId={poId}
+            entityType="dispatch_document"
+            entityId={selectedDispatchId?.toString()}
           />
         </Form.Item>
       </Form>

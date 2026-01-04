@@ -32,18 +32,21 @@ import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { selectAuth } from "../store/authSlice";
 import { useGetPOByIdQuery } from "../store/api/poApi";
 import {
-  deleteDispatchDetail,
+  useGetDispatchesByPoIdQuery,
+  useDeleteDispatchMutation,
+  useUpdateDispatchDocumentsMutation,
+} from "../store/api/dispatchApi";
+import {
   deletePreCommissioning,
   updatePO,
-  updateDispatchDetail,
 } from "../store/poSlice";
 import type { ColumnsType } from "antd/es/table";
 import type {
   POItem,
   POData,
-  DispatchDetail,
   PreCommissioning,
 } from "../store/poSlice";
+import type { DispatchResponse } from "@OrianaTypes";
 import DispatchFormModal from "../Components/POManagement/DispatchFormModal";
 import DispatchDocumentFormModal from "../Components/POManagement/DispatchDocumentFormModal";
 import DeliveryConfirmationFormModal from "../Components/POManagement/DeliveryConfirmationFormModal";
@@ -58,14 +61,7 @@ import ServiceDetailsModal, {
 } from "../Components/POManagement/ServiceDetailsModal";
 import UpdateAssignDispatchToModal from "../Components/POManagement/UpdateAssignDispatchToModal";
 import {
-  selectDispatchDetails,
   selectPreCommissioningDetails,
-  selectDispatchStatusInfo,
-  selectDocumentStatus,
-  selectDeliveryStatus,
-  selectPreCommissioningStatusInfo,
-  selectCommissioningStatusInfo,
-  selectWarrantyStatusInfo,
 } from "../store/poSelectors";
 import {
   getPaymentStatusColor,
@@ -125,15 +121,15 @@ const PODetails: React.FC = () => {
   const canUpdatePO = usePermission(PERMISSIONS.PRODUCT_UPDATE);
 
   const [isDispatchModalVisible, setIsDispatchModalVisible] = useState(false);
-  const [editingDispatch, setEditingDispatch] = useState<DispatchDetail | null>(
+  const [editingDispatch, setEditingDispatch] = useState<DispatchResponse | null>(
     null
   );
   const [isDocumentModalVisible, setIsDocumentModalVisible] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<DispatchDetail | null>(
+  const [editingDocument, setEditingDocument] = useState<DispatchResponse | null>(
     null
   );
   const [isDeliveryModalVisible, setIsDeliveryModalVisible] = useState(false);
-  const [editingDelivery, setEditingDelivery] = useState<DispatchDetail | null>(
+  const [editingDelivery, setEditingDelivery] = useState<DispatchResponse | null>(
     null
   );
   const [isPreCommissioningModalVisible, setIsPreCommissioningModalVisible] =
@@ -151,7 +147,7 @@ const PODetails: React.FC = () => {
   const [isDispatchDetailsModalVisible, setIsDispatchDetailsModalVisible] =
     useState(false);
   const [viewingDispatchDetails, setViewingDispatchDetails] =
-    useState<DispatchDetail | null>(null);
+    useState<DispatchResponse | null>(null);
   const [dispatchDetailsTab, setDispatchDetailsTab] =
     useState<DispatchDetailsTab>("dispatch");
   // Unified Service Details View Modal
@@ -167,7 +163,19 @@ const PODetails: React.FC = () => {
     setIsUpdateAssignDispatchToModalVisible,
   ] = useState(false);
 
-  const dispatchDetails = useAppSelector(selectDispatchDetails);
+  // Fetch dispatches from API
+  const {
+    data: currentPODispatches = [],
+    isLoading: isDispatchLoading,
+    isError: isDispatchError,
+  } = useGetDispatchesByPoIdQuery(poId || "", {
+    skip: !poId,
+  });
+
+  // Delete dispatch mutation
+  const [deleteDispatch] = useDeleteDispatchMutation();
+  const [updateDispatchDocuments] = useUpdateDispatchDocumentsMutation();
+
   const preCommissioningDetails = useAppSelector(selectPreCommissioningDetails);
 
   console.log(poResponse);
@@ -215,53 +223,45 @@ const PODetails: React.FC = () => {
     };
   }, [poResponse]);
 
-  // Filter dispatch details for current PO
-  const currentPODispatches = dispatchDetails.filter(
-    (dispatchItem) => dispatchItem.poId === poId
-  );
-
-  const handleEditDispatch = (record: DispatchDetail) => {
+  const handleEditDispatch = (record: DispatchResponse) => {
     setEditingDispatch(record);
     setIsDispatchModalVisible(true);
   };
 
-  const handleDeleteDispatch = (dispatchId: string) => {
-    dispatch(deleteDispatchDetail(dispatchId));
+  const handleDeleteDispatch = async (dispatchId: number) => {
+    if (!poId) return;
+    try {
+      await deleteDispatch({ id: dispatchId, poId }).unwrap();
+    } catch (error) {
+      console.error("Failed to delete dispatch:", error);
+    }
   };
 
   // Delete document details - clears document related fields from dispatch
-  const handleDeleteDocumentDetails = (dispatchId: string) => {
-    const targetDispatch = currentPODispatches.find((d) => d.id === dispatchId);
-    if (targetDispatch) {
-      // Clear serial numbers from dispatched items
-      const clearedDispatchedItems = targetDispatch.dispatchedItems.map(
-        (item) => ({
-          ...item,
-          serialNumbers: undefined,
-        })
-      );
-
-      const updatedDispatch: DispatchDetail = {
-        ...targetDispatch,
-        dispatchedItems: clearedDispatchedItems,
-        // Clear all document fields
-        noDuesClearance: undefined,
-        docOsgPiNo: undefined,
-        docOsgPiDate: undefined,
-        taxInvoiceNumber: undefined,
-        invoiceDate: undefined,
-        ewayBill: undefined,
-        deliveryChallan: undefined,
-        dispatchDate: undefined,
-        packagingList: undefined,
-        dispatchFromLocation: undefined,
-        dispatchStatus: undefined,
-        dispatchLrNo: undefined,
-        dispatchRemarks: undefined,
-        dispatchDocuments: undefined,
-        documentUpdatedAt: undefined,
-      };
-      dispatch(updateDispatchDetail(updatedDispatch));
+  const handleDeleteDocumentDetails = async (dispatchId: number) => {
+    try {
+      // Clear all document fields by updating with empty values
+      await updateDispatchDocuments({
+        id: dispatchId,
+        data: {
+          noDuesClearance: undefined,
+          docOsgPiNo: undefined,
+          docOsgPiDate: undefined,
+          taxInvoiceNumber: undefined,
+          invoiceDate: undefined,
+          ewayBill: undefined,
+          deliveryChallan: undefined,
+          dispatchDate: undefined,
+          packagingList: undefined,
+          dispatchFromLocation: undefined,
+          dispatchStatus: undefined,
+          dispatchLrNo: undefined,
+          dispatchRemarks: undefined,
+          serialNumbers: {},
+        },
+      }).unwrap();
+    } catch (error) {
+      console.error("Failed to clear document details:", error);
     }
   };
 
@@ -277,7 +277,7 @@ const PODetails: React.FC = () => {
 
   // Unified view handler for dispatch details modal
   const handleViewDispatchDetails = (
-    record: DispatchDetail,
+    record: DispatchResponse,
     tab: DispatchDetailsTab
   ) => {
     setViewingDispatchDetails(record);
@@ -311,7 +311,7 @@ const PODetails: React.FC = () => {
     setIsDocumentModalVisible(true);
   };
 
-  const handleEditDocument = (record: DispatchDetail) => {
+  const handleEditDocument = (record: DispatchResponse) => {
     setEditingDocument(record);
     setIsDocumentModalVisible(true);
   };
@@ -342,7 +342,7 @@ const PODetails: React.FC = () => {
     setIsDeliveryModalVisible(true);
   };
 
-  const handleEditDeliveryConfirmation = (record: DispatchDetail) => {
+  const handleEditDeliveryConfirmation = (record: DispatchResponse) => {
     setEditingDelivery(record);
     setIsDeliveryModalVisible(true);
   };
@@ -426,24 +426,90 @@ const PODetails: React.FC = () => {
     );
   }, [preCommissioningDetails, poId]);
 
-  // ============= ACCORDION STATUS FROM SELECTORS =============
+  // ============= ACCORDION STATUS COMPUTED FROM API DATA =============
 
-  const dispatchStatusInfo = useAppSelector(
-    selectDispatchStatusInfo(poId || "")
-  );
-  const documentStatus = useAppSelector(selectDocumentStatus(poId || ""));
-  const deliveryConfirmationStatus = useAppSelector(
-    selectDeliveryStatus(poId || "")
-  );
-  const preCommissioningAccordionStatus = useAppSelector(
-    selectPreCommissioningStatusInfo(poId || "")
-  );
-  const commissioningAccordionStatus = useAppSelector(
-    selectCommissioningStatusInfo(poId || "")
-  );
-  const warrantyAccordionStatus = useAppSelector(
-    selectWarrantyStatusInfo(poId || "")
-  );
+  type AccordionStatus = "Not Started" | "In-Progress" | "Done";
+
+  // Dispatch Status Info - computed from API data
+  const dispatchStatusInfo = useMemo(() => {
+    if (!selectedPO) return { status: "Not Started" as AccordionStatus, totalQty: 0, dispatchedQty: 0 };
+
+    const totalQty = selectedPO.poItems.reduce((sum, item) => sum + item.quantity, 0);
+    const dispatchedQty = currentPODispatches.reduce((sum, d) => {
+      return sum + d.dispatchedItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
+    }, 0);
+
+    if (currentPODispatches.length === 0) {
+      return { status: "Not Started" as AccordionStatus, totalQty, dispatchedQty };
+    } else if (dispatchedQty >= totalQty) {
+      return { status: "Done" as AccordionStatus, totalQty, dispatchedQty };
+    } else {
+      return { status: "In-Progress" as AccordionStatus, totalQty, dispatchedQty };
+    }
+  }, [selectedPO, currentPODispatches]);
+
+  // Document Status
+  const documentStatus = useMemo((): AccordionStatus => {
+    if (currentPODispatches.length === 0) return "Not Started";
+    const withDocuments = currentPODispatches.filter((d) => !!d.dispatchStatus);
+    if (withDocuments.length === 0) return "Not Started";
+    const withDoneStatus = currentPODispatches.filter((d) => d.dispatchStatus === "done");
+    if (dispatchStatusInfo.status === "Done" && withDoneStatus.length >= currentPODispatches.length) {
+      return "Done";
+    }
+    return "In-Progress";
+  }, [currentPODispatches, dispatchStatusInfo.status]);
+
+  // Delivery Confirmation Status
+  const deliveryConfirmationStatus = useMemo((): AccordionStatus => {
+    const forConfirmation = currentPODispatches.filter((d) => d.dispatchStatus === "done");
+    const withConfirmation = currentPODispatches.filter((d) => !!d.deliveryStatus);
+    if (forConfirmation.length === 0) return "Not Started";
+    if (withConfirmation.length === 0) return "Not Started";
+    if (withConfirmation.length >= forConfirmation.length) return "Done";
+    return "In-Progress";
+  }, [currentPODispatches]);
+
+  // Pre-Commissioning Status
+  const preCommissioningAccordionStatus = useMemo((): AccordionStatus => {
+    const dispatchesWithDeliveryDone = currentPODispatches.filter((d) => d.deliveryStatus === "done");
+    let totalSerials = 0;
+    dispatchesWithDeliveryDone.forEach((d) => {
+      d.dispatchedItems.forEach((item) => {
+        if (item.serialNumbers) {
+          const serials = item.serialNumbers.split(",").map((s) => s.trim()).filter((s) => s !== "");
+          totalSerials += serials.length;
+        }
+      });
+    });
+    if (totalSerials === 0) return "Not Started";
+    if (currentPOPreCommissioning.length === 0) return "Not Started";
+    if (currentPOPreCommissioning.length >= totalSerials) return "Done";
+    return "In-Progress";
+  }, [currentPODispatches, currentPOPreCommissioning]);
+
+  // Commissioning Status
+  const commissioningAccordionStatus = useMemo((): AccordionStatus => {
+    const forCommissioning = preCommissioningDetails.filter(
+      (pc) => pc.poId === poId && pc.preCommissioningStatus === "Done"
+    );
+    const commissioned = commissionedEntries;
+    if (forCommissioning.length === 0) return "Not Started";
+    if (commissioned.length === 0) return "Not Started";
+    if (commissioned.length >= forCommissioning.length) return "Done";
+    return "In-Progress";
+  }, [preCommissioningDetails, poId, commissionedEntries]);
+
+  // Warranty Status
+  const warrantyAccordionStatus = useMemo((): AccordionStatus => {
+    const forWarranty = preCommissioningDetails.filter(
+      (pc) => pc.poId === poId && pc.commissioningStatus === "Done"
+    );
+    if (forWarranty.length === 0) return "Not Started";
+    if (warrantyEntries.length === 0) return "Not Started";
+    if (warrantyEntries.length >= forWarranty.length) return "Done";
+    return "In-Progress";
+  }, [preCommissioningDetails, poId, warrantyEntries]);
 
   // Check if all accordions are in "Done" state
   const allAccordionsDone = useMemo(() => {
@@ -580,13 +646,14 @@ const PODetails: React.FC = () => {
     },
   ];
 
-  const dispatchColumns: ColumnsType<DispatchDetail> = [
+  const dispatchColumns: ColumnsType<DispatchResponse> = [
     {
       title: "Dispatch ID",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "dispatchId",
+      key: "dispatchId",
       width: 130,
       fixed: "left",
+      render: (value: number) => <Tag color="blue">#{value}</Tag>,
     },
     {
       title: "Dispatched Date",
@@ -606,11 +673,11 @@ const PODetails: React.FC = () => {
       dataIndex: "dispatchedItems",
       key: "dispatchedItems",
       width: 250,
-      render: (items: DispatchDetail["dispatchedItems"]) =>
+      render: (items: DispatchResponse["dispatchedItems"]) =>
         items?.map((item, index) => (
           <div key={index}>
             <Tag color="blue">
-              {formatLabel(item.product)}: {item.quantity}
+              {formatLabel(item.productName || "")}: {item.quantity}
             </Tag>
           </div>
         )) || "-",
@@ -668,7 +735,7 @@ const PODetails: React.FC = () => {
             <Popconfirm
               title="Delete Dispatch"
               description="Are you sure you want to delete this dispatch? This will remove all dispatch details data."
-              onConfirm={() => handleDeleteDispatch(record.id)}
+              onConfirm={() => handleDeleteDispatch(record.dispatchId)}
               okText="Yes"
               cancelText="No"
               okButtonProps={{ danger: true }}
@@ -691,14 +758,14 @@ const PODetails: React.FC = () => {
   ];
 
   // Dispatch Document table columns (flat properties)
-  const documentColumns: ColumnsType<DispatchDetail> = [
+  const documentColumns: ColumnsType<DispatchResponse> = [
     {
       title: "Dispatch ID",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "dispatchId",
+      key: "dispatchId",
       width: 130,
       fixed: "left",
-      render: (value: string) => <Tag color="blue">{value}</Tag>,
+      render: (value: number) => <Tag color="blue">#{value}</Tag>,
     },
     {
       title: "Dispatched Items",
@@ -706,11 +773,11 @@ const PODetails: React.FC = () => {
       key: "dispatchedItems",
       width: 180,
       fixed: "left",
-      render: (items: DispatchDetail["dispatchedItems"]) =>
+      render: (items: DispatchResponse["dispatchedItems"]) =>
         items?.map((item, index) => (
           <div key={index}>
             <Tag color="geekblue">
-              {formatLabel(item.product)}: {item.quantity}
+              {formatLabel(item.productName || "")}: {item.quantity}
             </Tag>
           </div>
         )) || "-",
@@ -825,7 +892,7 @@ const PODetails: React.FC = () => {
             <Popconfirm
               title="Delete Document Details"
               description="Are you sure you want to delete this document details? This will remove all document data."
-              onConfirm={() => handleDeleteDocumentDetails(record.id)}
+              onConfirm={() => handleDeleteDocumentDetails(record.dispatchId)}
               okText="Yes"
               cancelText="No"
               okButtonProps={{ danger: true }}
@@ -848,24 +915,25 @@ const PODetails: React.FC = () => {
   ];
 
   // Delivery Confirmation table columns (flat properties)
-  const deliveryConfirmationColumns: ColumnsType<DispatchDetail> = [
+  const deliveryConfirmationColumns: ColumnsType<DispatchResponse> = [
     {
       title: "Dispatch ID",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "dispatchId",
+      key: "dispatchId",
       width: 150,
       fixed: "left",
+      render: (value: number) => <Tag color="blue">#{value}</Tag>,
     },
     {
       title: "Dispatched Items",
       dataIndex: "dispatchedItems",
       key: "dispatchedItems",
       width: 200,
-      render: (items: DispatchDetail["dispatchedItems"]) =>
+      render: (items: DispatchResponse["dispatchedItems"]) =>
         items?.map((item, index) => (
           <div key={index}>
             <Tag color="blue">
-              {formatLabel(item.product)}: {item.quantity}
+              {formatLabel(item.productName || "")}: {item.quantity}
             </Tag>
           </div>
         )) || "-",
@@ -1675,7 +1743,7 @@ const PODetails: React.FC = () => {
                 columns={dispatchColumns}
                 dataSource={currentPODispatches.map((dispatchItem) => ({
                   ...dispatchItem,
-                  key: dispatchItem.id,
+                  key: dispatchItem.dispatchId,
                 }))}
                 pagination={false}
                 bordered
@@ -1740,7 +1808,7 @@ const PODetails: React.FC = () => {
                 columns={documentColumns}
                 dataSource={dispatchesWithDocuments.map((dispatchItem) => ({
                   ...dispatchItem,
-                  key: dispatchItem.id,
+                  key: dispatchItem.dispatchId,
                 }))}
                 pagination={false}
                 bordered
@@ -1810,7 +1878,7 @@ const PODetails: React.FC = () => {
                 dataSource={dispatchesWithDeliveryConfirmation.map(
                   (dispatchItem) => ({
                     ...dispatchItem,
-                    key: dispatchItem.id,
+                    key: dispatchItem.dispatchId,
                   })
                 )}
                 pagination={false}
@@ -2072,6 +2140,7 @@ const PODetails: React.FC = () => {
         onClose={handleCloseDocumentModal}
         dispatches={currentPODispatches}
         editData={editingDocument}
+        poId={poId}
       />
 
       {/* Delivery Confirmation Form Modal */}
@@ -2080,6 +2149,7 @@ const PODetails: React.FC = () => {
         onClose={handleCloseDeliveryModal}
         dispatches={dispatchesForDeliveryConfirmation}
         editData={editingDelivery}
+        poId={poId}
       />
 
       {/* Pre-Commissioning Form Modal */}

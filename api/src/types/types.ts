@@ -10,6 +10,7 @@ export const TYPES = {
   ProductController: Symbol.for('ProductController'),
   ClientController: Symbol.for('ClientController'),
   FileController: Symbol.for('FileController'),
+  DispatchController: Symbol.for('DispatchController'),
 
   // Services
   POService: Symbol.for('POService'),
@@ -23,6 +24,7 @@ export const TYPES = {
   ProductService: Symbol.for('ProductService'),
   ClientService: Symbol.for('ClientService'),
   FileService: Symbol.for('FileService'),
+  DispatchService: Symbol.for('DispatchService'),
 
   // Repositories
   AuthRepository: Symbol.for('AuthRepository'),
@@ -34,6 +36,7 @@ export const TYPES = {
   ProductRepository: Symbol.for('ProductRepository'),
   ClientRepository: Symbol.for('ClientRepository'),
   FileRepository: Symbol.for('FileRepository'),
+  DispatchRepository: Symbol.for('DispatchRepository'),
 
   // Database
   PrismaClient: Symbol.for('PrismaClient'),

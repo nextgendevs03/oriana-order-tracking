@@ -16,3 +16,6 @@ export * from "../../../api/src/schemas/request/ClientRequest";
 export * from "../../../api/src/schemas/response/ClientResponse";
 export * from "../../../api/src/schemas/request/PORequest";
 export * from "../../../api/src/schemas/response/POResponse";
+export * from "../../../api/src/schemas/request/DispatchRequest";
+export * from "../../../api/src/schemas/response/DispatchResponse";
+export * from "../../../api/src/constants/dispatchConstants";

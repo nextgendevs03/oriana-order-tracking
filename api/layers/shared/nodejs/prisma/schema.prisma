@@ -41,6 +41,7 @@ model PurchaseOrder {
   updatedAt             DateTime     @updatedAt @map("updated_at")
   poItems               POItem[]
   fileUploads           FileUpload[] // Files uploaded for this PO
+  dispatches            Dispatch[]   // Dispatches for this PO
 
   @@index([clientId])
   @@index([poStatus])
@@ -119,6 +120,8 @@ model User {
   clientsUpdated         Client[]         @relation("ClientUpdatedBy")
   fileUploadsCreated     FileUpload[]     @relation("FileUploadCreatedBy")
   fileUploadsUpdated     FileUpload[]     @relation("FileUploadUpdatedBy")
+  dispatchesCreated      Dispatch[]       @relation("DispatchCreatedBy")
+  dispatchesUpdated      Dispatch[]       @relation("DispatchUpdatedBy")
 
   @@index([email])
   @@index([username])
@@ -223,20 +226,21 @@ model OEM {
 }
 
 model Product {
-  productId   Int      @id @default(autoincrement()) @map("product_id")
-  productName String   @map("product_name") @db.VarChar(100)
-  isActive    Boolean  @default(true) @map("is_active")
-  categoryId  Int      @map("category_id")
-  category    Category @relation(fields: [categoryId], references: [categoryId])
-  oemId       Int      @map("oem_id")
-  oem         OEM      @relation(fields: [oemId], references: [oemId])
-  createdById Int?     @map("created_by")
-  createdBy   User?    @relation("ProductCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
-  updatedById Int?     @map("updated_by")
-  updatedBy   User?    @relation("ProductUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  poItems     POItem[] // PO items using this product
+  productId       Int              @id @default(autoincrement()) @map("product_id")
+  productName     String           @map("product_name") @db.VarChar(100)
+  isActive        Boolean          @default(true) @map("is_active")
+  categoryId      Int              @map("category_id")
+  category        Category         @relation(fields: [categoryId], references: [categoryId])
+  oemId           Int              @map("oem_id")
+  oem             OEM              @relation(fields: [oemId], references: [oemId])
+  createdById     Int?             @map("created_by")
+  createdBy       User?            @relation("ProductCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById     Int?             @map("updated_by")
+  updatedBy       User?            @relation("ProductUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  poItems         POItem[]         // PO items using this product
+  dispatchedItems DispatchedItem[] // Dispatched items using this product
 
   @@index([productName])
   @@index([isActive])
@@ -293,4 +297,78 @@ model FileUpload {
   @@index([poId])
   @@index([createdAt])
   @@map("file_uploads")
+}
+
+// Dispatch model for tracking product dispatches
+model Dispatch {
+  dispatchId          Int              @id @default(autoincrement()) @map("dispatch_id")
+  poId                String           @map("po_id") @db.VarChar(20)
+  purchaseOrder       PurchaseOrder    @relation(fields: [poId], references: [poId], onDelete: Cascade)
+
+  // Dispatch Details Fields (Section 1)
+  projectName         String           @map("project_name") @db.VarChar(255)
+  projectLocation     String           @map("project_location") @db.VarChar(255)
+  deliveryLocation    String           @map("delivery_location") @db.VarChar(255)
+  deliveryAddress     String           @map("delivery_address") @db.Text
+  googleMapLink       String?          @map("google_map_link") @db.VarChar(500)
+  confirmDispatchDate DateTime         @map("confirm_dispatch_date") @db.Date
+  deliveryContact     String           @map("delivery_contact") @db.VarChar(100)
+  remarks             String?          @db.Text
+
+  // Document Fields (Section 2 - Optional)
+  noDuesClearance     String?          @map("no_dues_clearance") @db.VarChar(50)
+  docOsgPiNo          String?          @map("doc_osg_pi_no") @db.VarChar(50)
+  docOsgPiDate        DateTime?        @map("doc_osg_pi_date") @db.Date
+  taxInvoiceNumber    String?          @map("tax_invoice_number") @db.VarChar(100)
+  invoiceDate         DateTime?        @map("invoice_date") @db.Date
+  ewayBill            String?          @map("eway_bill") @db.VarChar(100)
+  deliveryChallan     String?          @map("delivery_challan") @db.VarChar(100)
+  dispatchDate        DateTime?        @map("dispatch_date") @db.Date
+  packagingList       String?          @map("packaging_list") @db.Text
+  dispatchFromLocation String?         @map("dispatch_from_location") @db.VarChar(255)
+  dispatchStatus      String?          @map("dispatch_status") @db.VarChar(50)
+  dispatchLrNo        String?          @map("dispatch_lr_no") @db.VarChar(100)
+  dispatchRemarks     String?          @map("dispatch_remarks") @db.Text
+  documentUpdatedAt   DateTime?        @map("document_updated_at")
+
+  // Delivery Confirmation Fields (Section 3 - Optional)
+  dateOfDelivery      DateTime?        @map("date_of_delivery") @db.Date
+  deliveryStatus      String?          @map("delivery_status") @db.VarChar(50)
+  proofOfDelivery     String?          @map("proof_of_delivery") @db.Text
+  deliveryUpdatedAt   DateTime?        @map("delivery_updated_at")
+
+  // Audit Fields
+  createdById         Int?             @map("created_by")
+  createdBy           User?            @relation("DispatchCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById         Int?             @map("updated_by")
+  updatedBy           User?            @relation("DispatchUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  dispatchedItems     DispatchedItem[]
+
+  @@index([poId])
+  @@index([dispatchStatus])
+  @@index([deliveryStatus])
+  @@index([createdAt])
+  @@map("dispatches")
+}
+
+// DispatchedItem model for tracking items in each dispatch
+model DispatchedItem {
+  id            Int      @id @default(autoincrement())
+  dispatchId    Int      @map("dispatch_id")
+  dispatch      Dispatch @relation(fields: [dispatchId], references: [dispatchId], onDelete: Cascade)
+  productId     Int      @map("product_id")
+  product       Product  @relation(fields: [productId], references: [productId], onDelete: Restrict)
+  quantity      Int
+  serialNumbers String?  @map("serial_numbers") @db.Text // Comma-separated serial numbers
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([dispatchId])
+  @@index([productId])
+  @@map("dispatched_items")
 }

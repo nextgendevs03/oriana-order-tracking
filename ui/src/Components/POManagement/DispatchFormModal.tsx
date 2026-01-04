@@ -12,16 +12,15 @@ import {
   Card,
   Typography,
   Tag,
+  message,
 } from "antd";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
-  addDispatchDetail,
-  updateDispatchDetail,
-  DispatchDetail,
-  DispatchedItem,
-  POItem,
-} from "../../store/poSlice";
-import { selectDispatchDetails } from "../../store/poSelectors";
+  useCreateDispatchMutation,
+  useUpdateDispatchDetailsMutation,
+  useGetDispatchesByPoIdQuery,
+} from "../../store/api/dispatchApi";
+import type { DispatchResponse, DispatchedItemRequest } from "@OrianaTypes";
+import type { POItem } from "../../store/poSlice";
 import dayjs from "dayjs";
 import {
   formatLabel,
@@ -36,13 +35,14 @@ interface DispatchFormModalProps {
   onClose: () => void;
   poId: string;
   poItems: POItem[];
-  editData?: DispatchDetail | null;
+  editData?: DispatchResponse | null;
 }
 
 interface ProductQuantityInfo {
-  product: string;
+  productId: number;
+  productName: string;
   category: string;
-  quantity: number; // Actual quantity (excluding spare)
+  quantity: number;
   dispatchedQuantity: number;
   availableQuantity: number;
 }
@@ -55,38 +55,50 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
   editData = null,
 }) => {
   const [form] = Form.useForm();
-  const dispatch = useAppDispatch();
-  const dispatchDetails = useAppSelector(selectDispatchDetails);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+
+  // API mutations
+  const [createDispatch, { isLoading: isCreating }] = useCreateDispatchMutation();
+  const [updateDispatchDetails, { isLoading: isUpdating }] = useUpdateDispatchDetailsMutation();
+
+  // Fetch existing dispatches for current PO
+  const { data: existingDispatches = [] } = useGetDispatchesByPoIdQuery(poId, {
+    skip: !poId || !visible,
+  });
 
   const isEditMode = !!editData;
+  const isSubmitting = isCreating || isUpdating;
 
   // Get existing dispatches for current PO (excluding current edit record)
-  const currentPODispatches = dispatchDetails.filter(
-    (d: DispatchDetail) => d.poId === poId && d.id !== editData?.id
-  );
+  const currentPODispatches = useMemo(() => {
+    return existingDispatches.filter(
+      (d) => d.dispatchId !== editData?.dispatchId
+    );
+  }, [existingDispatches, editData?.dispatchId]);
 
-  // Calculate available quantities for all products (based on quantity, not totalQuantity)
-  const productQuantityInfo = useMemo((): Record<
-    string,
-    ProductQuantityInfo
-  > => {
-    const info: Record<string, ProductQuantityInfo> = {};
+  // Calculate available quantities for all products
+  const productQuantityInfo = useMemo((): Record<number, ProductQuantityInfo> => {
+    const info: Record<number, ProductQuantityInfo> = {};
     poItems.forEach((item) => {
+      // Find the productId from the item (we need to map product name to id)
+      // For now, using a workaround - get productId from poItems if available
+      const productId = (item as unknown as { productId?: number }).productId || 0;
+      
       // Sum dispatched quantity from all dispatch entries' dispatchedItems
       const dispatchedQty = currentPODispatches.reduce((sum, d) => {
-        const itemQty =
-          d.dispatchedItems?.find((di) => di.product === item.product)
-            ?.quantity || 0;
-        return sum + itemQty;
+        const matchingItem = d.dispatchedItems?.find(
+          (di) => di.productName === item.product || di.productId === productId
+        );
+        return sum + (matchingItem?.quantity || 0);
       }, 0);
-      // Use quantity (actual items) not totalQuantity (which includes spare)
+
       const availableQty = item.quantity - dispatchedQty;
 
-      info[item.product] = {
-        product: item.product,
+      info[productId] = {
+        productId,
+        productName: item.product,
         category: item.category,
-        quantity: item.quantity, // Actual quantity (excluding spare)
+        quantity: item.quantity,
         dispatchedQuantity: dispatchedQty,
         availableQuantity: availableQty > 0 ? availableQty : 0,
       };
@@ -97,16 +109,14 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
   // Initialize form with edit data
   useEffect(() => {
     if (visible && editData) {
-      const products =
-        editData.dispatchedItems?.map((item: DispatchedItem) => item.product) ||
-        [];
-      setSelectedProducts(products);
-      const productQuantities: Record<string, number> = {};
-      editData.dispatchedItems?.forEach((item: DispatchedItem) => {
-        productQuantities[item.product] = item.quantity;
+      const productIds = editData.dispatchedItems?.map((item) => item.productId) || [];
+      setSelectedProducts(productIds);
+      const productQuantities: Record<number, number> = {};
+      editData.dispatchedItems?.forEach((item) => {
+        productQuantities[item.productId] = item.quantity;
       });
       form.setFieldsValue({
-        products: products,
+        products: productIds,
         projectName: editData.projectName,
         projectLocation: editData.projectLocation,
         deliveryLocation: editData.deliveryLocation,
@@ -128,27 +138,27 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
   // Generate product options from PO items with remaining quantity info
   const getProductOptions = () => {
     return poItems.map((item) => {
-      const info = productQuantityInfo[item.product];
+      const productId = (item as unknown as { productId?: number }).productId || 0;
+      const info = productQuantityInfo[productId];
       const remainingQty = info?.availableQuantity || 0;
       const isEditProduct = editData?.dispatchedItems?.some(
-        (di) => di.product === item.product
+        (di) => di.productId === productId
       );
 
       return {
-        value: item.product,
-        label: `${item.product.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())} - ${item.category.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())} (Available: ${remainingQty}/${item.quantity})`,
+        value: productId,
+        label: `${formatLabel(item.product)} - ${formatLabel(item.category)} (Available: ${remainingQty}/${item.quantity})`,
         disabled: remainingQty <= 0 && !isEditProduct,
       };
     });
   };
 
-  const handleProductChange = (values: string[]) => {
+  const handleProductChange = (values: number[]) => {
     setSelectedProducts(values);
-    // Reset quantities for products that are deselected
     const currentQuantities = form.getFieldValue("productQuantities") || {};
-    const newQuantities: Record<string, number | undefined> = {};
-    values.forEach((product) => {
-      newQuantities[product] = currentQuantities[product];
+    const newQuantities: Record<number, number | undefined> = {};
+    values.forEach((productId) => {
+      newQuantities[productId] = currentQuantities[productId];
     });
     form.setFieldValue("productQuantities", newQuantities);
   };
@@ -158,59 +168,57 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
       const values = await form.validateFields();
 
       // Build dispatchedItems array from selected products and their quantities
-      const dispatchedItems: DispatchedItem[] = selectedProducts
-        .map((product) => ({
-          product: product,
-          quantity: values.productQuantities?.[product] || 0,
+      const dispatchedItems: DispatchedItemRequest[] = selectedProducts
+        .map((productId) => ({
+          productId: productId,
+          quantity: values.productQuantities?.[productId] || 0,
         }))
         .filter((item) => item.quantity > 0);
 
       if (isEditMode && editData) {
         // Update existing dispatch
-        const updatedDispatch: DispatchDetail = {
-          ...editData,
-          dispatchedItems: dispatchedItems,
-          projectName: values.projectName,
-          projectLocation: values.projectLocation,
-          deliveryLocation: values.deliveryLocation,
-          deliveryAddress: values.deliveryAddress,
-          googleMapLink: values.googleMapLink || "",
-          confirmDispatchDate: values.confirmDispatchDate
-            ? dayjs(values.confirmDispatchDate).format("YYYY-MM-DD")
-            : "",
-          deliveryContact: values.deliveryContact,
-          remarks: values.remarks || "",
-        };
-
-        dispatch(updateDispatchDetail(updatedDispatch));
+        await updateDispatchDetails({
+          id: editData.dispatchId,
+          data: {
+            dispatchedItems: dispatchedItems,
+            projectName: values.projectName,
+            projectLocation: values.projectLocation,
+            deliveryLocation: values.deliveryLocation,
+            deliveryAddress: values.deliveryAddress,
+            googleMapLink: values.googleMapLink || undefined,
+            confirmDispatchDate: values.confirmDispatchDate
+              ? dayjs(values.confirmDispatchDate).format("YYYY-MM-DD")
+              : undefined,
+            deliveryContact: values.deliveryContact,
+            remarks: values.remarks || undefined,
+          },
+        }).unwrap();
+        message.success("Dispatch updated successfully");
       } else {
-        // Create a single dispatch entry with all selected products
-        const timestamp = Date.now();
-        const dispatchData: DispatchDetail = {
-          id: `DISPATCH-${timestamp.toString().slice(-8)}`,
+        // Create a new dispatch
+        await createDispatch({
           poId: poId,
           dispatchedItems: dispatchedItems,
           projectName: values.projectName,
           projectLocation: values.projectLocation,
           deliveryLocation: values.deliveryLocation,
           deliveryAddress: values.deliveryAddress,
-          googleMapLink: values.googleMapLink || "",
+          googleMapLink: values.googleMapLink || undefined,
           confirmDispatchDate: values.confirmDispatchDate
             ? dayjs(values.confirmDispatchDate).format("YYYY-MM-DD")
             : "",
           deliveryContact: values.deliveryContact,
-          remarks: values.remarks || "",
-          createdAt: new Date().toISOString(),
-        };
-
-        dispatch(addDispatchDetail(dispatchData));
+          remarks: values.remarks || undefined,
+        }).unwrap();
+        message.success("Dispatch created successfully");
       }
 
       form.resetFields();
       setSelectedProducts([]);
       onClose();
     } catch (error) {
-      console.error("Validation failed:", error);
+      console.error("Submission failed:", error);
+      message.error("Failed to save dispatch. Please try again.");
     }
   };
 
@@ -221,8 +229,8 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
   };
 
   // Quantity validation rule for each product
-  const getQuantityValidator = (product: string) => {
-    const info = productQuantityInfo[product];
+  const getQuantityValidator = (productId: number) => {
+    const info = productQuantityInfo[productId];
     const availableQty = info?.availableQuantity || 0;
 
     return async (_: unknown, value: number) => {
@@ -249,7 +257,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
       width={900}
       destroyOnClose
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
+        <Button key="cancel" onClick={handleCancel} disabled={isSubmitting}>
           Cancel
         </Button>,
         <Button
@@ -257,6 +265,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
           type="primary"
           onClick={handleSubmit}
           disabled={selectedProducts.length === 0}
+          loading={isSubmitting}
           style={{
             backgroundColor: "#4b6cb7",
           }}
@@ -289,7 +298,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
                 options={getProductOptions()}
                 onChange={(value) =>
                   handleProductChange(
-                    isEditMode ? [value as string] : (value as string[])
+                    isEditMode ? [value as number] : (value as number[])
                   )
                 }
                 maxTagCount="responsive"
@@ -316,10 +325,10 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
             style={{ marginBottom: "1rem" }}
           >
             <Row gutter={[16, 8]}>
-              {selectedProducts.map((product) => {
-                const info = productQuantityInfo[product];
+              {selectedProducts.map((productId) => {
+                const info = productQuantityInfo[productId];
                 return (
-                  <Col span={isEditMode ? 24 : 12} key={product}>
+                  <Col span={isEditMode ? 24 : 12} key={productId}>
                     <div
                       style={{
                         padding: "12px",
@@ -329,7 +338,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
                       }}
                     >
                       <div style={{ marginBottom: "8px" }}>
-                        <Text strong>{formatLabel(product)}</Text>
+                        <Text strong>{formatLabel(info?.productName || "")}</Text>
                         <Tag
                           color={info?.availableQuantity > 0 ? "blue" : "red"}
                           style={{ marginLeft: "8px" }}
@@ -339,8 +348,8 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
                         </Tag>
                       </div>
                       <Form.Item
-                        name={["productQuantities", product]}
-                        rules={[{ validator: getQuantityValidator(product) }]}
+                        name={["productQuantities", productId]}
+                        rules={[{ validator: getQuantityValidator(productId) }]}
                         style={{ marginBottom: 0 }}
                       >
                         <InputNumber

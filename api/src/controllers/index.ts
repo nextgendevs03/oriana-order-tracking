@@ -38,3 +38,5 @@ export * from './ProductController';
 export * from './ClientController';
 // File Controller
 export * from './FileController';
+// Dispatch Controller
+export * from './DispatchController';
