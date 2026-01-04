@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Modal, Form, Select, Button, Tooltip } from "antd";
+import { EditOutlined } from "@ant-design/icons";
 import { useGetUsersQuery } from "../../store/api/userApi";
 import { useUpdatePOMutation } from "../../store/api/poApi";
 import { useDebounce } from "../../hooks";
@@ -102,6 +103,7 @@ const UpdateAssignDispatchToModal: React.FC<
         <Button
           key="submit"
           type="primary"
+          icon={<EditOutlined />}
           onClick={handleSubmit}
           loading={isUpdating}
         >

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type FC } from "react";
+import { useState, useMemo, useEffect, useRef, type FC } from "react";
 import {
   Form,
   Input,
@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
 import { colors, shadows } from "../styles/theme";
-import FileUpload from "../Components/POManagement/FileUpload";
+import S3FileUpload, { S3FileUploadRef } from "../Components/POManagement/S3FileUpload";
 import POItemsTable from "../Components/POManagement/POItemsTable";
 import AddClientModal from "../Components/Admin/ClientManagment/AddClientModal";
 import { useGetCategoriesQuery } from "../store/api/categoryApi";
@@ -67,6 +67,7 @@ const CreatePO: FC = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const s3FileUploadRef = useRef<S3FileUploadRef>(null);
   const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
   const [userSearchTerm, setUserSearchTerm] = useState<string>("");
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
@@ -338,6 +339,17 @@ const CreatePO: FC = () => {
       // Call the API to create PO
       const result = await createPO(createPORequest).unwrap();
 
+      // Upload files to S3 if any files are selected
+      if (fileList.length > 0 && s3FileUploadRef.current) {
+        try {
+          // Set the poId and entityId for file upload
+          await s3FileUploadRef.current.uploadAndConfirm();
+        } catch (uploadError) {
+          console.warn("File upload failed, but PO was created:", uploadError);
+          toast.warning("PO created but some files failed to upload. You can add them later.");
+        }
+      }
+
       toast.success(`Purchase Order ${result.poId} created successfully!`);
 
       // Reset form and file list
@@ -348,17 +360,17 @@ const CreatePO: FC = () => {
 
       // Navigate to dashboard
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create PO:", error);
-      toast.error(
-        error?.data?.message ||
-          error?.message ||
-          "An error occurred. Please try again.",
-        {
-          description: "Failed to create Purchase Order",
-          duration: 5000,
-        }
-      );
+      const errorMessage = error && typeof error === 'object' && 'data' in error
+        ? (error.data as { message?: string })?.message
+        : error instanceof Error
+          ? error.message
+          : "An error occurred. Please try again.";
+      toast.error(errorMessage || "An error occurred. Please try again.", {
+        description: "Failed to create Purchase Order",
+        duration: 5000,
+      });
     }
   };
 
@@ -744,13 +756,15 @@ const CreatePO: FC = () => {
               label="Upload Documents (OSG PI, Client PO)"
               tooltip="Upload up to 2 documents. Supported formats: Images, PDF, Word, Excel"
             >
-              <FileUpload
+              <S3FileUpload
+                ref={s3FileUploadRef}
                 fileList={fileList}
                 onChange={setFileList}
                 maxFiles={2}
                 maxSizeMB={10}
                 buttonLabel="Click to Upload"
                 helperText="Supported: Images (JPG, PNG, GIF, SVG), PDF, Word, Excel."
+                entityType="po_document"
               />
             </Form.Item>
           </Col>
@@ -774,7 +788,7 @@ const CreatePO: FC = () => {
                     loading={isCreatingPO}
                     disabled={hasErrors}
                     style={{
-                      backgroundColor: "#4b6cb7",
+                      backgroundColor: colors.primary,
                       borderRadius: 8,
                       fontWeight: 600,
                       paddingLeft: "2rem",

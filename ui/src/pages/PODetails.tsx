@@ -1620,6 +1620,7 @@ const PODetails: React.FC = () => {
                   <Button
                     type="link"
                     size="small"
+                    icon={<EditOutlined />}
                     onClick={() =>
                       setIsUpdateAssignDispatchToModalVisible(true)
                     }
@@ -1632,6 +1633,7 @@ const PODetails: React.FC = () => {
                     <Button
                       type="link"
                       size="small"
+                      icon={<EditOutlined />}
                       disabled
                       style={{ padding: 0, height: "auto" }}
                     >
