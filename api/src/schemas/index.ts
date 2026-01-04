@@ -41,3 +41,18 @@ export * from './response/FileResponse';
 export * from './request/DispatchRequest';
 // Dispatch Response schemas
 export * from './response/DispatchResponse';
+
+// Pre-Commissioning Request schemas
+export * from './request/PreCommissioningRequest';
+// Pre-Commissioning Response schemas
+export * from './response/PreCommissioningResponse';
+
+// Commissioning Request schemas
+export * from './request/CommissioningRequest';
+// Commissioning Response schemas
+export * from './response/CommissioningResponse';
+
+// Warranty Certificate Request schemas
+export * from './request/WarrantyCertificateRequest';
+// Warranty Certificate Response schemas
+export * from './response/WarrantyCertificateResponse';

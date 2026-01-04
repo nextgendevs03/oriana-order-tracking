@@ -33,6 +33,7 @@ export interface IDispatchRepository {
   findById(dispatchId: number): Promise<DispatchWithRelations | null>;
   findAll(params: ListDispatchRequest): Promise<{ rows: DispatchWithRelations[]; count: number }>;
   findByPoId(poId: string): Promise<DispatchWithRelations[]>;
+  getPOTotalQuantity(poId: string): Promise<number>;
   updateDetails(
     dispatchId: number,
     data: UpdateDispatchDetailsRequest
@@ -165,6 +166,17 @@ export class DispatchRepository implements IDispatchRepository {
       orderBy: { createdAt: 'desc' },
     });
     return dispatches as DispatchWithRelations[];
+  }
+
+  /**
+   * Get total quantity from PO items for a specific PO
+   */
+  async getPOTotalQuantity(poId: string): Promise<number> {
+    const result = await this.prisma.pOItem.aggregate({
+      where: { poId },
+      _sum: { quantity: true },
+    });
+    return result._sum.quantity || 0;
   }
 
   /**

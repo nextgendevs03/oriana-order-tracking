@@ -13,6 +13,7 @@ import { Upload, Button, Typography, Progress, Space } from "antd";
 import {
   UploadOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   FileOutlined,
   FilePdfOutlined,
   FileExcelOutlined,
@@ -27,6 +28,7 @@ import { useToast } from "../../hooks/useToast";
 import {
   useGeneratePresignedUrlsMutation,
   useConfirmFilesMutation,
+  useLazyGetDownloadUrlQuery,
   uploadFileToS3,
   FileUploadInfo,
 } from "../../store/api/fileApi";
@@ -146,12 +148,14 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
     // RTK Query mutations
     const [generatePresignedUrls] = useGeneratePresignedUrlsMutation();
     const [confirmFiles] = useConfirmFilesMutation();
+    const [getDownloadUrl] = useLazyGetDownloadUrlQuery();
 
     // Upload state tracking
     const [uploadStates, setUploadStates] = useState<Map<string, FileUploadState>>(
       new Map()
     );
     const [isUploading, setIsUploading] = useState(false);
+    const [downloadingFileUid, setDownloadingFileUid] = useState<string | null>(null);
 
     // Check if minimum files requirement is met
     const isMinFilesMet = fileList.length >= minFiles;
@@ -241,12 +245,52 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
       });
     };
 
+    // Handle file download (for existing files)
+    const handleDownloadFile = async (file: UploadFile) => {
+      // Extract file ID from uid (format: "existing-{fileId}")
+      const fileIdMatch = file.uid.match(/^existing-(\d+)$/);
+      if (!fileIdMatch) {
+        toast.error("Cannot download new files before they are uploaded");
+        return;
+      }
+
+      const fileId = parseInt(fileIdMatch[1], 10);
+      setDownloadingFileUid(file.uid);
+
+      try {
+        const result = await getDownloadUrl(fileId).unwrap();
+        // Open download URL in new tab
+        window.open(result.downloadUrl, "_blank");
+      } catch (error) {
+        console.error("Download failed:", error);
+        toast.error("Failed to download file");
+      } finally {
+        setDownloadingFileUid(null);
+      }
+    };
+
+    // Check if file is an existing file (already uploaded)
+    const isExistingFile = (file: UploadFile) => {
+      return file.uid.startsWith("existing-");
+    };
+
     // Format file size for display
     const formatFileSize = (size: number) => {
       if (size < 1024) return `${size} B`;
       if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
       return `${(size / (1024 * 1024)).toFixed(1)} MB`;
     };
+
+    // Get list of uploaded file IDs
+    const getUploadedFileIds = useCallback((): number[] => {
+      const ids: number[] = [];
+      uploadStates.forEach((state) => {
+        if (state.fileId && (state.status === "uploaded" || state.status === "confirmed")) {
+          ids.push(state.fileId);
+        }
+      });
+      return ids;
+    }, [uploadStates]);
 
     // Upload all pending files to S3 and confirm them
     const uploadAndConfirm = useCallback(async (): Promise<number[]> => {
@@ -388,18 +432,8 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
       entityType,
       entityId,
       toast,
+      getUploadedFileIds,
     ]);
-
-    // Get list of uploaded file IDs
-    const getUploadedFileIds = useCallback((): number[] => {
-      const ids: number[] = [];
-      uploadStates.forEach((state) => {
-        if (state.fileId && (state.status === "uploaded" || state.status === "confirmed")) {
-          ids.push(state.fileId);
-        }
-      });
-      return ids;
-    }, [uploadStates]);
 
     // Expose methods via ref
     useImperativeHandle(
@@ -498,6 +532,17 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
                       strokeWidth={10}
                     />
                   )}
+                  {isExistingFile(file) && (
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={downloadingFileUid === file.uid ? <LoadingOutlined /> : <DownloadOutlined />}
+                      onClick={() => handleDownloadFile(file)}
+                      disabled={disabled || isUploading || downloadingFileUid === file.uid}
+                      title="Download file"
+                      style={{ color: "#1890ff" }}
+                    />
+                  )}
                   <Button
                     type="text"
                     danger
@@ -505,6 +550,7 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
                     icon={<DeleteOutlined />}
                     onClick={() => handleRemoveFile(file)}
                     disabled={disabled || isUploading}
+                    title="Remove file"
                   />
                 </Space>
               </div>

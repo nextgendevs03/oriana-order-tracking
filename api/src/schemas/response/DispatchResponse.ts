@@ -84,3 +84,24 @@ export interface DeleteDispatchResponse {
   dispatchId: number;
   deleted: boolean;
 }
+
+/**
+ * Accordion Status Type
+ */
+export type AccordionStatusType = 'Not Started' | 'In-Progress' | 'Done';
+
+/**
+ * Dispatch Accordion Status Response
+ * Returns status for Dispatch, Document, and Delivery sections
+ */
+export interface DispatchAccordionStatusResponse {
+  dispatchStatus: AccordionStatusType;
+  totalQty: number;
+  dispatchedQty: number;
+  documentStatus: AccordionStatusType;
+  dispatchesWithDocuments: number;
+  dispatchesWithDoneDocuments: number;
+  deliveryStatus: AccordionStatusType;
+  dispatchesForDelivery: number;
+  dispatchesWithDelivery: number;
+}

@@ -33,18 +33,35 @@ import { selectAuth } from "../store/authSlice";
 import { useGetPOByIdQuery } from "../store/api/poApi";
 import {
   useGetDispatchesByPoIdQuery,
+  useGetDispatchAccordionStatusQuery,
   useDeleteDispatchMutation,
   useUpdateDispatchDocumentsMutation,
 } from "../store/api/dispatchApi";
 import {
-  deletePreCommissioning,
+  useGetPreCommissioningsByPoIdQuery,
+  useGetPreCommissioningStatusQuery,
+  useDeletePreCommissioningMutation,
+} from "../store/api/preCommissioningApi";
+import {
+  useGetCommissioningsByPoIdQuery,
+  useGetCommissioningStatusQuery,
+} from "../store/api/commissioningApi";
+import {
+  useGetWarrantyCertificatesByPoIdQuery,
+  useGetWarrantyCertificateStatusQuery,
+} from "../store/api/warrantyCertificateApi";
+import type {
+  PreCommissioningResponse,
+  CommissioningResponse,
+  WarrantyCertificateResponse,
+} from "@OrianaTypes";
+import {
   updatePO,
 } from "../store/poSlice";
 import type { ColumnsType } from "antd/es/table";
 import type {
   POItem,
   POData,
-  PreCommissioning,
 } from "../store/poSlice";
 import type { DispatchResponse } from "@OrianaTypes";
 import DispatchFormModal from "../Components/POManagement/DispatchFormModal";
@@ -60,9 +77,6 @@ import ServiceDetailsModal, {
   ServiceDetailsTab,
 } from "../Components/POManagement/ServiceDetailsModal";
 import UpdateAssignDispatchToModal from "../Components/POManagement/UpdateAssignDispatchToModal";
-import {
-  selectPreCommissioningDetails,
-} from "../store/poSelectors";
 import {
   getPaymentStatusColor,
   getPoStatusColor,
@@ -135,14 +149,14 @@ const PODetails: React.FC = () => {
   const [isPreCommissioningModalVisible, setIsPreCommissioningModalVisible] =
     useState(false);
   const [editingPreCommissioning, setEditingPreCommissioning] =
-    useState<PreCommissioning | null>(null);
+    useState<PreCommissioningResponse | null>(null);
   const [isCommissioningModalVisible, setIsCommissioningModalVisible] =
     useState(false);
   const [editingCommissioning, setEditingCommissioning] =
-    useState<PreCommissioning | null>(null);
+    useState<CommissioningResponse | null>(null);
   const [isWarrantyModalVisible, setIsWarrantyModalVisible] = useState(false);
   const [editingWarranty, setEditingWarranty] =
-    useState<PreCommissioning | null>(null);
+    useState<WarrantyCertificateResponse | null>(null);
   // Unified Dispatch Details View Modal
   const [isDispatchDetailsModalVisible, setIsDispatchDetailsModalVisible] =
     useState(false);
@@ -154,7 +168,7 @@ const PODetails: React.FC = () => {
   const [isServiceDetailsModalVisible, setIsServiceDetailsModalVisible] =
     useState(false);
   const [viewingServiceDetails, setViewingServiceDetails] =
-    useState<PreCommissioning | null>(null);
+    useState<PreCommissioningResponse | null>(null);
   const [serviceDetailsTab, setServiceDetailsTab] =
     useState<ServiceDetailsTab>("precommissioning");
   // Update Assign Dispatch To Modal
@@ -172,11 +186,48 @@ const PODetails: React.FC = () => {
     skip: !poId,
   });
 
+  // Fetch dispatch accordion status from API
+  const { data: dispatchAccordionStatus } = useGetDispatchAccordionStatusQuery(
+    poId || "",
+    { skip: !poId }
+  );
+
   // Delete dispatch mutation
   const [deleteDispatch] = useDeleteDispatchMutation();
   const [updateDispatchDocuments] = useUpdateDispatchDocumentsMutation();
 
-  const preCommissioningDetails = useAppSelector(selectPreCommissioningDetails);
+  // Fetch pre-commissioning data from API
+  const { data: preCommissioningData = [] } =
+    useGetPreCommissioningsByPoIdQuery(poId || "", {
+      skip: !poId,
+    });
+  const { data: preCommissioningStatus } = useGetPreCommissioningStatusQuery(
+    poId || "",
+    { skip: !poId }
+  );
+
+  // Fetch commissioning data from API
+  const { data: commissioningData = [] } = useGetCommissioningsByPoIdQuery(
+    poId || "",
+    { skip: !poId }
+  );
+  const { data: commissioningStatus } = useGetCommissioningStatusQuery(
+    poId || "",
+    { skip: !poId }
+  );
+
+  // Fetch warranty certificate data from API
+  const { data: warrantyCertificateData = [] } =
+    useGetWarrantyCertificatesByPoIdQuery(poId || "", {
+      skip: !poId,
+    });
+  const { data: warrantyCertificateStatus } = useGetWarrantyCertificateStatusQuery(
+    poId || "",
+    { skip: !poId }
+  );
+
+  // Delete mutations for service lifecycle
+  const [deletePreCommissioning] = useDeletePreCommissioningMutation();
 
   console.log(poResponse);
   // Map API response to POData format expected by the component
@@ -200,6 +251,7 @@ const PODetails: React.FC = () => {
       clientGST: poResponse.clientGST,
       poItems: poResponse.poItems.map(
         (item): POItem => ({
+          productId: item.productId,
           category: item.categoryName || "",
           oemName: item.oemName || "",
           product: item.productName || "",
@@ -292,7 +344,7 @@ const PODetails: React.FC = () => {
 
   // Unified view handler for service details modal
   const handleViewServiceDetails = (
-    record: PreCommissioning,
+    record: PreCommissioningResponse,
     tab: ServiceDetailsTab
   ) => {
     setViewingServiceDetails(record);
@@ -357,10 +409,8 @@ const PODetails: React.FC = () => {
     return currentPODispatches.filter((d) => d.deliveryStatus === "done");
   }, [currentPODispatches]);
 
-  // Get pre-commissioning entries for current PO
-  const currentPOPreCommissioning = useMemo(() => {
-    return preCommissioningDetails.filter((pc) => pc.poId === poId);
-  }, [preCommissioningDetails, poId]);
+  // Pre-commissioning entries for current PO (from API)
+  const currentPOPreCommissioning = preCommissioningData;
 
   // Pre-commissioning modal handlers
   const handleAddPreCommissioning = () => {
@@ -368,13 +418,17 @@ const PODetails: React.FC = () => {
     setIsPreCommissioningModalVisible(true);
   };
 
-  const handleEditPreCommissioning = (record: PreCommissioning) => {
+  const handleEditPreCommissioning = (record: PreCommissioningResponse) => {
     setEditingPreCommissioning(record);
     setIsPreCommissioningModalVisible(true);
   };
 
-  const handleDeletePreCommissioning = (pcId: string) => {
-    dispatch(deletePreCommissioning(pcId));
+  const handleDeletePreCommissioningRecord = async (pcId: number) => {
+    try {
+      await deletePreCommissioning({ id: pcId, poId }).unwrap();
+    } catch (error) {
+      console.error("Failed to delete pre-commissioning:", error);
+    }
   };
 
   const handleClosePreCommissioningModal = () => {
@@ -382,19 +436,15 @@ const PODetails: React.FC = () => {
     setEditingPreCommissioning(null);
   };
 
-  // Get pre-commissioning entries with "Done" preCommissioningStatus for commissioning
+  // Pre-commissioning entries with "Done" status (eligible for commissioning)
   const preCommissioningForCommissioning = useMemo(() => {
-    return preCommissioningDetails.filter(
-      (pc) => pc.poId === poId && pc.preCommissioningStatus === "Done"
+    return preCommissioningData.filter(
+      (pc) => pc.preCommissioningStatus === "Done"
     );
-  }, [preCommissioningDetails, poId]);
+  }, [preCommissioningData]);
 
-  // Get commissioned entries (those with commissioningStatus)
-  const commissionedEntries = useMemo(() => {
-    return preCommissioningDetails.filter(
-      (pc) => pc.poId === poId && pc.commissioningStatus
-    );
-  }, [preCommissioningDetails, poId]);
+  // Commissioned entries (from API)
+  const commissionedEntries = commissioningData;
 
   // Commissioning modal handlers
   const handleAddCommissioning = () => {
@@ -402,7 +452,7 @@ const PODetails: React.FC = () => {
     setIsCommissioningModalVisible(true);
   };
 
-  const handleEditCommissioning = (record: PreCommissioning) => {
+  const handleEditCommissioning = (record: CommissioningResponse) => {
     setEditingCommissioning(record);
     setIsCommissioningModalVisible(true);
   };
@@ -412,104 +462,56 @@ const PODetails: React.FC = () => {
     setEditingCommissioning(null);
   };
 
-  // Get records with commissioningStatus === "Done" for warranty
+  // Commissioning entries with "Done" status (eligible for warranty)
   const commissioningForWarranty = useMemo(() => {
-    return preCommissioningDetails.filter(
-      (pc) => pc.poId === poId && pc.commissioningStatus === "Done"
+    return commissioningData.filter(
+      (c) => c.commissioningStatus === "Done"
     );
-  }, [preCommissioningDetails, poId]);
+  }, [commissioningData]);
 
-  // Get warranty entries (those with warrantyStatus)
-  const warrantyEntries = useMemo(() => {
-    return preCommissioningDetails.filter(
-      (pc) => pc.poId === poId && pc.warrantyStatus
-    );
-  }, [preCommissioningDetails, poId]);
+  // Warranty entries (from API)
+  const warrantyEntries = warrantyCertificateData;
 
   // ============= ACCORDION STATUS COMPUTED FROM API DATA =============
 
   type AccordionStatus = "Not Started" | "In-Progress" | "Done";
 
-  // Dispatch Status Info - computed from API data
+  // Dispatch Status Info - from API
   const dispatchStatusInfo = useMemo(() => {
-    if (!selectedPO) return { status: "Not Started" as AccordionStatus, totalQty: 0, dispatchedQty: 0 };
-
-    const totalQty = selectedPO.poItems.reduce((sum, item) => sum + item.quantity, 0);
-    const dispatchedQty = currentPODispatches.reduce((sum, d) => {
-      return sum + d.dispatchedItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
-    }, 0);
-
-    if (currentPODispatches.length === 0) {
-      return { status: "Not Started" as AccordionStatus, totalQty, dispatchedQty };
-    } else if (dispatchedQty >= totalQty) {
-      return { status: "Done" as AccordionStatus, totalQty, dispatchedQty };
-    } else {
-      return { status: "In-Progress" as AccordionStatus, totalQty, dispatchedQty };
+    if (!dispatchAccordionStatus) {
+      return { status: "Not Started" as AccordionStatus, totalQty: 0, dispatchedQty: 0 };
     }
-  }, [selectedPO, currentPODispatches]);
+    return {
+      status: dispatchAccordionStatus.dispatchStatus as AccordionStatus,
+      totalQty: dispatchAccordionStatus.totalQty,
+      dispatchedQty: dispatchAccordionStatus.dispatchedQty,
+    };
+  }, [dispatchAccordionStatus]);
 
-  // Document Status
+  // Document Status - from API
   const documentStatus = useMemo((): AccordionStatus => {
-    if (currentPODispatches.length === 0) return "Not Started";
-    const withDocuments = currentPODispatches.filter((d) => !!d.dispatchStatus);
-    if (withDocuments.length === 0) return "Not Started";
-    const withDoneStatus = currentPODispatches.filter((d) => d.dispatchStatus === "done");
-    if (dispatchStatusInfo.status === "Done" && withDoneStatus.length >= currentPODispatches.length) {
-      return "Done";
-    }
-    return "In-Progress";
-  }, [currentPODispatches, dispatchStatusInfo.status]);
+    return (dispatchAccordionStatus?.documentStatus || "Not Started") as AccordionStatus;
+  }, [dispatchAccordionStatus]);
 
-  // Delivery Confirmation Status
+  // Delivery Confirmation Status - from API
   const deliveryConfirmationStatus = useMemo((): AccordionStatus => {
-    const forConfirmation = currentPODispatches.filter((d) => d.dispatchStatus === "done");
-    const withConfirmation = currentPODispatches.filter((d) => !!d.deliveryStatus);
-    if (forConfirmation.length === 0) return "Not Started";
-    if (withConfirmation.length === 0) return "Not Started";
-    if (withConfirmation.length >= forConfirmation.length) return "Done";
-    return "In-Progress";
-  }, [currentPODispatches]);
+    return (dispatchAccordionStatus?.deliveryStatus || "Not Started") as AccordionStatus;
+  }, [dispatchAccordionStatus]);
 
-  // Pre-Commissioning Status
+  // Pre-Commissioning Status - from API
   const preCommissioningAccordionStatus = useMemo((): AccordionStatus => {
-    const dispatchesWithDeliveryDone = currentPODispatches.filter((d) => d.deliveryStatus === "done");
-    let totalSerials = 0;
-    dispatchesWithDeliveryDone.forEach((d) => {
-      d.dispatchedItems.forEach((item) => {
-        if (item.serialNumbers) {
-          const serials = item.serialNumbers.split(",").map((s) => s.trim()).filter((s) => s !== "");
-          totalSerials += serials.length;
-        }
-      });
-    });
-    if (totalSerials === 0) return "Not Started";
-    if (currentPOPreCommissioning.length === 0) return "Not Started";
-    if (currentPOPreCommissioning.length >= totalSerials) return "Done";
-    return "In-Progress";
-  }, [currentPODispatches, currentPOPreCommissioning]);
+    return preCommissioningStatus?.status || "Not Started";
+  }, [preCommissioningStatus]);
 
-  // Commissioning Status
+  // Commissioning Status - from API
   const commissioningAccordionStatus = useMemo((): AccordionStatus => {
-    const forCommissioning = preCommissioningDetails.filter(
-      (pc) => pc.poId === poId && pc.preCommissioningStatus === "Done"
-    );
-    const commissioned = commissionedEntries;
-    if (forCommissioning.length === 0) return "Not Started";
-    if (commissioned.length === 0) return "Not Started";
-    if (commissioned.length >= forCommissioning.length) return "Done";
-    return "In-Progress";
-  }, [preCommissioningDetails, poId, commissionedEntries]);
+    return commissioningStatus?.status || "Not Started";
+  }, [commissioningStatus]);
 
-  // Warranty Status
+  // Warranty Status - from API
   const warrantyAccordionStatus = useMemo((): AccordionStatus => {
-    const forWarranty = preCommissioningDetails.filter(
-      (pc) => pc.poId === poId && pc.commissioningStatus === "Done"
-    );
-    if (forWarranty.length === 0) return "Not Started";
-    if (warrantyEntries.length === 0) return "Not Started";
-    if (warrantyEntries.length >= forWarranty.length) return "Done";
-    return "In-Progress";
-  }, [preCommissioningDetails, poId, warrantyEntries]);
+    return warrantyCertificateStatus?.status || "Not Started";
+  }, [warrantyCertificateStatus]);
 
   // Check if all accordions are in "Done" state
   const allAccordionsDone = useMemo(() => {
@@ -570,7 +572,7 @@ const PODetails: React.FC = () => {
     setIsWarrantyModalVisible(true);
   };
 
-  const handleEditWarranty = (record: PreCommissioning) => {
+  const handleEditWarranty = (record: WarrantyCertificateResponse) => {
     setEditingWarranty(record);
     setIsWarrantyModalVisible(true);
   };
@@ -1013,11 +1015,11 @@ const PODetails: React.FC = () => {
   ];
 
   // Pre-Commissioning table columns
-  const preCommissioningColumns: ColumnsType<PreCommissioning> = [
+  const preCommissioningColumns: ColumnsType<PreCommissioningResponse> = [
     {
       title: "ID",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "preCommissioningId",
+      key: "preCommissioningId",
       width: 120,
       fixed: "left",
     },
@@ -1035,8 +1037,8 @@ const PODetails: React.FC = () => {
     },
     {
       title: "Product",
-      dataIndex: "product",
-      key: "product",
+      dataIndex: "productName",
+      key: "productName",
       width: 120,
       render: (value: string) => formatLabel(value || ""),
     },
@@ -1132,7 +1134,7 @@ const PODetails: React.FC = () => {
           <Popconfirm
             title="Delete Pre-Commissioning"
             description="Are you sure you want to delete this entry?"
-            onConfirm={() => handleDeletePreCommissioning(record.id)}
+            onConfirm={() => handleDeletePreCommissioningRecord(record.preCommissioningId)}
             okText="Yes"
             cancelText="No"
             okButtonProps={{ danger: true }}
@@ -1160,11 +1162,11 @@ const PODetails: React.FC = () => {
   ];
 
   // Commissioning table columns
-  const commissioningColumns: ColumnsType<PreCommissioning> = [
+  const commissioningColumns: ColumnsType<CommissioningResponse> = [
     {
       title: "ID",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "commissioningId",
+      key: "commissioningId",
       width: 120,
       fixed: "left",
     },
@@ -1176,47 +1178,47 @@ const PODetails: React.FC = () => {
     },
     {
       title: "Product",
-      dataIndex: "product",
-      key: "product",
+      dataIndex: "productName",
+      key: "productName",
       width: 120,
       render: (value: string) => formatLabel(value || ""),
     },
     {
       title: "ECD from Client",
-      dataIndex: "commissioningEcdFromClient",
-      key: "commissioningEcdFromClient",
+      dataIndex: "ecdFromClient",
+      key: "ecdFromClient",
       width: 150,
     },
     {
       title: "Service Ticket No",
-      dataIndex: "commissioningServiceTicketNo",
-      key: "commissioningServiceTicketNo",
+      dataIndex: "serviceTicketNo",
+      key: "serviceTicketNo",
       width: 150,
     },
     {
       title: "CCD from Client",
-      dataIndex: "commissioningCcdFromClient",
-      key: "commissioningCcdFromClient",
+      dataIndex: "ccdFromClient",
+      key: "ccdFromClient",
       width: 150,
     },
     {
       title: "Issues",
-      dataIndex: "commissioningIssues",
-      key: "commissioningIssues",
+      dataIndex: "issues",
+      key: "issues",
       width: 150,
       ellipsis: true,
     },
     {
       title: "Solution",
-      dataIndex: "commissioningSolution",
-      key: "commissioningSolution",
+      dataIndex: "solution",
+      key: "solution",
       width: 150,
       ellipsis: true,
     },
     {
       title: "Info Generated",
-      dataIndex: "commissioningInfoGenerated",
-      key: "commissioningInfoGenerated",
+      dataIndex: "infoGenerated",
+      key: "infoGenerated",
       width: 140,
     },
     {
@@ -1242,8 +1244,8 @@ const PODetails: React.FC = () => {
     },
     {
       title: "Remarks",
-      dataIndex: "commissioningRemarks",
-      key: "commissioningRemarks",
+      dataIndex: "remarks",
+      key: "remarks",
       width: 150,
       ellipsis: true,
     },
@@ -1282,11 +1284,11 @@ const PODetails: React.FC = () => {
   ];
 
   // Warranty Certificate table columns
-  const warrantyColumns: ColumnsType<PreCommissioning> = [
+  const warrantyColumns: ColumnsType<WarrantyCertificateResponse> = [
     {
       title: "ID",
-      dataIndex: "id",
-      key: "id",
+      dataIndex: "warrantyCertificateId",
+      key: "warrantyCertificateId",
       width: 120,
       fixed: "left",
     },
@@ -1298,21 +1300,21 @@ const PODetails: React.FC = () => {
     },
     {
       title: "Product",
-      dataIndex: "product",
-      key: "product",
+      dataIndex: "productName",
+      key: "productName",
       width: 120,
       render: (value: string) => formatLabel(value || ""),
     },
     {
       title: "Certificate No",
-      dataIndex: "warrantyCertificateNo",
-      key: "warrantyCertificateNo",
+      dataIndex: "certificateNo",
+      key: "certificateNo",
       width: 150,
     },
     {
       title: "Issue Date",
-      dataIndex: "warrantyIssueDate",
-      key: "warrantyIssueDate",
+      dataIndex: "issueDate",
+      key: "issueDate",
       width: 120,
     },
     {
@@ -1349,13 +1351,6 @@ const PODetails: React.FC = () => {
       width: 100,
       render: (_, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewServiceDetails(record, "warranty")}
-            style={{ padding: 0, color: "#1890ff" }}
-            title="View Details"
-          />
           <Tooltip
             title={
               canUpdateCommissioning
@@ -1956,7 +1951,7 @@ const PODetails: React.FC = () => {
                 columns={preCommissioningColumns}
                 dataSource={currentPOPreCommissioning.map((pc) => ({
                   ...pc,
-                  key: pc.id,
+                  key: pc.preCommissioningId,
                 }))}
                 pagination={false}
                 bordered
@@ -2029,9 +2024,9 @@ const PODetails: React.FC = () => {
             <div style={{ overflowX: "auto" }}>
               <Table
                 columns={commissioningColumns}
-                dataSource={commissionedEntries.map((pc) => ({
-                  ...pc,
-                  key: pc.id,
+                dataSource={commissionedEntries.map((c) => ({
+                  ...c,
+                  key: c.commissioningId,
                 }))}
                 pagination={false}
                 bordered
@@ -2104,9 +2099,9 @@ const PODetails: React.FC = () => {
             <div style={{ overflowX: "auto" }}>
               <Table
                 columns={warrantyColumns}
-                dataSource={warrantyEntries.map((pc) => ({
-                  ...pc,
-                  key: pc.id,
+                dataSource={warrantyEntries.map((w) => ({
+                  ...w,
+                  key: w.warrantyCertificateId,
                 }))}
                 pagination={false}
                 bordered

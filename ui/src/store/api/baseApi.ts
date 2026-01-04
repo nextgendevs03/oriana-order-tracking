@@ -162,6 +162,9 @@ export const baseApi = createApi({
     "Product", // Products
     "Client", // Clients
     "File", // File uploads
+    "PreCommissioning", // Pre-Commissioning
+    "Commissioning", // Commissioning
+    "WarrantyCertificate", // Warranty Certificates
   ],
 
   // Base endpoints - empty, will be extended by feature APIs

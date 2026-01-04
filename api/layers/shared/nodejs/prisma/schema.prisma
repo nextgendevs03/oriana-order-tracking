@@ -122,6 +122,13 @@ model User {
   fileUploadsUpdated     FileUpload[]     @relation("FileUploadUpdatedBy")
   dispatchesCreated      Dispatch[]       @relation("DispatchCreatedBy")
   dispatchesUpdated      Dispatch[]       @relation("DispatchUpdatedBy")
+  // Service Lifecycle relations
+  preCommissioningsCreated    PreCommissioning[]    @relation("PreCommissioningCreatedBy")
+  preCommissioningsUpdated    PreCommissioning[]    @relation("PreCommissioningUpdatedBy")
+  commissioningsCreated       Commissioning[]       @relation("CommissioningCreatedBy")
+  commissioningsUpdated       Commissioning[]       @relation("CommissioningUpdatedBy")
+  warrantyCertificatesCreated WarrantyCertificate[] @relation("WarrantyCertificateCreatedBy")
+  warrantyCertificatesUpdated WarrantyCertificate[] @relation("WarrantyCertificateUpdatedBy")
 
   @@index([email])
   @@index([username])
@@ -347,6 +354,7 @@ model Dispatch {
 
   // Relations
   dispatchedItems     DispatchedItem[]
+  preCommissionings   PreCommissioning[]
 
   @@index([poId])
   @@index([dispatchStatus])
@@ -371,4 +379,111 @@ model DispatchedItem {
   @@index([dispatchId])
   @@index([productId])
   @@map("dispatched_items")
+}
+
+// ============================================================================
+// SERVICE LIFECYCLE MODELS
+// Pre-Commissioning -> Commissioning -> Warranty Certificate
+// ============================================================================
+
+// Pre-Commissioning model for tracking pre-commissioning activities
+// Created after delivery is confirmed (deliveryStatus = "done")
+model PreCommissioning {
+  preCommissioningId        Int               @id @default(autoincrement()) @map("pre_commissioning_id")
+  dispatchId                Int               @map("dispatch_id")
+  dispatch                  Dispatch          @relation(fields: [dispatchId], references: [dispatchId], onDelete: Cascade)
+  serialNumber              String            @map("serial_number") @db.VarChar(100)
+  productName               String            @map("product_name") @db.VarChar(255)
+
+  // Pre-Commissioning Details
+  pcContact                 String            @map("pc_contact") @db.VarChar(255) // Client side coordinator
+  serviceEngineerAssigned   String            @map("service_engineer_assigned") @db.VarChar(255)
+  ppmChecklist              String            @map("ppm_checklist") @db.VarChar(255)
+  ppmSheetReceivedFromClient String           @map("ppm_sheet_received_from_client") @db.VarChar(255)
+  ppmChecklistSharedWithOem String            @map("ppm_checklist_shared_with_oem") @db.VarChar(255)
+  ppmTickedNoFromOem        String            @map("ppm_ticked_no_from_oem") @db.VarChar(255)
+  ppmConfirmationStatus     String            @map("ppm_confirmation_status") @db.VarChar(50) // Done, Pending, Hold, Cancelled
+  oemComments               String?           @map("oem_comments") @db.Text
+  preCommissioningStatus    String            @map("pre_commissioning_status") @db.VarChar(50) // Done, Pending, Hold, Cancelled
+  remarks                   String?           @db.Text
+
+  // Audit Fields
+  createdById               Int?              @map("created_by")
+  createdBy                 User?             @relation("PreCommissioningCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById               Int?              @map("updated_by")
+  updatedBy                 User?             @relation("PreCommissioningUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt                 DateTime          @default(now()) @map("created_at")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  commissioning             Commissioning?
+
+  @@unique([dispatchId, serialNumber]) // Each serial number can only have one pre-commissioning per dispatch
+  @@index([dispatchId])
+  @@index([preCommissioningStatus])
+  @@index([createdAt])
+  @@map("pre_commissionings")
+}
+
+// Commissioning model for tracking commissioning activities
+// Created after pre-commissioning is done (preCommissioningStatus = "Done")
+model Commissioning {
+  commissioningId           Int               @id @default(autoincrement()) @map("commissioning_id")
+  preCommissioningId        Int               @unique @map("pre_commissioning_id")
+  preCommissioning          PreCommissioning  @relation(fields: [preCommissioningId], references: [preCommissioningId], onDelete: Cascade)
+
+  // Commissioning Details
+  ecdFromClient             String?           @map("ecd_from_client") @db.VarChar(255) // Expected Commissioning Date from client
+  serviceTicketNo           String?           @map("service_ticket_no") @db.VarChar(100) // Service Ticket No from OEM
+  ccdFromClient             String?           @map("ccd_from_client") @db.VarChar(255) // Confirm Commissioning Date from client
+  issues                    String?           @db.Text // Issues in commissioning
+  solution                  String?           @db.Text // Solution on issues
+  infoGenerated             String?           @map("info_generated") @db.VarChar(255) // Information generated
+  commissioningDate         DateTime?         @map("commissioning_date") @db.Date
+  commissioningStatus       String            @map("commissioning_status") @db.VarChar(50) // Done, Pending, Hold, Cancelled
+  remarks                   String?           @db.Text
+
+  // Audit Fields
+  createdById               Int?              @map("created_by")
+  createdBy                 User?             @relation("CommissioningCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById               Int?              @map("updated_by")
+  updatedBy                 User?             @relation("CommissioningUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt                 DateTime          @default(now()) @map("created_at")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  warrantyCertificate       WarrantyCertificate?
+
+  @@index([preCommissioningId])
+  @@index([commissioningStatus])
+  @@index([createdAt])
+  @@map("commissionings")
+}
+
+// Warranty Certificate model for tracking warranty certificates
+// Created after commissioning is done (commissioningStatus = "Done")
+model WarrantyCertificate {
+  warrantyCertificateId     Int               @id @default(autoincrement()) @map("warranty_certificate_id")
+  commissioningId           Int               @unique @map("commissioning_id")
+  commissioning             Commissioning     @relation(fields: [commissioningId], references: [commissioningId], onDelete: Cascade)
+
+  // Warranty Certificate Details
+  certificateNo             String            @map("certificate_no") @db.VarChar(100)
+  issueDate                 DateTime          @map("issue_date") @db.Date
+  warrantyStartDate         DateTime          @map("warranty_start_date") @db.Date
+  warrantyEndDate           DateTime          @map("warranty_end_date") @db.Date
+  warrantyStatus            String            @map("warranty_status") @db.VarChar(50) // Done, Pending, Hold, Cancelled
+
+  // Audit Fields
+  createdById               Int?              @map("created_by")
+  createdBy                 User?             @relation("WarrantyCertificateCreatedBy", fields: [createdById], references: [userId], onDelete: SetNull)
+  updatedById               Int?              @map("updated_by")
+  updatedBy                 User?             @relation("WarrantyCertificateUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
+  createdAt                 DateTime          @default(now()) @map("created_at")
+  updatedAt                 DateTime          @updatedAt @map("updated_at")
+
+  @@index([commissioningId])
+  @@index([warrantyStatus])
+  @@index([createdAt])
+  @@map("warranty_certificates")
 }

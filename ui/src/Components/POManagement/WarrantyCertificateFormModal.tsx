@@ -1,89 +1,85 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Form, Input, Select, Row, Col, Button, DatePicker } from "antd";
-import dayjs from "dayjs";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import {
-  updatePreCommissioning,
-  PreCommissioning,
-  DispatchDocument,
-} from "../../store/poSlice";
-import { selectPreCommissioningDetails } from "../../store/poSelectors";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { Modal, Form, Input, Select, Row, Col, Button, DatePicker, Spin, Alert } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
-import FileUpload from "./FileUpload";
+import S3FileUpload, { S3FileUploadRef } from "./S3FileUpload";
+import { formatLabel, selectFieldRules } from "../../utils";
+import dayjs from "dayjs";
 import {
-  warrantyStatusOptions,
-  textFieldRules,
-  selectFieldRules,
-} from "../../utils";
+  useGetEligibleCommissioningsQuery,
+  useCreateWarrantyCertificateMutation,
+  useUpdateWarrantyCertificateMutation,
+} from "../../store/api/warrantyCertificateApi";
+import { useToast } from "../../hooks/useToast";
+import type { WarrantyCertificateResponse } from "@OrianaTypes";
 
 interface WarrantyCertificateFormModalProps {
   visible: boolean;
   onClose: () => void;
   poId: string;
-  editData?: PreCommissioning | null;
+  editData?: WarrantyCertificateResponse | null;
 }
 
-const WarrantyCertificateFormModal: React.FC<
-  WarrantyCertificateFormModalProps
-> = ({ visible, onClose, poId, editData = null }) => {
+const WarrantyCertificateFormModal: React.FC<WarrantyCertificateFormModalProps> = ({
+  visible,
+  onClose,
+  poId,
+  editData = null,
+}) => {
   const [form] = Form.useForm();
-  const dispatch = useAppDispatch();
-  const preCommissioningDetails = useAppSelector(selectPreCommissioningDetails);
+  const toast = useToast();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const fileUploadRef = useRef<S3FileUploadRef>(null);
 
   const isEditMode = !!editData;
 
-  // Get serial numbers from records with commissioningStatus === "Done"
-  const serialOptions = useMemo(() => {
-    return preCommissioningDetails
-      .filter(
-        (pc: PreCommissioning) =>
-          pc.poId === poId &&
-          pc.commissioningStatus === "Done" &&
-          // Exclude already warranty-processed items unless editing that specific item
-          (!pc.warrantyStatus || pc.id === editData?.id)
-      )
-      .map((pc: PreCommissioning) => ({
-        value: pc.id,
-        label: `${pc.serialNumber} (${pc.product})`,
-      }));
-  }, [preCommissioningDetails, poId, editData]);
+  const { data: eligibleCommissionings = [], isLoading: isLoadingEligible } =
+    useGetEligibleCommissioningsQuery(poId, { skip: !visible || isEditMode });
 
-  // Initialize form with edit data
+  const [createWarrantyCertificate, { isLoading: isCreating }] = useCreateWarrantyCertificateMutation();
+  const [updateWarrantyCertificate, { isLoading: isUpdating }] = useUpdateWarrantyCertificateMutation();
+
+  const statusOptions = [
+    { value: "Active", label: "Active" },
+    { value: "Pending", label: "Pending" },
+    { value: "Expired", label: "Expired" },
+    { value: "Done", label: "Done" },
+    { value: "Cancelled", label: "Cancelled" },
+  ];
+
+  const serialOptions = useMemo(() => {
+    if (isEditMode && editData) {
+      return [{
+        value: `${editData.commissioningId}__${editData.serialNumber}`,
+        label: `${editData.serialNumber} (${formatLabel(editData.productName || "")} - #${editData.dispatchId})`,
+      }];
+    }
+    return eligibleCommissionings.map((c) => ({
+      value: `${c.commissioningId}__${c.serialNumber}`,
+      label: `${c.serialNumber} (${formatLabel(c.productName)} - #${c.dispatchId})`,
+    }));
+  }, [eligibleCommissionings, isEditMode, editData]);
+
   useEffect(() => {
     if (visible && editData) {
-      // Initialize file list from existing documents
-      if (editData.warrantyDocuments && editData.warrantyDocuments.length > 0) {
-        const existingFiles: UploadFile[] = editData.warrantyDocuments.map(
-          (doc: DispatchDocument) => ({
-            uid: doc.uid,
-            name: doc.name,
-            status: "done",
-            url: doc.url,
-            type: doc.type,
-            size: doc.size,
-          })
-        );
-        setFileList(existingFiles);
+      if (editData.files?.length) {
+        setFileList(editData.files.map((f) => ({
+          uid: `existing-${f.fileId}`,
+          name: f.originalFileName,
+          status: "done" as const,
+          size: f.fileSize,
+        })));
       } else {
         setFileList([]);
       }
-
       form.setFieldsValue({
-        preCommissioningIds: [editData.id],
-        warrantyCertificateNo: editData.warrantyCertificateNo,
-        issueDate: editData.warrantyIssueDate
-          ? dayjs(editData.warrantyIssueDate)
-          : undefined,
-        warrantyStartDate: editData.warrantyStartDate
-          ? dayjs(editData.warrantyStartDate)
-          : undefined,
-        warrantyEndDate: editData.warrantyEndDate
-          ? dayjs(editData.warrantyEndDate)
-          : undefined,
+        serialNumbers: [`${editData.commissioningId}__${editData.serialNumber}`],
+        certificateNo: editData.certificateNo,
+        issueDate: editData.issueDate ? dayjs(editData.issueDate) : null,
+        warrantyStartDate: editData.warrantyStartDate ? dayjs(editData.warrantyStartDate) : null,
+        warrantyEndDate: editData.warrantyEndDate ? dayjs(editData.warrantyEndDate) : null,
         warrantyStatus: editData.warrantyStatus,
       });
-    } else if (visible && !editData) {
+    } else if (visible) {
       form.resetFields();
       setFileList([]);
     }
@@ -92,50 +88,45 @@ const WarrantyCertificateFormModal: React.FC<
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      
+      // Upload files to S3 and get file IDs
+      const fileIds = fileUploadRef.current 
+        ? await fileUploadRef.current.uploadAndConfirm()
+        : [];
 
-      // Convert file list to documents
-      const warrantyDocuments: DispatchDocument[] = fileList.map((file) => ({
-        uid: file.uid,
-        name: file.name,
-        type: file.type || "",
-        size: file.size || 0,
-        url:
-          file.url ||
-          (file.originFileObj ? URL.createObjectURL(file.originFileObj) : ""),
-        uploadedAt: new Date().toISOString(),
-      }));
-
-      // Get selected pre-commissioning IDs (can be multiple in add mode)
-      const selectedIds: string[] = values.preCommissioningIds;
-
-      // Update each selected record with warranty data
-      selectedIds.forEach((pcId: string) => {
-        const preCommRecord = preCommissioningDetails.find(
-          (pc: PreCommissioning) => pc.id === pcId
-        );
-
-        if (preCommRecord) {
-          const updatedRecord: PreCommissioning = {
-            ...preCommRecord,
-            warrantyCertificateNo: values.warrantyCertificateNo || "",
-            warrantyIssueDate: values.issueDate?.format("YYYY-MM-DD") || "",
-            warrantyStartDate:
-              values.warrantyStartDate?.format("YYYY-MM-DD") || "",
-            warrantyEndDate: values.warrantyEndDate?.format("YYYY-MM-DD") || "",
-            warrantyStatus: values.warrantyStatus || "",
-            warrantyDocuments: warrantyDocuments,
-            warrantyUpdatedAt: new Date().toISOString(),
-          };
-
-          dispatch(updatePreCommissioning(updatedRecord));
-        }
-      });
-
-      form.resetFields();
-      setFileList([]);
-      onClose();
+      if (isEditMode && editData) {
+        await updateWarrantyCertificate({
+          id: editData.warrantyCertificateId,
+          data: {
+            certificateNo: values.certificateNo,
+            issueDate: values.issueDate?.format("YYYY-MM-DD"),
+            warrantyStartDate: values.warrantyStartDate?.format("YYYY-MM-DD"),
+            warrantyEndDate: values.warrantyEndDate?.format("YYYY-MM-DD"),
+            warrantyStatus: values.warrantyStatus,
+            fileIds,
+          },
+        }).unwrap();
+        toast.success("Warranty certificate updated successfully");
+      } else {
+        const items = values.serialNumbers.map((serialValue: string) => {
+          const [commissioningId] = serialValue.split("__");
+          return { commissioningId: parseInt(commissioningId, 10) };
+        });
+        await createWarrantyCertificate({
+          items,
+          certificateNo: values.certificateNo,
+          issueDate: values.issueDate?.format("YYYY-MM-DD"),
+          warrantyStartDate: values.warrantyStartDate?.format("YYYY-MM-DD"),
+          warrantyEndDate: values.warrantyEndDate?.format("YYYY-MM-DD"),
+          warrantyStatus: values.warrantyStatus,
+          fileIds,
+        }).unwrap();
+        toast.success(`${items.length} warranty certificate(s) created`);
+      }
+      handleCancel();
     } catch (error) {
-      console.error("Validation failed:", error);
+      console.error("Submission failed:", error);
+      toast.error("Failed to save warranty certificate");
     }
   };
 
@@ -145,152 +136,93 @@ const WarrantyCertificateFormModal: React.FC<
     onClose();
   };
 
+  const isSubmitting = isCreating || isUpdating || (fileUploadRef.current?.isUploading ?? false);
+
   return (
     <Modal
-      title={isEditMode ? "Edit Warranty Details" : "Update Warranty Details"}
+      title={isEditMode ? "Edit Warranty Certificate" : "Add Warranty Certificate"}
       open={visible}
       onCancel={handleCancel}
-      width={900}
+      width={800}
       destroyOnClose
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
-          Cancel
-        </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          onClick={handleSubmit}
-          style={{
-            backgroundColor: "#4b6cb7",
-          }}
-        >
+        <Button key="cancel" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>,
+        <Button key="submit" type="primary" onClick={handleSubmit} loading={isSubmitting}
+          style={{ backgroundColor: "#4b6cb7" }}>
           {isEditMode ? "Update" : "Submit"}
         </Button>,
       ]}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        autoComplete="off"
-        style={{ marginTop: "1rem" }}
-      >
-        {/* Row 1: Serial Numbers (Multi-select) */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              name="preCommissioningIds"
-              label="Serial Numbers"
-              rules={[
-                {
-                  required: true,
-                  message: "Please select at least one serial number",
-                },
-              ]}
-            >
-              <Select
-                mode={isEditMode ? undefined : "multiple"}
-                placeholder="Select serial numbers from commissioning (Done status)"
-                options={serialOptions}
-                maxTagCount="responsive"
-                disabled={isEditMode}
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 2: Warranty Certificate No */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              name="warrantyCertificateNo"
-              label="Warranty Certificate No"
-              rules={textFieldRules}
-            >
-              <Input placeholder="Enter warranty certificate number" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 3: Issue Date, Warranty Start Date */}
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              name="issueDate"
-              label="Issue Date"
-              rules={[{ required: true, message: "Please select issue date" }]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="warrantyStartDate"
-              label="Warranty Start Date"
-              rules={[
-                {
-                  required: true,
-                  message: "Please select warranty start date",
-                },
-              ]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 4: Warranty End Date, Warranty Status */}
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              name="warrantyEndDate"
-              label="Warranty End Date"
-              rules={[
-                { required: true, message: "Please select warranty end date" },
-              ]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="warrantyStatus"
-              label="Warranty Status"
-              rules={selectFieldRules}
-            >
-              <Select
-                placeholder="Select warranty status"
-                options={warrantyStatusOptions}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 5: Upload Documents */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              label="Upload Documents (Warranty certificate shared with client)"
-              tooltip="Upload 1-5 documents. Supported formats: Images, PDF, Word, Excel"
-            >
-              <FileUpload
-                fileList={fileList}
-                onChange={setFileList}
-                minFiles={1}
-                maxFiles={5}
-                maxSizeMB={10}
-                buttonLabel="Click to Upload"
-                helperText="Supported: Images (JPG, PNG, GIF, SVG), PDF, Word, Excel."
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
+      {isLoadingEligible && !isEditMode ? (
+        <div style={{ textAlign: "center", padding: "40px" }}><Spin size="large" /><p>Loading eligible commissionings...</p></div>
+      ) : !isEditMode && serialOptions.length === 0 ? (
+        <Alert type="info" message="No Eligible Commissionings"
+          description="Commissionings become eligible when their status is 'Done'." showIcon />
+      ) : (
+        <Form form={form} layout="vertical" autoComplete="off" style={{ marginTop: "1rem" }}>
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item name="serialNumbers" label="Serial Numbers"
+                rules={[{ required: true, message: "Select at least one serial" }]}>
+                <Select mode={isEditMode ? undefined : "multiple"} placeholder="Select serials"
+                  options={serialOptions} maxTagCount="responsive" disabled={isEditMode} showSearch
+                  filterOption={(input, option) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase())} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="certificateNo" label="Certificate No"
+                rules={[{ required: true, message: "Enter certificate number" }]}>
+                <Input placeholder="Warranty certificate number" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="issueDate" label="Issue Date"
+                rules={[{ required: true, message: "Select issue date" }]}>
+                <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="warrantyStartDate" label="Warranty Start Date"
+                rules={[{ required: true, message: "Select start date" }]}>
+                <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="warrantyEndDate" label="Warranty End Date"
+                rules={[{ required: true, message: "Select end date" }]}>
+                <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="warrantyStatus" label="Status" rules={selectFieldRules}>
+                <Select placeholder="Select status" options={statusOptions} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item label="Upload Documents">
+                <S3FileUpload
+                  ref={fileUploadRef}
+                  fileList={fileList}
+                  onChange={setFileList}
+                  maxFiles={5}
+                  maxSizeMB={10}
+                  buttonLabel="Upload Warranty Documents"
+                  poId={poId}
+                  entityType="warranty_certificate"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      )}
     </Modal>
   );
 };

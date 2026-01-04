@@ -140,6 +140,20 @@ export class DispatchController implements IDispatchController {
   }
 
   /**
+   * GET /api/dispatch/po/{poId}/status
+   * Get accordion status for Dispatch, Document, and Delivery sections
+   */
+  @Get('/po/{poId}/status')
+  async getAccordionStatus(@Param('poId') poId: string): Promise<APIGatewayProxyResult> {
+    if (!poId) {
+      throw new ValidationError('PO ID is required');
+    }
+
+    const status = await this.dispatchService.getAccordionStatus(poId);
+    return createSuccessResponse(status);
+  }
+
+  /**
    * GET /api/dispatch/{id}
    * Get dispatch by ID
    */

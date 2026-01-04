@@ -20,6 +20,8 @@ import {
   DispatchResponse,
   DispatchListResponse,
   DispatchedItemResponse,
+  DispatchAccordionStatusResponse,
+  AccordionStatusType,
 } from '../schemas';
 
 export interface IDispatchService {
@@ -27,6 +29,7 @@ export interface IDispatchService {
   getDispatchById(dispatchId: number): Promise<DispatchResponse | null>;
   getAllDispatches(params: ListDispatchRequest): Promise<DispatchListResponse>;
   getDispatchesByPoId(poId: string): Promise<DispatchResponse[]>;
+  getAccordionStatus(poId: string): Promise<DispatchAccordionStatusResponse>;
   updateDispatchDetails(
     dispatchId: number,
     data: UpdateDispatchDetailsRequest
@@ -170,6 +173,59 @@ export class DispatchService implements IDispatchService {
   async getDispatchesByPoId(poId: string): Promise<DispatchResponse[]> {
     const dispatches = await this.dispatchRepository.findByPoId(poId);
     return dispatches.map((dispatch) => this.mapToResponse(dispatch));
+  }
+
+  /**
+   * Get accordion status for Dispatch, Document, and Delivery sections
+   * Calculates status based on dispatch data for a PO
+   */
+  async getAccordionStatus(poId: string): Promise<DispatchAccordionStatusResponse> {
+    const dispatches = await this.dispatchRepository.findByPoId(poId);
+    const poTotalQty = await this.dispatchRepository.getPOTotalQuantity(poId);
+
+    // Calculate dispatched quantity
+    const dispatchedQty = dispatches.reduce((sum, d) => {
+      return sum + (d.dispatchedItems || []).reduce((itemSum, item) => itemSum + item.quantity, 0);
+    }, 0);
+
+    // Dispatch Status
+    let dispatchStatus: AccordionStatusType = 'Not Started';
+    if (dispatches.length > 0) {
+      dispatchStatus = dispatchedQty >= poTotalQty ? 'Done' : 'In-Progress';
+    }
+
+    // Document Status
+    const dispatchesWithDocuments = dispatches.filter((d) => !!d.dispatchStatus).length;
+    const dispatchesWithDoneDocuments = dispatches.filter(
+      (d) => d.dispatchStatus === 'done'
+    ).length;
+    let documentStatus: AccordionStatusType = 'Not Started';
+    if (dispatchesWithDocuments > 0) {
+      documentStatus =
+        dispatchStatus === 'Done' && dispatchesWithDoneDocuments >= dispatches.length
+          ? 'Done'
+          : 'In-Progress';
+    }
+
+    // Delivery Status
+    const dispatchesForDelivery = dispatches.filter((d) => d.dispatchStatus === 'done').length;
+    const dispatchesWithDelivery = dispatches.filter((d) => !!d.deliveryStatus).length;
+    let deliveryStatus: AccordionStatusType = 'Not Started';
+    if (dispatchesForDelivery > 0 && dispatchesWithDelivery > 0) {
+      deliveryStatus = dispatchesWithDelivery >= dispatchesForDelivery ? 'Done' : 'In-Progress';
+    }
+
+    return {
+      dispatchStatus,
+      totalQty: poTotalQty,
+      dispatchedQty,
+      documentStatus,
+      dispatchesWithDocuments,
+      dispatchesWithDoneDocuments,
+      deliveryStatus,
+      dispatchesForDelivery,
+      dispatchesWithDelivery,
+    };
   }
 
   /**

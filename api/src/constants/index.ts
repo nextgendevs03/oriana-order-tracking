@@ -5,3 +5,4 @@
  */
 
 export * from './dispatchConstants';
+export * from './serviceLifecycleConstants';

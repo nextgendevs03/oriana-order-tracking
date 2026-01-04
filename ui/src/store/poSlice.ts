@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface POItem {
+  productId: number;
   category: string;
   oemName: string;
   product: string;

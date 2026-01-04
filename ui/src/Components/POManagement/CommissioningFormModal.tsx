@@ -1,26 +1,22 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Form, Input, Select, Row, Col, Button, DatePicker } from "antd";
-import dayjs from "dayjs";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import {
-  updatePreCommissioning,
-  PreCommissioning,
-  DispatchDocument,
-} from "../../store/poSlice";
-import { selectPreCommissioningDetails } from "../../store/poSelectors";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { Modal, Form, Input, Select, Row, Col, Button, DatePicker, Spin, Alert } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
-import FileUpload from "./FileUpload";
+import S3FileUpload, { S3FileUploadRef } from "./S3FileUpload";
+import { formatLabel, selectFieldRules } from "../../utils";
+import dayjs from "dayjs";
 import {
-  commissioningStatusOptions,
-  textFieldRules,
-  selectFieldRules,
-} from "../../utils";
+  useGetEligiblePreCommissioningsQuery,
+  useCreateCommissioningMutation,
+  useUpdateCommissioningMutation,
+} from "../../store/api/commissioningApi";
+import { useToast } from "../../hooks/useToast";
+import type { CommissioningResponse } from "@OrianaTypes";
 
 interface CommissioningFormModalProps {
   visible: boolean;
   onClose: () => void;
   poId: string;
-  editData?: PreCommissioning | null;
+  editData?: CommissioningResponse | null;
 }
 
 const CommissioningFormModal: React.FC<CommissioningFormModalProps> = ({
@@ -30,66 +26,63 @@ const CommissioningFormModal: React.FC<CommissioningFormModalProps> = ({
   editData = null,
 }) => {
   const [form] = Form.useForm();
-  const dispatch = useAppDispatch();
-  const preCommissioningDetails = useAppSelector(selectPreCommissioningDetails);
+  const toast = useToast();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const fileUploadRef = useRef<S3FileUploadRef>(null);
 
   const isEditMode = !!editData;
 
-  // Get serial numbers from pre-commissioning records with "Done" preCommissioningStatus
-  const serialOptions = useMemo(() => {
-    return preCommissioningDetails
-      .filter(
-        (pc: PreCommissioning) =>
-          pc.poId === poId &&
-          pc.preCommissioningStatus === "Done" &&
-          // Exclude already commissioned items unless editing that specific item
-          (!pc.commissioningStatus || pc.id === editData?.id)
-      )
-      .map((pc: PreCommissioning) => ({
-        value: pc.id,
-        label: `${pc.serialNumber} (${pc.product})`,
-      }));
-  }, [preCommissioningDetails, poId, editData]);
+  const { data: eligiblePreCommissionings = [], isLoading: isLoadingEligible } =
+    useGetEligiblePreCommissioningsQuery(poId, { skip: !visible || isEditMode });
 
-  // Initialize form with edit data
+  const [createCommissioning, { isLoading: isCreating }] = useCreateCommissioningMutation();
+  const [updateCommissioning, { isLoading: isUpdating }] = useUpdateCommissioningMutation();
+
+  const statusOptions = [
+    { value: "Done", label: "Done" },
+    { value: "Pending", label: "Pending" },
+    { value: "Hold", label: "Hold" },
+    { value: "Cancelled", label: "Cancelled" },
+  ];
+
+  const serialOptions = useMemo(() => {
+    if (isEditMode && editData) {
+      return [{
+        value: `${editData.preCommissioningId}__${editData.serialNumber}`,
+        label: `${editData.serialNumber} (${formatLabel(editData.productName || "")} - #${editData.dispatchId})`,
+      }];
+    }
+    return eligiblePreCommissionings.map((pc) => ({
+      value: `${pc.preCommissioningId}__${pc.serialNumber}`,
+      label: `${pc.serialNumber} (${formatLabel(pc.productName)} - #${pc.dispatchId})`,
+    }));
+  }, [eligiblePreCommissionings, isEditMode, editData]);
+
   useEffect(() => {
     if (visible && editData) {
-      // Initialize file list from existing documents
-      if (
-        editData.commissioningDocuments &&
-        editData.commissioningDocuments.length > 0
-      ) {
-        const existingFiles: UploadFile[] = editData.commissioningDocuments.map(
-          (doc: DispatchDocument) => ({
-            uid: doc.uid,
-            name: doc.name,
-            status: "done",
-            url: doc.url,
-            type: doc.type,
-            size: doc.size,
-          })
-        );
-        setFileList(existingFiles);
+      if (editData.files?.length) {
+        setFileList(editData.files.map((f) => ({
+          uid: `existing-${f.fileId}`,
+          name: f.originalFileName,
+          status: "done" as const,
+          size: f.fileSize,
+        })));
       } else {
         setFileList([]);
       }
-
       form.setFieldsValue({
-        preCommissioningIds: [editData.id],
-        ecdFromClient: editData.commissioningEcdFromClient,
-        serviceTicketNo: editData.commissioningServiceTicketNo,
-        ccdFromClient: editData.commissioningCcdFromClient,
-        issuesInCommissioning: editData.commissioningIssues,
-        solutionOnIssues: editData.commissioningSolution,
-        infoGenerated: editData.commissioningInfoGenerated,
-        commissioningDate: editData.commissioningDate
-          ? dayjs(editData.commissioningDate)
-          : undefined,
+        serialNumbers: [`${editData.preCommissioningId}__${editData.serialNumber}`],
+        ecdFromClient: editData.ecdFromClient,
+        serviceTicketNo: editData.serviceTicketNo,
+        ccdFromClient: editData.ccdFromClient,
+        issues: editData.issues,
+        solution: editData.solution,
+        infoGenerated: editData.infoGenerated,
+        commissioningDate: editData.commissioningDate ? dayjs(editData.commissioningDate) : null,
         commissioningStatus: editData.commissioningStatus,
-        remarks: editData.commissioningRemarks,
+        remarks: editData.remarks,
       });
-    } else if (visible && !editData) {
+    } else if (visible) {
       form.resetFields();
       setFileList([]);
     }
@@ -98,56 +91,53 @@ const CommissioningFormModal: React.FC<CommissioningFormModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      
+      // Upload files to S3 and get file IDs
+      const fileIds = fileUploadRef.current 
+        ? await fileUploadRef.current.uploadAndConfirm()
+        : [];
 
-      // Convert file list to documents
-      const commissioningDocuments: DispatchDocument[] = fileList.map(
-        (file) => ({
-          uid: file.uid,
-          name: file.name,
-          type: file.type || "",
-          size: file.size || 0,
-          url:
-            file.url ||
-            (file.originFileObj ? URL.createObjectURL(file.originFileObj) : ""),
-          uploadedAt: new Date().toISOString(),
-        })
-      );
-
-      // Get selected pre-commissioning IDs (can be multiple in add mode)
-      const selectedIds: string[] = values.preCommissioningIds;
-
-      // Update each selected pre-commissioning record with commissioning data
-      selectedIds.forEach((pcId: string) => {
-        const preCommRecord = preCommissioningDetails.find(
-          (pc) => pc.id === pcId
-        );
-
-        if (preCommRecord) {
-          const updatedRecord: PreCommissioning = {
-            ...preCommRecord,
-            commissioningEcdFromClient: values.ecdFromClient || "",
-            commissioningServiceTicketNo: values.serviceTicketNo || "",
-            commissioningCcdFromClient: values.ccdFromClient || "",
-            commissioningIssues: values.issuesInCommissioning || "",
-            commissioningSolution: values.solutionOnIssues || "",
-            commissioningInfoGenerated: values.infoGenerated || "",
-            commissioningDate:
-              values.commissioningDate?.format("YYYY-MM-DD") || "",
-            commissioningStatus: values.commissioningStatus || "",
-            commissioningRemarks: values.remarks || "",
-            commissioningDocuments: commissioningDocuments,
-            commissioningUpdatedAt: new Date().toISOString(),
-          };
-
-          dispatch(updatePreCommissioning(updatedRecord));
-        }
-      });
-
-      form.resetFields();
-      setFileList([]);
-      onClose();
+      if (isEditMode && editData) {
+        await updateCommissioning({
+          id: editData.commissioningId,
+          data: {
+            ecdFromClient: values.ecdFromClient || "",
+            serviceTicketNo: values.serviceTicketNo || "",
+            ccdFromClient: values.ccdFromClient || "",
+            issues: values.issues || "",
+            solution: values.solution || "",
+            infoGenerated: values.infoGenerated || "",
+            commissioningDate: values.commissioningDate?.format("YYYY-MM-DD"),
+            commissioningStatus: values.commissioningStatus,
+            remarks: values.remarks || "",
+            fileIds,
+          },
+        }).unwrap();
+        toast.success("Commissioning updated successfully");
+      } else {
+        const items = values.serialNumbers.map((serialValue: string) => {
+          const [preCommissioningId] = serialValue.split("__");
+          return { preCommissioningId: parseInt(preCommissioningId, 10) };
+        });
+        await createCommissioning({
+          items,
+          ecdFromClient: values.ecdFromClient || "",
+          serviceTicketNo: values.serviceTicketNo || "",
+          ccdFromClient: values.ccdFromClient || "",
+          issues: values.issues || "",
+          solution: values.solution || "",
+          infoGenerated: values.infoGenerated || "",
+          commissioningDate: values.commissioningDate?.format("YYYY-MM-DD"),
+          commissioningStatus: values.commissioningStatus,
+          remarks: values.remarks || "",
+          fileIds,
+        }).unwrap();
+        toast.success(`${items.length} commissioning record(s) created`);
+      }
+      handleCancel();
     } catch (error) {
-      console.error("Validation failed:", error);
+      console.error("Submission failed:", error);
+      toast.error("Failed to save commissioning details");
     }
   };
 
@@ -157,198 +147,115 @@ const CommissioningFormModal: React.FC<CommissioningFormModalProps> = ({
     onClose();
   };
 
+  const isSubmitting = isCreating || isUpdating || (fileUploadRef.current?.isUploading ?? false);
+
   return (
     <Modal
-      title={
-        isEditMode
-          ? "Edit Commissioning Details"
-          : "Update Commissioning Details"
-      }
+      title={isEditMode ? "Edit Commissioning" : "Add Commissioning"}
       open={visible}
       onCancel={handleCancel}
       width={900}
       destroyOnClose
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
-          Cancel
-        </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          onClick={handleSubmit}
-          style={{
-            backgroundColor: "#4b6cb7",
-          }}
-        >
+        <Button key="cancel" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>,
+        <Button key="submit" type="primary" onClick={handleSubmit} loading={isSubmitting}
+          style={{ backgroundColor: "#4b6cb7" }}>
           {isEditMode ? "Update" : "Submit"}
         </Button>,
       ]}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        autoComplete="off"
-        style={{ marginTop: "1rem" }}
-      >
-        {/* Row 1: Serial Numbers (Multi-select) */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              name="preCommissioningIds"
-              label="Serial Numbers"
-              rules={[
-                {
-                  required: true,
-                  message: "Please select at least one serial number",
-                },
-              ]}
-            >
-              <Select
-                mode={isEditMode ? undefined : "multiple"}
-                placeholder="Select serial numbers from pre-commissioning (Done status)"
-                options={serialOptions}
-                maxTagCount="responsive"
-                disabled={isEditMode}
-                showSearch
-                filterOption={(input, option) =>
-                  String(option?.label ?? "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 2: ECD from Client, Service Ticket No */}
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              name="ecdFromClient"
-              label="ECD from Client"
-              rules={textFieldRules}
-            >
-              <Input placeholder="Expected Commissioning date from client" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="serviceTicketNo"
-              label="Service Ticket No from OEM"
-              rules={textFieldRules}
-            >
-              <Input placeholder="Enter service ticket number" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 3: CCD from Client, Info Generated */}
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              name="ccdFromClient"
-              label="CCD from Client"
-              rules={textFieldRules}
-            >
-              <Input placeholder="Confirm Commissioning date from client" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="infoGenerated"
-              label="Information Generated"
-              rules={textFieldRules}
-            >
-              <Input placeholder="Enter information generated" />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 4: Issues in Commissioning */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              name="issuesInCommissioning"
-              label="Issues in Commissioning"
-              rules={textFieldRules}
-            >
-              <Input.TextArea
-                placeholder="Enter issues in commissioning"
-                rows={2}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 5: Solution on Issues */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              name="solutionOnIssues"
-              label="Solution on Issues"
-              rules={textFieldRules}
-            >
-              <Input.TextArea placeholder="Enter solution on issues" rows={2} />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 6: Commissioning Date, Status */}
-        <Row gutter={24}>
-          <Col span={12}>
-            <Form.Item
-              name="commissioningDate"
-              label="Commissioning Date"
-              rules={[
-                { required: true, message: "Please select commissioning date" },
-              ]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="commissioningStatus"
-              label="Commissioning Status"
-              rules={selectFieldRules}
-            >
-              <Select
-                placeholder="Select commissioning status"
-                options={commissioningStatusOptions}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 7: Remarks (Optional) */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item name="remarks" label="Remarks">
-              <Input.TextArea placeholder="Enter remarks (optional)" rows={2} />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 8: Upload Documents */}
-        <Row gutter={24}>
-          <Col span={24}>
-            <Form.Item
-              label="Upload Documents (Info document During Commissioning)"
-              tooltip="Upload 1-5 documents. Supported formats: Images, PDF, Word, Excel"
-            >
-              <FileUpload
-                fileList={fileList}
-                onChange={setFileList}
-                minFiles={1}
-                maxFiles={5}
-                maxSizeMB={10}
-                buttonLabel="Click to Upload"
-                helperText="Supported: Images (JPG, PNG, GIF, SVG), PDF, Word, Excel."
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
+      {isLoadingEligible && !isEditMode ? (
+        <div style={{ textAlign: "center", padding: "40px" }}><Spin size="large" /><p>Loading eligible pre-commissionings...</p></div>
+      ) : !isEditMode && serialOptions.length === 0 ? (
+        <Alert type="info" message="No Eligible Pre-Commissionings"
+          description="Pre-commissionings become eligible when their status is 'Done'." showIcon />
+      ) : (
+        <Form form={form} layout="vertical" autoComplete="off" style={{ marginTop: "1rem" }}>
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item name="serialNumbers" label="Serial Numbers"
+                rules={[{ required: true, message: "Select at least one serial" }]}>
+                <Select mode={isEditMode ? undefined : "multiple"} placeholder="Select serials"
+                  options={serialOptions} maxTagCount="responsive" disabled={isEditMode} showSearch
+                  filterOption={(input, option) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase())} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="ecdFromClient" label="ECD From Client">
+                <Input placeholder="Expected commissioning date from client" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="serviceTicketNo" label="Service Ticket No">
+                <Input placeholder="Service ticket number" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="ccdFromClient" label="CCD From Client">
+                <Input placeholder="Confirmed commissioning date" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="commissioningDate" label="Commissioning Date">
+                <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="infoGenerated" label="Info Generated">
+                <Input placeholder="Info details" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="commissioningStatus" label="Status" rules={selectFieldRules}>
+                <Select placeholder="Select status" options={statusOptions} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item name="issues" label="Issues">
+                <Input.TextArea placeholder="Issues faced" rows={2} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item name="solution" label="Solution">
+                <Input.TextArea placeholder="Solution provided" rows={2} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item name="remarks" label="Remarks">
+                <Input.TextArea placeholder="Enter remarks" rows={2} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item label="Upload Documents">
+                <S3FileUpload
+                  ref={fileUploadRef}
+                  fileList={fileList}
+                  onChange={setFileList}
+                  maxFiles={5}
+                  maxSizeMB={10}
+                  buttonLabel="Upload Commissioning Documents"
+                  poId={poId}
+                  entityType="commissioning"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      )}
     </Modal>
   );
 };

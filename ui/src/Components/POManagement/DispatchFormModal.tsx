@@ -80,14 +80,12 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
   const productQuantityInfo = useMemo((): Record<number, ProductQuantityInfo> => {
     const info: Record<number, ProductQuantityInfo> = {};
     poItems.forEach((item) => {
-      // Find the productId from the item (we need to map product name to id)
-      // For now, using a workaround - get productId from poItems if available
-      const productId = (item as unknown as { productId?: number }).productId || 0;
+      const productId = item.productId;
       
       // Sum dispatched quantity from all dispatch entries' dispatchedItems
       const dispatchedQty = currentPODispatches.reduce((sum, d) => {
         const matchingItem = d.dispatchedItems?.find(
-          (di) => di.productName === item.product || di.productId === productId
+          (di) => di.productId === productId
         );
         return sum + (matchingItem?.quantity || 0);
       }, 0);
@@ -138,7 +136,7 @@ const DispatchFormModal: React.FC<DispatchFormModalProps> = ({
   // Generate product options from PO items with remaining quantity info
   const getProductOptions = () => {
     return poItems.map((item) => {
-      const productId = (item as unknown as { productId?: number }).productId || 0;
+      const productId = item.productId;
       const info = productQuantityInfo[productId];
       const remainingQty = info?.availableQuantity || 0;
       const isEditProduct = editData?.dispatchedItems?.some(

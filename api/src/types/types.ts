@@ -11,6 +11,9 @@ export const TYPES = {
   ClientController: Symbol.for('ClientController'),
   FileController: Symbol.for('FileController'),
   DispatchController: Symbol.for('DispatchController'),
+  PreCommissioningController: Symbol.for('PreCommissioningController'),
+  CommissioningController: Symbol.for('CommissioningController'),
+  WarrantyCertificateController: Symbol.for('WarrantyCertificateController'),
 
   // Services
   POService: Symbol.for('POService'),
@@ -25,6 +28,9 @@ export const TYPES = {
   ClientService: Symbol.for('ClientService'),
   FileService: Symbol.for('FileService'),
   DispatchService: Symbol.for('DispatchService'),
+  PreCommissioningService: Symbol.for('PreCommissioningService'),
+  CommissioningService: Symbol.for('CommissioningService'),
+  WarrantyCertificateService: Symbol.for('WarrantyCertificateService'),
 
   // Repositories
   AuthRepository: Symbol.for('AuthRepository'),
@@ -37,6 +43,9 @@ export const TYPES = {
   ClientRepository: Symbol.for('ClientRepository'),
   FileRepository: Symbol.for('FileRepository'),
   DispatchRepository: Symbol.for('DispatchRepository'),
+  PreCommissioningRepository: Symbol.for('PreCommissioningRepository'),
+  CommissioningRepository: Symbol.for('CommissioningRepository'),
+  WarrantyCertificateRepository: Symbol.for('WarrantyCertificateRepository'),
 
   // Database
   PrismaClient: Symbol.for('PrismaClient'),
