@@ -33,22 +33,18 @@ import { selectAuth } from "../store/authSlice";
 import { useGetPOByIdQuery } from "../store/api/poApi";
 import {
   useGetDispatchesByPoIdQuery,
-  useGetDispatchAccordionStatusQuery,
   useDeleteDispatchMutation,
   useUpdateDispatchDocumentsMutation,
 } from "../store/api/dispatchApi";
 import {
   useGetPreCommissioningsByPoIdQuery,
-  useGetPreCommissioningStatusQuery,
   useDeletePreCommissioningMutation,
 } from "../store/api/preCommissioningApi";
 import {
   useGetCommissioningsByPoIdQuery,
-  useGetCommissioningStatusQuery,
 } from "../store/api/commissioningApi";
 import {
   useGetWarrantyCertificatesByPoIdQuery,
-  useGetWarrantyCertificateStatusQuery,
 } from "../store/api/warrantyCertificateApi";
 import type {
   PreCommissioningResponse,
@@ -186,12 +182,6 @@ const PODetails: React.FC = () => {
     skip: !poId,
   });
 
-  // Fetch dispatch accordion status from API
-  const { data: dispatchAccordionStatus } = useGetDispatchAccordionStatusQuery(
-    poId || "",
-    { skip: !poId }
-  );
-
   // Delete dispatch mutation
   const [deleteDispatch] = useDeleteDispatchMutation();
   const [updateDispatchDocuments] = useUpdateDispatchDocumentsMutation();
@@ -201,17 +191,9 @@ const PODetails: React.FC = () => {
     useGetPreCommissioningsByPoIdQuery(poId || "", {
       skip: !poId,
     });
-  const { data: preCommissioningStatus } = useGetPreCommissioningStatusQuery(
-    poId || "",
-    { skip: !poId }
-  );
 
   // Fetch commissioning data from API
   const { data: commissioningData = [] } = useGetCommissioningsByPoIdQuery(
-    poId || "",
-    { skip: !poId }
-  );
-  const { data: commissioningStatus } = useGetCommissioningStatusQuery(
     poId || "",
     { skip: !poId }
   );
@@ -221,10 +203,6 @@ const PODetails: React.FC = () => {
     useGetWarrantyCertificatesByPoIdQuery(poId || "", {
       skip: !poId,
     });
-  const { data: warrantyCertificateStatus } = useGetWarrantyCertificateStatusQuery(
-    poId || "",
-    { skip: !poId }
-  );
 
   // Delete mutations for service lifecycle
   const [deletePreCommissioning] = useDeletePreCommissioningMutation();
@@ -472,46 +450,49 @@ const PODetails: React.FC = () => {
   // Warranty entries (from API)
   const warrantyEntries = warrantyCertificateData;
 
-  // ============= ACCORDION STATUS COMPUTED FROM API DATA =============
+  // ============= ACCORDION STATUS FROM PO RESPONSE =============
 
   type AccordionStatus = "Not Started" | "In-Progress" | "Done";
 
-  // Dispatch Status Info - from API
+  // Get accordion status from PO response
+  const accordionStatus = poResponse?.accordionStatus;
+
+  // Dispatch Status Info - from PO response
   const dispatchStatusInfo = useMemo(() => {
-    if (!dispatchAccordionStatus) {
+    if (!accordionStatus?.dispatch) {
       return { status: "Not Started" as AccordionStatus, totalQty: 0, dispatchedQty: 0 };
     }
     return {
-      status: dispatchAccordionStatus.dispatchStatus as AccordionStatus,
-      totalQty: dispatchAccordionStatus.totalQty,
-      dispatchedQty: dispatchAccordionStatus.dispatchedQty,
+      status: accordionStatus.dispatch.status as AccordionStatus,
+      totalQty: accordionStatus.dispatch.totalQty,
+      dispatchedQty: accordionStatus.dispatch.dispatchedQty,
     };
-  }, [dispatchAccordionStatus]);
+  }, [accordionStatus]);
 
-  // Document Status - from API
+  // Document Status - from PO response
   const documentStatus = useMemo((): AccordionStatus => {
-    return (dispatchAccordionStatus?.documentStatus || "Not Started") as AccordionStatus;
-  }, [dispatchAccordionStatus]);
+    return (accordionStatus?.document?.status || "Not Started") as AccordionStatus;
+  }, [accordionStatus]);
 
-  // Delivery Confirmation Status - from API
+  // Delivery Confirmation Status - from PO response
   const deliveryConfirmationStatus = useMemo((): AccordionStatus => {
-    return (dispatchAccordionStatus?.deliveryStatus || "Not Started") as AccordionStatus;
-  }, [dispatchAccordionStatus]);
+    return (accordionStatus?.delivery?.status || "Not Started") as AccordionStatus;
+  }, [accordionStatus]);
 
-  // Pre-Commissioning Status - from API
+  // Pre-Commissioning Status - from PO response
   const preCommissioningAccordionStatus = useMemo((): AccordionStatus => {
-    return preCommissioningStatus?.status || "Not Started";
-  }, [preCommissioningStatus]);
+    return (accordionStatus?.preCommissioning?.status || "Not Started") as AccordionStatus;
+  }, [accordionStatus]);
 
-  // Commissioning Status - from API
+  // Commissioning Status - from PO response
   const commissioningAccordionStatus = useMemo((): AccordionStatus => {
-    return commissioningStatus?.status || "Not Started";
-  }, [commissioningStatus]);
+    return (accordionStatus?.commissioning?.status || "Not Started") as AccordionStatus;
+  }, [accordionStatus]);
 
-  // Warranty Status - from API
+  // Warranty Status - from PO response
   const warrantyAccordionStatus = useMemo((): AccordionStatus => {
-    return warrantyCertificateStatus?.status || "Not Started";
-  }, [warrantyCertificateStatus]);
+    return (accordionStatus?.warranty?.status || "Not Started") as AccordionStatus;
+  }, [accordionStatus]);
 
   // Check if all accordions are in "Done" state
   const allAccordionsDone = useMemo(() => {

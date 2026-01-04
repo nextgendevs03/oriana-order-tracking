@@ -12,7 +12,6 @@ import {
   CommissioningResponse,
   CommissioningListResponse,
   EligiblePreCommissioningResponse,
-  CommissioningStatusResponse,
   DeleteCommissioningResponse,
 } from '@OrianaTypes';
 
@@ -70,14 +69,6 @@ export const commissioningApi = baseApi.injectEndpoints({
           : [{ type: 'Commissioning', id: `PO-${poId}` }],
     }),
 
-    getCommissioningStatus: builder.query<CommissioningStatusResponse, string>({
-      query: (poId) => `/commissioning/po/${poId}/status`,
-      transformResponse: (response: ApiResponse<CommissioningStatusResponse>) => response.data,
-      providesTags: (_result, _error, poId) => [
-        { type: 'Commissioning', id: `STATUS-${poId}` },
-      ],
-    }),
-
     getEligiblePreCommissionings: builder.query<EligiblePreCommissioningResponse[], string>({
       query: (poId) => `/commissioning/po/${poId}/eligible`,
       transformResponse: (response: ApiResponse<EligiblePreCommissioningResponse[]>) => response.data,
@@ -93,16 +84,17 @@ export const commissioningApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: 'Commissioning', id }],
     }),
 
-    createCommissioning: builder.mutation<CommissioningResponse[], CreateCommissioningRequest>({
+    createCommissioning: builder.mutation<CommissioningResponse[], CreateCommissioningRequest & { poId?: string }>({
       query: (data) => ({
         url: '/commissioning',
         method: 'POST',
         body: data,
       }),
       transformResponse: (response: ApiResponse<CommissioningResponse[]>) => response.data,
-      invalidatesTags: [
+      invalidatesTags: (result) => [
         { type: 'Commissioning', id: 'LIST' },
         { type: 'PreCommissioning', id: 'LIST' },
+        ...(result?.[0]?.poId ? [{ type: 'PO' as const, id: result[0].poId }] : []),
       ],
     }),
 
@@ -120,7 +112,7 @@ export const commissioningApi = baseApi.injectEndpoints({
         { type: 'Commissioning', id },
         { type: 'Commissioning', id: 'LIST' },
         ...(result?.poId ? [{ type: 'Commissioning' as const, id: `PO-${result.poId}` }] : []),
-        ...(result?.poId ? [{ type: 'Commissioning' as const, id: `STATUS-${result.poId}` }] : []),
+        ...(result?.poId ? [{ type: 'PO' as const, id: result.poId }] : []),
         { type: 'WarrantyCertificate', id: 'LIST' },
       ],
     }),
@@ -135,8 +127,8 @@ export const commissioningApi = baseApi.injectEndpoints({
         { type: 'Commissioning', id },
         { type: 'Commissioning', id: 'LIST' },
         ...(poId ? [{ type: 'Commissioning' as const, id: `PO-${poId}` }] : []),
-        ...(poId ? [{ type: 'Commissioning' as const, id: `STATUS-${poId}` }] : []),
         ...(poId ? [{ type: 'Commissioning' as const, id: `ELIGIBLE-${poId}` }] : []),
+        ...(poId ? [{ type: 'PO' as const, id: poId }] : []),
         { type: 'PreCommissioning', id: 'LIST' },
       ],
     }),
@@ -148,7 +140,6 @@ export const commissioningApi = baseApi.injectEndpoints({
 export const {
   useGetCommissioningsQuery,
   useGetCommissioningsByPoIdQuery,
-  useGetCommissioningStatusQuery,
   useGetEligiblePreCommissioningsQuery,
   useGetCommissioningByIdQuery,
   useLazyGetCommissioningsQuery,

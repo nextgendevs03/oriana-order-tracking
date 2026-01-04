@@ -12,7 +12,6 @@ import {
   WarrantyCertificateResponse,
   WarrantyCertificateListResponse,
   EligibleCommissioningResponse,
-  WarrantyCertificateStatusResponse,
   DeleteWarrantyCertificateResponse,
 } from '@OrianaTypes';
 
@@ -70,14 +69,6 @@ export const warrantyCertificateApi = baseApi.injectEndpoints({
           : [{ type: 'WarrantyCertificate', id: `PO-${poId}` }],
     }),
 
-    getWarrantyCertificateStatus: builder.query<WarrantyCertificateStatusResponse, string>({
-      query: (poId) => `/warranty-certificate/po/${poId}/status`,
-      transformResponse: (response: ApiResponse<WarrantyCertificateStatusResponse>) => response.data,
-      providesTags: (_result, _error, poId) => [
-        { type: 'WarrantyCertificate', id: `STATUS-${poId}` },
-      ],
-    }),
-
     getEligibleCommissionings: builder.query<EligibleCommissioningResponse[], string>({
       query: (poId) => `/warranty-certificate/po/${poId}/eligible`,
       transformResponse: (response: ApiResponse<EligibleCommissioningResponse[]>) => response.data,
@@ -93,16 +84,17 @@ export const warrantyCertificateApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: 'WarrantyCertificate', id }],
     }),
 
-    createWarrantyCertificate: builder.mutation<WarrantyCertificateResponse[], CreateWarrantyCertificateRequest>({
+    createWarrantyCertificate: builder.mutation<WarrantyCertificateResponse[], CreateWarrantyCertificateRequest & { poId?: string }>({
       query: (data) => ({
         url: '/warranty-certificate',
         method: 'POST',
         body: data,
       }),
       transformResponse: (response: ApiResponse<WarrantyCertificateResponse[]>) => response.data,
-      invalidatesTags: [
+      invalidatesTags: (result) => [
         { type: 'WarrantyCertificate', id: 'LIST' },
         { type: 'Commissioning', id: 'LIST' },
+        ...(result?.[0]?.poId ? [{ type: 'PO' as const, id: result[0].poId }] : []),
       ],
     }),
 
@@ -120,7 +112,7 @@ export const warrantyCertificateApi = baseApi.injectEndpoints({
         { type: 'WarrantyCertificate', id },
         { type: 'WarrantyCertificate', id: 'LIST' },
         ...(result?.poId ? [{ type: 'WarrantyCertificate' as const, id: `PO-${result.poId}` }] : []),
-        ...(result?.poId ? [{ type: 'WarrantyCertificate' as const, id: `STATUS-${result.poId}` }] : []),
+        ...(result?.poId ? [{ type: 'PO' as const, id: result.poId }] : []),
       ],
     }),
 
@@ -134,8 +126,8 @@ export const warrantyCertificateApi = baseApi.injectEndpoints({
         { type: 'WarrantyCertificate', id },
         { type: 'WarrantyCertificate', id: 'LIST' },
         ...(poId ? [{ type: 'WarrantyCertificate' as const, id: `PO-${poId}` }] : []),
-        ...(poId ? [{ type: 'WarrantyCertificate' as const, id: `STATUS-${poId}` }] : []),
         ...(poId ? [{ type: 'WarrantyCertificate' as const, id: `ELIGIBLE-${poId}` }] : []),
+        ...(poId ? [{ type: 'PO' as const, id: poId }] : []),
         { type: 'Commissioning', id: 'LIST' },
       ],
     }),
@@ -147,7 +139,6 @@ export const warrantyCertificateApi = baseApi.injectEndpoints({
 export const {
   useGetWarrantyCertificatesQuery,
   useGetWarrantyCertificatesByPoIdQuery,
-  useGetWarrantyCertificateStatusQuery,
   useGetEligibleCommissioningsQuery,
   useGetWarrantyCertificateByIdQuery,
   useLazyGetWarrantyCertificatesQuery,

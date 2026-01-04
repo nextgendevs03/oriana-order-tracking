@@ -174,19 +174,67 @@ export class PreCommissioningService implements IPreCommissioningService {
   }
 
   /**
-   * Get all pre-commissioning records for a specific PO
+   * Get all pre-commissioning records for a specific PO (with files)
    */
   async getPreCommissioningsByPoId(poId: string): Promise<PreCommissioningResponse[]> {
     const records = await this.preCommissioningRepository.findByPoId(poId);
-    return records.map((record) => this.mapToResponse(record));
+
+    // Fetch files for each record
+    const responses = await Promise.all(
+      records.map(async (record) => {
+        const response = this.mapToResponse(record);
+        const files = await this.fileRepository.findByEntity(
+          'pre_commissioning',
+          record.preCommissioningId.toString()
+        );
+        response.files = files.map((f) => ({
+          fileId: f.fileId,
+          originalFileName: f.originalFileName,
+          storedFileName: f.storedFileName,
+          mimeType: f.mimeType,
+          fileSize: f.fileSize,
+          status: f.status,
+          entityType: f.entityType || undefined,
+          entityId: f.entityId || undefined,
+          createdAt: f.createdAt.toISOString(),
+        }));
+        return response;
+      })
+    );
+
+    return responses;
   }
 
   /**
-   * Get all pre-commissioning records for a specific dispatch
+   * Get all pre-commissioning records for a specific dispatch (with files)
    */
   async getPreCommissioningsByDispatchId(dispatchId: number): Promise<PreCommissioningResponse[]> {
     const records = await this.preCommissioningRepository.findByDispatchId(dispatchId);
-    return records.map((record) => this.mapToResponse(record));
+
+    // Fetch files for each record
+    const responses = await Promise.all(
+      records.map(async (record) => {
+        const response = this.mapToResponse(record);
+        const files = await this.fileRepository.findByEntity(
+          'pre_commissioning',
+          record.preCommissioningId.toString()
+        );
+        response.files = files.map((f) => ({
+          fileId: f.fileId,
+          originalFileName: f.originalFileName,
+          storedFileName: f.storedFileName,
+          mimeType: f.mimeType,
+          fileSize: f.fileSize,
+          status: f.status,
+          entityType: f.entityType || undefined,
+          entityId: f.entityId || undefined,
+          createdAt: f.createdAt.toISOString(),
+        }));
+        return response;
+      })
+    );
+
+    return responses;
   }
 
   /**

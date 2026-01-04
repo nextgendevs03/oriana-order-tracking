@@ -115,7 +115,12 @@ const CommissioningFormModal: React.FC<CommissioningFormModalProps> = ({
         }).unwrap();
         toast.success("Commissioning updated successfully");
       } else {
-        const items = values.serialNumbers.map((serialValue: string) => {
+        const serialNumbersArray = values.serialNumbers || [];
+        if (!Array.isArray(serialNumbersArray) || serialNumbersArray.length === 0) {
+          toast.error("Please select at least one serial number");
+          return;
+        }
+        const items = serialNumbersArray.map((serialValue: string) => {
           const [preCommissioningId] = serialValue.split("__");
           return { preCommissioningId: parseInt(preCommissioningId, 10) };
         });

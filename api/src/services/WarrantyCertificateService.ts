@@ -173,9 +173,36 @@ export class WarrantyCertificateService implements IWarrantyCertificateService {
   /**
    * Get all warranty certificate records for a specific PO
    */
+  /**
+   * Get all warranty certificates for a specific PO (with files)
+   */
   async getWarrantyCertificatesByPoId(poId: string): Promise<WarrantyCertificateResponse[]> {
     const records = await this.warrantyCertificateRepository.findByPoId(poId);
-    return records.map((record) => this.mapToResponse(record));
+
+    // Fetch files for each record
+    const responses = await Promise.all(
+      records.map(async (record) => {
+        const response = this.mapToResponse(record);
+        const files = await this.fileRepository.findByEntity(
+          'warranty_certificate',
+          record.warrantyCertificateId.toString()
+        );
+        response.files = files.map((f) => ({
+          fileId: f.fileId,
+          originalFileName: f.originalFileName,
+          storedFileName: f.storedFileName,
+          mimeType: f.mimeType,
+          fileSize: f.fileSize,
+          status: f.status,
+          entityType: f.entityType || undefined,
+          entityId: f.entityId || undefined,
+          createdAt: f.createdAt.toISOString(),
+        }));
+        return response;
+      })
+    );
+
+    return responses;
   }
 
   /**

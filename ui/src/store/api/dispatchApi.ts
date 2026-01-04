@@ -15,7 +15,6 @@ import {
   DispatchResponse,
   DispatchListResponse,
   DeleteDispatchResponse,
-  DispatchAccordionStatusResponse,
 } from '@OrianaTypes';
 
 interface ApiResponse<T> {
@@ -78,18 +77,6 @@ export const dispatchApi = baseApi.injectEndpoints({
               { type: 'Dispatch', id: `PO-${poId}` },
             ]
           : [{ type: 'Dispatch', id: `PO-${poId}` }],
-    }),
-
-    /**
-     * GET /dispatch/po/:poId/status
-     * Fetch accordion status for Dispatch, Document, and Delivery sections
-     */
-    getDispatchAccordionStatus: builder.query<DispatchAccordionStatusResponse, string>({
-      query: (poId) => `/dispatch/po/${poId}/status`,
-      transformResponse: (response: ApiResponse<DispatchAccordionStatusResponse>) => response.data,
-      providesTags: (_result, _error, poId) => [
-        { type: 'Dispatch', id: `STATUS-${poId}` },
-      ],
     }),
 
     /**
@@ -208,7 +195,6 @@ export const dispatchApi = baseApi.injectEndpoints({
 export const {
   useGetDispatchesQuery,
   useGetDispatchesByPoIdQuery,
-  useGetDispatchAccordionStatusQuery,
   useGetDispatchByIdQuery,
   useLazyGetDispatchesQuery,
   useLazyGetDispatchesByPoIdQuery,

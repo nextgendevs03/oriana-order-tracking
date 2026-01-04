@@ -12,7 +12,6 @@ import {
   PreCommissioningResponse,
   PreCommissioningListResponse,
   EligibleSerialResponse,
-  PreCommissioningStatusResponse,
   DeletePreCommissioningResponse,
 } from '@OrianaTypes';
 
@@ -70,14 +69,6 @@ export const preCommissioningApi = baseApi.injectEndpoints({
           : [{ type: 'PreCommissioning', id: `PO-${poId}` }],
     }),
 
-    getPreCommissioningStatus: builder.query<PreCommissioningStatusResponse, string>({
-      query: (poId) => `/pre-commissioning/po/${poId}/status`,
-      transformResponse: (response: ApiResponse<PreCommissioningStatusResponse>) => response.data,
-      providesTags: (_result, _error, poId) => [
-        { type: 'PreCommissioning', id: `STATUS-${poId}` },
-      ],
-    }),
-
     getEligibleSerials: builder.query<EligibleSerialResponse[], string>({
       query: (poId) => `/pre-commissioning/po/${poId}/eligible`,
       transformResponse: (response: ApiResponse<EligibleSerialResponse[]>) => response.data,
@@ -93,14 +84,17 @@ export const preCommissioningApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: 'PreCommissioning', id }],
     }),
 
-    createPreCommissioning: builder.mutation<PreCommissioningResponse[], CreatePreCommissioningRequest>({
+    createPreCommissioning: builder.mutation<PreCommissioningResponse[], CreatePreCommissioningRequest & { poId?: string }>({
       query: (data) => ({
         url: '/pre-commissioning',
         method: 'POST',
         body: data,
       }),
       transformResponse: (response: ApiResponse<PreCommissioningResponse[]>) => response.data,
-      invalidatesTags: [{ type: 'PreCommissioning', id: 'LIST' }],
+      invalidatesTags: (result) => [
+        { type: 'PreCommissioning', id: 'LIST' },
+        ...(result?.[0]?.poId ? [{ type: 'PO' as const, id: result[0].poId }] : []),
+      ],
     }),
 
     updatePreCommissioning: builder.mutation<
@@ -117,7 +111,7 @@ export const preCommissioningApi = baseApi.injectEndpoints({
         { type: 'PreCommissioning', id },
         { type: 'PreCommissioning', id: 'LIST' },
         ...(result?.poId ? [{ type: 'PreCommissioning' as const, id: `PO-${result.poId}` }] : []),
-        ...(result?.poId ? [{ type: 'PreCommissioning' as const, id: `STATUS-${result.poId}` }] : []),
+        ...(result?.poId ? [{ type: 'PO' as const, id: result.poId }] : []),
         { type: 'Commissioning', id: 'LIST' },
       ],
     }),
@@ -132,8 +126,8 @@ export const preCommissioningApi = baseApi.injectEndpoints({
         { type: 'PreCommissioning', id },
         { type: 'PreCommissioning', id: 'LIST' },
         ...(poId ? [{ type: 'PreCommissioning' as const, id: `PO-${poId}` }] : []),
-        ...(poId ? [{ type: 'PreCommissioning' as const, id: `STATUS-${poId}` }] : []),
         ...(poId ? [{ type: 'PreCommissioning' as const, id: `ELIGIBLE-${poId}` }] : []),
+        ...(poId ? [{ type: 'PO' as const, id: poId }] : []),
       ],
     }),
   }),
@@ -144,7 +138,6 @@ export const preCommissioningApi = baseApi.injectEndpoints({
 export const {
   useGetPreCommissioningsQuery,
   useGetPreCommissioningsByPoIdQuery,
-  useGetPreCommissioningStatusQuery,
   useGetEligibleSerialsQuery,
   useGetPreCommissioningByIdQuery,
   useLazyGetPreCommissioningsQuery,

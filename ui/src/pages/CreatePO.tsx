@@ -274,7 +274,15 @@ const CreatePO: FC = () => {
     };
 
     // Build PO items array with proper types
-    const poItems: POItemRequest[] = (values.poItems as POItemFormValues[]).map(
+    const poItemsArray = values.poItems as POItemFormValues[] | undefined;
+    if (!poItemsArray || !Array.isArray(poItemsArray) || poItemsArray.length === 0) {
+      toast.error("PO Items Required", {
+        description: "Please add at least one PO item.",
+      });
+      return;
+    }
+
+    const poItems: POItemRequest[] = poItemsArray.map(
       (item) => ({
         categoryId:
           typeof item.categoryId === "string"

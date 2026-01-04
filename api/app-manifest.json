@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generatedAt": "2026-01-04T07:31:37.733Z",
+  "generatedAt": "2026-01-04T12:42:17.475Z",
   "lambdas": {
     "CreatePO": {
       "handler": "dist/handlers/CreatePO.handler",
@@ -335,6 +335,66 @@
           "path": "/api/files/cleanup",
           "controller": "FileController",
           "action": "cleanupOrphanedFiles"
+        }
+      ]
+    },
+    "dispatch": {
+      "handler": "dist/handlers/dispatch.handler",
+      "controller": "DispatchController",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/api/dispatch",
+          "controller": "DispatchController",
+          "action": "create"
+        },
+        {
+          "method": "GET",
+          "path": "/api/dispatch",
+          "controller": "DispatchController",
+          "action": "getAll"
+        },
+        {
+          "method": "GET",
+          "path": "/api/dispatch/po/{poId}",
+          "controller": "DispatchController",
+          "action": "getByPoId"
+        },
+        {
+          "method": "GET",
+          "path": "/api/dispatch/po/{poId}/status",
+          "controller": "DispatchController",
+          "action": "getAccordionStatus"
+        },
+        {
+          "method": "GET",
+          "path": "/api/dispatch/{id}",
+          "controller": "DispatchController",
+          "action": "getById"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/dispatch/{id}",
+          "controller": "DispatchController",
+          "action": "updateDetails"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/dispatch/{id}/documents",
+          "controller": "DispatchController",
+          "action": "updateDocuments"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/dispatch/{id}/delivery",
+          "controller": "DispatchController",
+          "action": "updateDelivery"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/dispatch/{id}",
+          "controller": "DispatchController",
+          "action": "delete"
         }
       ]
     }

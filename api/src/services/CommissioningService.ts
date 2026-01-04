@@ -171,9 +171,36 @@ export class CommissioningService implements ICommissioningService {
   /**
    * Get all commissioning records for a specific PO
    */
+  /**
+   * Get all commissioning records for a specific PO (with files)
+   */
   async getCommissioningsByPoId(poId: string): Promise<CommissioningResponse[]> {
     const records = await this.commissioningRepository.findByPoId(poId);
-    return records.map((record) => this.mapToResponse(record));
+
+    // Fetch files for each record
+    const responses = await Promise.all(
+      records.map(async (record) => {
+        const response = this.mapToResponse(record);
+        const files = await this.fileRepository.findByEntity(
+          'commissioning',
+          record.commissioningId.toString()
+        );
+        response.files = files.map((f) => ({
+          fileId: f.fileId,
+          originalFileName: f.originalFileName,
+          storedFileName: f.storedFileName,
+          mimeType: f.mimeType,
+          fileSize: f.fileSize,
+          status: f.status,
+          entityType: f.entityType || undefined,
+          entityId: f.entityId || undefined,
+          createdAt: f.createdAt.toISOString(),
+        }));
+        return response;
+      })
+    );
+
+    return responses;
   }
 
   /**

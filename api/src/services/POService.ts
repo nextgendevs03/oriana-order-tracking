@@ -1,4 +1,5 @@
 import { injectable, inject } from 'inversify';
+import { PrismaClient } from '@prisma/client';
 import { TYPES } from '../types/types';
 import {
   IPORepository,
@@ -12,6 +13,8 @@ import {
   POResponse,
   POListResponse,
   POItemResponse,
+  POAccordionStatus,
+  AccordionStatusType,
 } from '../schemas';
 
 export interface IPOService {
@@ -24,7 +27,10 @@ export interface IPOService {
 
 @injectable()
 export class POService implements IPOService {
-  constructor(@inject(TYPES.PORepository) private poRepository: IPORepository) {}
+  constructor(
+    @inject(TYPES.PORepository) private poRepository: IPORepository,
+    @inject(TYPES.PrismaClient) private prisma: PrismaClient
+  ) {}
 
   private mapItemToResponse(item: POItemWithRelations): POItemResponse {
     return {
@@ -48,7 +54,138 @@ export class POService implements IPOService {
     };
   }
 
-  private mapToResponse(po: PurchaseOrderWithRelations): POResponse {
+  /**
+   * Calculate accordion status for all sections of a PO
+   */
+  private async calculateAccordionStatus(
+    poId: string,
+    totalPOQty: number
+  ): Promise<POAccordionStatus> {
+    // Get all dispatches for this PO
+    const dispatches = await this.prisma.dispatch.findMany({
+      where: { poId },
+      include: {
+        dispatchedItems: true,
+      },
+    });
+
+    // Calculate dispatched quantity
+    const dispatchedQty = dispatches.reduce((sum, d) => {
+      return sum + d.dispatchedItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
+    }, 0);
+
+    // Dispatch Status
+    let dispatchStatus: AccordionStatusType = 'Not Started';
+    if (dispatches.length > 0) {
+      dispatchStatus = dispatchedQty >= totalPOQty ? 'Done' : 'In-Progress';
+    }
+
+    // Document Status
+    const dispatchesWithDocuments = dispatches.filter((d) => !!d.dispatchStatus).length;
+    const dispatchesWithDoneDocuments = dispatches.filter(
+      (d) => d.dispatchStatus === 'done'
+    ).length;
+    let documentStatus: AccordionStatusType = 'Not Started';
+    if (dispatchesWithDocuments > 0) {
+      documentStatus =
+        dispatchStatus === 'Done' && dispatchesWithDoneDocuments >= dispatches.length
+          ? 'Done'
+          : 'In-Progress';
+    }
+
+    // Delivery Status
+    const dispatchesForDelivery = dispatches.filter((d) => d.dispatchStatus === 'done').length;
+    const dispatchesWithDelivery = dispatches.filter((d) => !!d.deliveryStatus).length;
+    const dispatchesWithDeliveryDone = dispatches.filter((d) => d.deliveryStatus === 'done').length;
+    let deliveryStatus: AccordionStatusType = 'Not Started';
+    if (dispatchesForDelivery > 0 && dispatchesWithDelivery > 0) {
+      deliveryStatus = dispatchesWithDeliveryDone >= dispatchesForDelivery ? 'Done' : 'In-Progress';
+    }
+
+    // Pre-Commissioning Status (eligible = delivery done)
+    const eligibleForPreCommissioning = dispatchesWithDeliveryDone;
+    const preCommissioningCount = await this.prisma.preCommissioning.count({
+      where: { dispatch: { poId } },
+    });
+    const preCommissioningDoneCount = await this.prisma.preCommissioning.count({
+      where: { dispatch: { poId }, preCommissioningStatus: 'Done' },
+    });
+    let preCommissioningStatus: AccordionStatusType = 'Not Started';
+    if (preCommissioningCount > 0) {
+      preCommissioningStatus =
+        preCommissioningDoneCount >= eligibleForPreCommissioning && eligibleForPreCommissioning > 0
+          ? 'Done'
+          : 'In-Progress';
+    }
+
+    // Commissioning Status (eligible = pre-commissioning done)
+    const commissioningCount = await this.prisma.commissioning.count({
+      where: { dispatch: { poId } },
+    });
+    const commissioningDoneCount = await this.prisma.commissioning.count({
+      where: { dispatch: { poId }, commissioningStatus: 'Done' },
+    });
+    let commissioningStatus: AccordionStatusType = 'Not Started';
+    if (commissioningCount > 0) {
+      commissioningStatus =
+        commissioningDoneCount >= preCommissioningDoneCount && preCommissioningDoneCount > 0
+          ? 'Done'
+          : 'In-Progress';
+    }
+
+    // Warranty Status (eligible = commissioning done)
+    const warrantyCount = await this.prisma.warrantyCertificate.count({
+      where: { dispatch: { poId } },
+    });
+    const warrantyDoneCount = await this.prisma.warrantyCertificate.count({
+      where: { dispatch: { poId }, warrantyStatus: 'Done' },
+    });
+    let warrantyStatus: AccordionStatusType = 'Not Started';
+    if (warrantyCount > 0) {
+      warrantyStatus =
+        warrantyDoneCount >= commissioningDoneCount && commissioningDoneCount > 0
+          ? 'Done'
+          : 'In-Progress';
+    }
+
+    return {
+      dispatch: {
+        status: dispatchStatus,
+        totalQty: totalPOQty,
+        dispatchedQty,
+      },
+      document: {
+        status: documentStatus,
+        total: dispatches.length,
+        completed: dispatchesWithDoneDocuments,
+      },
+      delivery: {
+        status: deliveryStatus,
+        total: dispatchesForDelivery,
+        completed: dispatchesWithDeliveryDone,
+      },
+      preCommissioning: {
+        status: preCommissioningStatus,
+        total: eligibleForPreCommissioning,
+        completed: preCommissioningDoneCount,
+      },
+      commissioning: {
+        status: commissioningStatus,
+        total: preCommissioningDoneCount,
+        completed: commissioningDoneCount,
+      },
+      warranty: {
+        status: warrantyStatus,
+        total: commissioningDoneCount,
+        completed: warrantyDoneCount,
+      },
+    };
+  }
+
+  private mapToResponse(
+    po: PurchaseOrderWithRelations,
+    accordionStatus?: POAccordionStatus
+  ): POResponse {
     const poItems: POItemResponse[] = (po.poItems || []).map((item) =>
       this.mapItemToResponse(item)
     );
@@ -83,6 +220,7 @@ export class POService implements IPOService {
       remarks: po.remarks || null,
       createdAt: po.createdAt.toISOString(),
       updatedAt: po.updatedAt.toISOString(),
+      accordionStatus,
     };
   }
 
@@ -93,7 +231,15 @@ export class POService implements IPOService {
 
   async getPOById(poId: string): Promise<POResponse | null> {
     const po = await this.poRepository.findById(poId);
-    return po ? this.mapToResponse(po) : null;
+    if (!po) return null;
+
+    // Calculate total PO quantity
+    const totalPOQty = po.poItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Calculate accordion status
+    const accordionStatus = await this.calculateAccordionStatus(poId, totalPOQty);
+
+    return this.mapToResponse(po, accordionStatus);
   }
 
   async getAllPOs(params: ListPORequest): Promise<POListResponse> {
@@ -113,7 +259,15 @@ export class POService implements IPOService {
 
   async updatePO(poId: string, data: UpdatePORequest): Promise<POResponse | null> {
     const po = await this.poRepository.update(poId, data);
-    return po ? this.mapToResponse(po) : null;
+    if (!po) return null;
+
+    // Calculate total PO quantity
+    const totalPOQty = po.poItems.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Calculate accordion status
+    const accordionStatus = await this.calculateAccordionStatus(poId, totalPOQty);
+
+    return this.mapToResponse(po, accordionStatus);
   }
 
   async deletePO(poId: string): Promise<boolean> {

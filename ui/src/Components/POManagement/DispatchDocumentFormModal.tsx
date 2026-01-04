@@ -119,9 +119,11 @@ const DispatchDocumentFormModal: React.FC<DispatchDocumentFormModalProps> = ({
 
       // Build serial numbers map (productId -> serialNumbers)
       const serialNumbers: Record<number, string> = {};
-      targetDispatch.dispatchedItems.forEach((item) => {
-        serialNumbers[item.productId] = values.serialNumbers?.[item.productId] || "";
-      });
+      if (targetDispatch.dispatchedItems && Array.isArray(targetDispatch.dispatchedItems)) {
+        targetDispatch.dispatchedItems.forEach((item) => {
+          serialNumbers[item.productId] = values.serialNumbers?.[item.productId] || "";
+        });
+      }
 
       // Upload files to S3 if any new files
       if (fileUploadRef.current && fileList.some(f => f.originFileObj)) {

@@ -18,6 +18,47 @@ export interface POItemResponse {
   updatedAt: string;
 }
 
+/**
+ * Accordion Status Type
+ */
+export type AccordionStatusType = 'Not Started' | 'In-Progress' | 'Done';
+
+/**
+ * Aggregated accordion status for all sections
+ */
+export interface POAccordionStatus {
+  dispatch: {
+    status: AccordionStatusType;
+    totalQty: number;
+    dispatchedQty: number;
+  };
+  document: {
+    status: AccordionStatusType;
+    total: number;
+    completed: number;
+  };
+  delivery: {
+    status: AccordionStatusType;
+    total: number;
+    completed: number;
+  };
+  preCommissioning: {
+    status: AccordionStatusType;
+    total: number;
+    completed: number;
+  };
+  commissioning: {
+    status: AccordionStatusType;
+    total: number;
+    completed: number;
+  };
+  warranty: {
+    status: AccordionStatusType;
+    total: number;
+    completed: number;
+  };
+}
+
 export interface POResponse {
   poId: string;
   poReceivedDate: string;
@@ -43,6 +84,8 @@ export interface POResponse {
   remarks: string | null;
   createdAt: string;
   updatedAt: string;
+  // Accordion status for all sections
+  accordionStatus?: POAccordionStatus;
 }
 
 export interface POListResponse {

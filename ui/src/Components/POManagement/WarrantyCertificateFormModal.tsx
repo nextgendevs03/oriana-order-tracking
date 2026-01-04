@@ -108,7 +108,12 @@ const WarrantyCertificateFormModal: React.FC<WarrantyCertificateFormModalProps> 
         }).unwrap();
         toast.success("Warranty certificate updated successfully");
       } else {
-        const items = values.serialNumbers.map((serialValue: string) => {
+        const serialNumbersArray = values.serialNumbers || [];
+        if (!Array.isArray(serialNumbersArray) || serialNumbersArray.length === 0) {
+          toast.error("Please select at least one serial number");
+          return;
+        }
+        const items = serialNumbersArray.map((serialValue: string) => {
           const [commissioningId] = serialValue.split("__");
           return { commissioningId: parseInt(commissioningId, 10) };
         });

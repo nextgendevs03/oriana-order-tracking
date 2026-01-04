@@ -85,23 +85,5 @@ export interface DeleteDispatchResponse {
   deleted: boolean;
 }
 
-/**
- * Accordion Status Type
- */
-export type AccordionStatusType = 'Not Started' | 'In-Progress' | 'Done';
-
-/**
- * Dispatch Accordion Status Response
- * Returns status for Dispatch, Document, and Delivery sections
- */
-export interface DispatchAccordionStatusResponse {
-  dispatchStatus: AccordionStatusType;
-  totalQty: number;
-  dispatchedQty: number;
-  documentStatus: AccordionStatusType;
-  dispatchesWithDocuments: number;
-  dispatchesWithDoneDocuments: number;
-  deliveryStatus: AccordionStatusType;
-  dispatchesForDelivery: number;
-  dispatchesWithDelivery: number;
-}
+// Note: Accordion status is now consolidated in POResponse.accordionStatus
+// The DispatchAccordionStatusResponse is deprecated - use POResponse.accordionStatus instead

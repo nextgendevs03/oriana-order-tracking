@@ -320,10 +320,22 @@ const S3FileUpload = forwardRef<S3FileUploadRef, S3FileUploadProps>(
           entityId,
         }).unwrap();
 
+        // Validate presigned response
+        if (!presignedResponse || !presignedResponse.files || !Array.isArray(presignedResponse.files)) {
+          throw new Error("Invalid response from server. Please try again.");
+        }
+
+        if (presignedResponse.files.length !== filesToUpload.length) {
+          throw new Error("Mismatch between uploaded files and server response.");
+        }
+
         // Map file UIDs to presigned URL responses
         const uidToPresigned = new Map<string, (typeof presignedResponse.files)[0]>();
         filesToUpload.forEach((file, index) => {
-          uidToPresigned.set(file.uid, presignedResponse.files[index]);
+          const presignedFile = presignedResponse.files[index];
+          if (presignedFile) {
+            uidToPresigned.set(file.uid, presignedFile);
+          }
         });
 
         // Upload each file to S3
