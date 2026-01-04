@@ -168,7 +168,7 @@ const PODetails: React.FC = () => {
   const [isServiceDetailsModalVisible, setIsServiceDetailsModalVisible] =
     useState(false);
   const [viewingServiceDetails, setViewingServiceDetails] =
-    useState<PreCommissioningResponse | null>(null);
+    useState<PreCommissioningResponse | CommissioningResponse | WarrantyCertificateResponse | null>(null);
   const [serviceDetailsTab, setServiceDetailsTab] =
     useState<ServiceDetailsTab>("precommissioning");
   // Update Assign Dispatch To Modal
@@ -344,7 +344,7 @@ const PODetails: React.FC = () => {
 
   // Unified view handler for service details modal
   const handleViewServiceDetails = (
-    record: PreCommissioningResponse,
+    record: PreCommissioningResponse | CommissioningResponse | WarrantyCertificateResponse,
     tab: ServiceDetailsTab
   ) => {
     setViewingServiceDetails(record);
@@ -2186,7 +2186,7 @@ const PODetails: React.FC = () => {
       <ServiceDetailsModal
         visible={isServiceDetailsModalVisible}
         onClose={handleCloseServiceDetailsModal}
-        preCommissioning={viewingServiceDetails}
+        data={viewingServiceDetails}
         initialTab={serviceDetailsTab}
       />
 

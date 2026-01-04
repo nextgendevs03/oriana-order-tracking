@@ -1,32 +1,44 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Tabs, Descriptions, Tag, Empty } from "antd";
+import { Modal, Tabs, Descriptions, Tag, Empty, Button, Space } from "antd";
 import {
   ToolOutlined,
   SettingOutlined,
   SafetyCertificateOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
-import type { PreCommissioning } from "../../store/poSlice";
+import type {
+  PreCommissioningResponse,
+  CommissioningResponse,
+  WarrantyCertificateResponse,
+} from "@OrianaTypes";
 import { formatLabel, getStatusColor } from "../../utils";
+import { useLazyGetDownloadUrlQuery } from "../../store/api/fileApi";
 
 export type ServiceDetailsTab =
   | "precommissioning"
   | "commissioning"
   | "warranty";
 
+type ServiceDetailsData =
+  | PreCommissioningResponse
+  | CommissioningResponse
+  | WarrantyCertificateResponse;
+
 interface ServiceDetailsModalProps {
   visible: boolean;
   onClose: () => void;
-  preCommissioning: PreCommissioning | null;
+  data: ServiceDetailsData | null;
   initialTab?: ServiceDetailsTab;
 }
 
 const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
   visible,
   onClose,
-  preCommissioning,
+  data,
   initialTab = "precommissioning",
 }) => {
   const [activeTab, setActiveTab] = useState<ServiceDetailsTab>(initialTab);
+  const [getDownloadUrl] = useLazyGetDownloadUrlQuery();
 
   // Update active tab when initialTab changes
   useEffect(() => {
@@ -35,78 +47,119 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
     }
   }, [visible, initialTab]);
 
+  const handleDownloadFile = async (fileId: number) => {
+    try {
+      const result = await getDownloadUrl(fileId).unwrap();
+      window.open(result.downloadUrl, "_blank");
+    } catch (error) {
+      console.error("Failed to download file:", error);
+    }
+  };
+
+  // Type guards
+  const isPreCommissioning = (d: ServiceDetailsData): d is PreCommissioningResponse => {
+    return "preCommissioningId" in d;
+  };
+
+  const isCommissioning = (d: ServiceDetailsData): d is CommissioningResponse => {
+    return "commissioningId" in d && !("warrantyCertificateId" in d);
+  };
+
+  const isWarrantyCertificate = (d: ServiceDetailsData): d is WarrantyCertificateResponse => {
+    return "warrantyCertificateId" in d;
+  };
+
+  // Render file list
+  const renderFiles = (files?: { fileId: number; originalFileName: string }[]) => {
+    if (!files || files.length === 0) return "-";
+    return (
+      <Space direction="vertical" size="small">
+        {files.map((file) => (
+          <Button
+            key={file.fileId}
+            type="link"
+            icon={<DownloadOutlined />}
+            onClick={() => handleDownloadFile(file.fileId)}
+            style={{ padding: 0 }}
+          >
+            {file.originalFileName}
+          </Button>
+        ))}
+      </Space>
+    );
+  };
+
   // Pre-Commissioning Tab Content
   const renderPreCommissioningDetails = () => {
-    if (!preCommissioning) return <Empty description="No data available" />;
+    if (!data || !isPreCommissioning(data)) {
+      return <Empty description="No pre-commissioning data available" />;
+    }
 
     return (
       <Descriptions
         bordered
         column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }}
         size="small"
-        labelStyle={{
-          fontWeight: 600,
-          backgroundColor: "#fafafa",
-          width: "200px",
-        }}
+        labelStyle={{ fontWeight: 600, backgroundColor: "#fafafa", width: "200px" }}
       >
         <Descriptions.Item label="PC ID">
-          <Tag color="purple">{preCommissioning.id || "-"}</Tag>
+          <Tag color="purple">{data.preCommissioningId}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Dispatch ID">
-          <Tag color="blue">{preCommissioning.dispatchId || "-"}</Tag>
+          <Tag color="blue">{data.dispatchId}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Serial Number">
-          <Tag color="geekblue">{preCommissioning.serialNumber || "-"}</Tag>
+          <Tag color="geekblue">{data.serialNumber}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Product">
-          {formatLabel(preCommissioning.product) || "-"}
+          {formatLabel(data.productName) || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="PC Contact">
-          {preCommissioning.pcContact || "-"}
+          {data.pcContact || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Service Engineer Assigned">
-          {preCommissioning.serviceEngineerAssigned || "-"}
+          {data.serviceEngineerAssigned || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="PPM/Checklist">
-          {preCommissioning.ppmChecklist || "-"}
+          {data.ppmChecklist || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="PPM Sheet Received from Client">
-          {preCommissioning.ppmSheetReceivedFromClient || "-"}
+          {data.ppmSheetReceivedFromClient || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="PPM Checklist Shared with OEM">
-          {preCommissioning.ppmChecklistSharedWithOem || "-"}
+          {data.ppmChecklistSharedWithOem || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="PPM Ticked No from OEM">
-          {preCommissioning.ppmTickedNoFromOem || "-"}
+          {data.ppmTickedNoFromOem || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="PPM Confirmation Status">
-          {preCommissioning.ppmConfirmationStatus ? (
-            <Tag color={getStatusColor(preCommissioning.ppmConfirmationStatus)}>
-              {formatLabel(preCommissioning.ppmConfirmationStatus)}
+          {data.ppmConfirmationStatus ? (
+            <Tag color={getStatusColor(data.ppmConfirmationStatus)}>
+              {formatLabel(data.ppmConfirmationStatus)}
             </Tag>
-          ) : (
-            "-"
-          )}
+          ) : "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Pre-Commissioning Status">
-          {preCommissioning.preCommissioningStatus ? (
-            <Tag
-              color={getStatusColor(preCommissioning.preCommissioningStatus)}
-            >
-              {formatLabel(preCommissioning.preCommissioningStatus)}
+          {data.preCommissioningStatus ? (
+            <Tag color={getStatusColor(data.preCommissioningStatus)}>
+              {formatLabel(data.preCommissioningStatus)}
             </Tag>
-          ) : (
-            "-"
-          )}
+          ) : "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="OEM Comments" span={2}>
+          {data.oemComments || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Remarks" span={2}>
-          {preCommissioning.remarks || "-"}
+          {data.remarks || "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Documents" span={2}>
+          {renderFiles(data.files)}
         </Descriptions.Item>
         <Descriptions.Item label="Created At">
-          {preCommissioning.createdAt
-            ? new Date(preCommissioning.createdAt).toLocaleString()
-            : "-"}
+          {data.createdAt ? new Date(data.createdAt).toLocaleString() : "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Updated At">
+          {data.updatedAt ? new Date(data.updatedAt).toLocaleString() : "-"}
         </Descriptions.Item>
       </Descriptions>
     );
@@ -114,15 +167,8 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
 
   // Commissioning Tab Content
   const renderCommissioningDetails = () => {
-    if (!preCommissioning) return <Empty description="No data available" />;
-
-    const hasCommissioningData =
-      preCommissioning.commissioningStatus ||
-      preCommissioning.commissioningDate ||
-      preCommissioning.commissioningEcdFromClient;
-
-    if (!hasCommissioningData) {
-      return <Empty description="No commissioning details available" />;
+    if (!data || !isCommissioning(data)) {
+      return <Empty description="No commissioning data available" />;
     }
 
     return (
@@ -130,58 +176,59 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
         bordered
         column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }}
         size="small"
-        labelStyle={{
-          fontWeight: 600,
-          backgroundColor: "#fafafa",
-          width: "200px",
-        }}
+        labelStyle={{ fontWeight: 600, backgroundColor: "#fafafa", width: "200px" }}
       >
-        <Descriptions.Item label="PC ID">
-          <Tag color="purple">{preCommissioning.id || "-"}</Tag>
+        <Descriptions.Item label="Commissioning ID">
+          <Tag color="purple">{data.commissioningId}</Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Pre-Commissioning ID">
+          <Tag color="blue">{data.preCommissioningId}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Serial Number">
-          <Tag color="geekblue">{preCommissioning.serialNumber || "-"}</Tag>
+          <Tag color="geekblue">{data.serialNumber || "-"}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Product">
-          {formatLabel(preCommissioning.product) || "-"}
+          {formatLabel(data.productName) || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Commissioning Status">
-          {preCommissioning.commissioningStatus ? (
-            <Tag color={getStatusColor(preCommissioning.commissioningStatus)}>
-              {formatLabel(preCommissioning.commissioningStatus)}
+          {data.commissioningStatus ? (
+            <Tag color={getStatusColor(data.commissioningStatus)}>
+              {formatLabel(data.commissioningStatus)}
             </Tag>
-          ) : (
-            "-"
-          )}
-        </Descriptions.Item>
-        <Descriptions.Item label="ECD from Client">
-          {preCommissioning.commissioningEcdFromClient || "-"}
-        </Descriptions.Item>
-        <Descriptions.Item label="CCD from Client">
-          {preCommissioning.commissioningCcdFromClient || "-"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Service Ticket No from OEM">
-          {preCommissioning.commissioningServiceTicketNo || "-"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Information Generated">
-          {preCommissioning.commissioningInfoGenerated || "-"}
+          ) : "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Commissioning Date">
-          {preCommissioning.commissioningDate || "-"}
+          {data.commissioningDate || "-"}
         </Descriptions.Item>
-        <Descriptions.Item label="Issues in Commissioning" span={2}>
-          {preCommissioning.commissioningIssues || "-"}
+        <Descriptions.Item label="ECD from Client">
+          {data.ecdFromClient || "-"}
         </Descriptions.Item>
-        <Descriptions.Item label="Solution on Issues" span={2}>
-          {preCommissioning.commissioningSolution || "-"}
+        <Descriptions.Item label="CCD from Client">
+          {data.ccdFromClient || "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Service Ticket No">
+          {data.serviceTicketNo || "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Info Generated">
+          {data.infoGenerated || "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Issues" span={2}>
+          {data.issues || "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Solution" span={2}>
+          {data.solution || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Remarks" span={2}>
-          {preCommissioning.commissioningRemarks || "-"}
+          {data.remarks || "-"}
         </Descriptions.Item>
-        <Descriptions.Item label="Last Updated">
-          {preCommissioning.commissioningUpdatedAt
-            ? new Date(preCommissioning.commissioningUpdatedAt).toLocaleString()
-            : "-"}
+        <Descriptions.Item label="Documents" span={2}>
+          {renderFiles(data.files)}
+        </Descriptions.Item>
+        <Descriptions.Item label="Created At">
+          {data.createdAt ? new Date(data.createdAt).toLocaleString() : "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Updated At">
+          {data.updatedAt ? new Date(data.updatedAt).toLocaleString() : "-"}
         </Descriptions.Item>
       </Descriptions>
     );
@@ -189,15 +236,8 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
 
   // Warranty Certificate Tab Content
   const renderWarrantyDetails = () => {
-    if (!preCommissioning) return <Empty description="No data available" />;
-
-    const hasWarrantyData =
-      preCommissioning.warrantyStatus ||
-      preCommissioning.warrantyCertificateNo ||
-      preCommissioning.warrantyStartDate;
-
-    if (!hasWarrantyData) {
-      return <Empty description="No warranty certificate details available" />;
+    if (!data || !isWarrantyCertificate(data)) {
+      return <Empty description="No warranty certificate data available" />;
     }
 
     return (
@@ -205,49 +245,59 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
         bordered
         column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }}
         size="small"
-        labelStyle={{
-          fontWeight: 600,
-          backgroundColor: "#fafafa",
-          width: "200px",
-        }}
+        labelStyle={{ fontWeight: 600, backgroundColor: "#fafafa", width: "200px" }}
       >
-        <Descriptions.Item label="PC ID">
-          <Tag color="purple">{preCommissioning.id || "-"}</Tag>
+        <Descriptions.Item label="Warranty Certificate ID">
+          <Tag color="purple">{data.warrantyCertificateId}</Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="Commissioning ID">
+          <Tag color="blue">{data.commissioningId}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Serial Number">
-          <Tag color="geekblue">{preCommissioning.serialNumber || "-"}</Tag>
+          <Tag color="geekblue">{data.serialNumber || "-"}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Product">
-          {formatLabel(preCommissioning.product) || "-"}
+          {formatLabel(data.productName) || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Warranty Status">
-          {preCommissioning.warrantyStatus ? (
-            <Tag color={getStatusColor(preCommissioning.warrantyStatus)}>
-              {formatLabel(preCommissioning.warrantyStatus)}
+          {data.warrantyStatus ? (
+            <Tag color={getStatusColor(data.warrantyStatus)}>
+              {formatLabel(data.warrantyStatus)}
             </Tag>
-          ) : (
-            "-"
-          )}
+          ) : "-"}
         </Descriptions.Item>
-        <Descriptions.Item label="Warranty Certificate No" span={2}>
-          {preCommissioning.warrantyCertificateNo || "-"}
+        <Descriptions.Item label="Certificate No">
+          {data.certificateNo || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Issue Date">
-          {preCommissioning.warrantyIssueDate || "-"}
+          {data.issueDate || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Warranty Start Date">
-          {preCommissioning.warrantyStartDate || "-"}
+          {data.warrantyStartDate || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Warranty End Date">
-          {preCommissioning.warrantyEndDate || "-"}
+          {data.warrantyEndDate || "-"}
         </Descriptions.Item>
-        <Descriptions.Item label="Last Updated">
-          {preCommissioning.warrantyUpdatedAt
-            ? new Date(preCommissioning.warrantyUpdatedAt).toLocaleString()
-            : "-"}
+        <Descriptions.Item label="Documents" span={2}>
+          {renderFiles(data.files)}
+        </Descriptions.Item>
+        <Descriptions.Item label="Created At">
+          {data.createdAt ? new Date(data.createdAt).toLocaleString() : "-"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Updated At">
+          {data.updatedAt ? new Date(data.updatedAt).toLocaleString() : "-"}
         </Descriptions.Item>
       </Descriptions>
     );
+  };
+
+  // Get title based on data type
+  const getTitle = () => {
+    if (!data) return "Service Details";
+    if (isPreCommissioning(data)) return `Pre-Commissioning Details - #${data.preCommissioningId}`;
+    if (isCommissioning(data)) return `Commissioning Details - #${data.commissioningId}`;
+    if (isWarrantyCertificate(data)) return `Warranty Certificate - #${data.warrantyCertificateId}`;
+    return "Service Details";
   };
 
   const tabItems = [
@@ -255,37 +305,37 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
       key: "precommissioning",
       label: (
         <span>
-          <ToolOutlined />
-          Pre-Commissioning
+          <ToolOutlined /> Pre-Commissioning
         </span>
       ),
       children: renderPreCommissioningDetails(),
+      disabled: data ? !isPreCommissioning(data) : true,
     },
     {
       key: "commissioning",
       label: (
         <span>
-          <SettingOutlined />
-          Commissioning
+          <SettingOutlined /> Commissioning
         </span>
       ),
       children: renderCommissioningDetails(),
+      disabled: data ? !isCommissioning(data) : true,
     },
     {
       key: "warranty",
       label: (
         <span>
-          <SafetyCertificateOutlined />
-          Warranty Certificate
+          <SafetyCertificateOutlined /> Warranty Certificate
         </span>
       ),
       children: renderWarrantyDetails(),
+      disabled: data ? !isWarrantyCertificate(data) : true,
     },
   ];
 
   return (
     <Modal
-      title={`Service Details - ${preCommissioning?.id || ""}`}
+      title={getTitle()}
       open={visible}
       onCancel={onClose}
       footer={null}
